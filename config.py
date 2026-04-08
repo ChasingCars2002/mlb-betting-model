@@ -10,6 +10,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "mlb_bets.db"
 MODEL_DIR = BASE_DIR / "models"
+LOG_FILE = BASE_DIR / "mlb_model.log"
 CACHE_DIR = MODEL_DIR / "cache"
 TRAINING_STATE_PATH = MODEL_DIR / "training_state.json"
 
@@ -17,7 +18,6 @@ TRAINING_STATE_PATH = MODEL_DIR / "training_state.json"
 RETRAIN_SCHEDULE_DAY = "mon"
 RETRAIN_SCHEDULE_HOUR = 6
 RETRAIN_SCHEDULE_MINUTE = 0
-LOG_FILE = BASE_DIR / "mlb_model.log"
 
 # --- API Keys ---
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "")
