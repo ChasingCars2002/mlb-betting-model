@@ -78,3 +78,91 @@ class TestTrainingState:
             train_mod.save_training_state(state)
             loaded = train_mod.load_training_state()
         assert loaded == state
+
+
+# ---------------------------------------------------------------------------
+# get_or_build_season_features
+# ---------------------------------------------------------------------------
+
+class TestGetOrBuildSeasonFeatures:
+    def test_builds_and_writes_cache_on_first_call(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(20)
+        cache_dir = tmp_path / "cache"
+
+        with patch.object(train_mod, "CACHE_DIR", cache_dir), \
+             patch("train.get_historical_game_data", return_value=pd.DataFrame({"dummy": [1]})), \
+             patch("train.build_training_features", return_value=(X, y)):
+            result_X, result_y = train_mod.get_or_build_season_features(
+                2023, force_rebuild=False, current_hash="abc"
+            )
+
+        assert (cache_dir / "features_2023.parquet").exists()
+        pd.testing.assert_frame_equal(result_X.reset_index(drop=True), X.reset_index(drop=True))
+        assert len(result_y) == 20
+
+    def test_loads_from_cache_without_api_calls(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(20)
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        df = X.copy()
+        df["home_win"] = y.values
+        df.to_parquet(cache_dir / "features_2023.parquet", index=False)
+
+        with patch.object(train_mod, "CACHE_DIR", cache_dir), \
+             patch("train.get_historical_game_data") as mock_fetch:
+            result_X, result_y = train_mod.get_or_build_season_features(
+                2023, force_rebuild=False, current_hash="abc"
+            )
+            mock_fetch.assert_not_called()
+
+        assert len(result_X) == 20
+
+    def test_force_rebuild_ignores_existing_cache(self, tmp_path):
+        import train as train_mod
+        X_stale, y_stale = make_feature_df(20, seed=1)
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        df = X_stale.copy()
+        df["home_win"] = y_stale.values
+        df.to_parquet(cache_dir / "features_2023.parquet", index=False)
+
+        X_fresh, y_fresh = make_feature_df(30, seed=99)
+        with patch.object(train_mod, "CACHE_DIR", cache_dir), \
+             patch("train.get_historical_game_data", return_value=pd.DataFrame({"dummy": [1]})), \
+             patch("train.build_training_features", return_value=(X_fresh, y_fresh)):
+            result_X, _ = train_mod.get_or_build_season_features(
+                2023, force_rebuild=True, current_hash="abc"
+            )
+
+        assert len(result_X) == 30
+
+    def test_corrupt_cache_falls_back_to_rebuild(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(20)
+        cache_dir = tmp_path / "cache"
+        cache_dir.mkdir()
+        (cache_dir / "features_2023.parquet").write_bytes(b"not a parquet file")
+
+        with patch.object(train_mod, "CACHE_DIR", cache_dir), \
+             patch("train.get_historical_game_data", return_value=pd.DataFrame({"dummy": [1]})), \
+             patch("train.build_training_features", return_value=(X, y)):
+            result_X, _ = train_mod.get_or_build_season_features(
+                2023, force_rebuild=False, current_hash="abc"
+            )
+
+        assert len(result_X) == 20
+
+    def test_returns_empty_when_no_game_data(self, tmp_path):
+        import train as train_mod
+        cache_dir = tmp_path / "cache"
+
+        with patch.object(train_mod, "CACHE_DIR", cache_dir), \
+             patch("train.get_historical_game_data", return_value=pd.DataFrame()):
+            result_X, result_y = train_mod.get_or_build_season_features(
+                2026, force_rebuild=True, current_hash="abc"
+            )
+
+        assert result_X.empty
+        assert len(result_y) == 0

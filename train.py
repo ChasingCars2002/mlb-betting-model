@@ -50,6 +50,49 @@ def save_training_state(state: dict):
     logger.info("Training state saved to %s", TRAINING_STATE_PATH)
 
 
+def get_or_build_season_features(
+    season: int,
+    force_rebuild: bool,
+    current_hash: str,
+) -> tuple[pd.DataFrame, pd.Series]:
+    """Load season features from cache, or build from scratch if unavailable.
+
+    Returns (X, y). Returns empty DataFrame/Series when no game data exists
+    (e.g., off-season or season not yet started).
+    """
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_path = CACHE_DIR / f"features_{season}.parquet"
+
+    if not force_rebuild and cache_path.exists():
+        try:
+            df = pd.read_parquet(cache_path)
+            X = df[FEATURE_COLUMNS]
+            y = df["home_win"].rename("home_win")
+            logger.info("Loaded cached features for %d (%d rows).", season, len(X))
+            return X, y
+        except Exception as e:
+            logger.warning("Cache for %d is corrupt (%s) — rebuilding.", season, e)
+
+    logger.info("Building features for %d season...", season)
+    historical = get_historical_game_data([season])
+
+    if historical.empty:
+        logger.warning("No game data found for %d — skipping.", season)
+        return (
+            pd.DataFrame(columns=FEATURE_COLUMNS),
+            pd.Series([], dtype=int, name="home_win"),
+        )
+
+    X, y = build_training_features(historical)
+
+    cache_df = X.copy()
+    cache_df["home_win"] = y.values
+    cache_df.to_parquet(cache_path, index=False)
+    logger.info("Cached features for %d to %s.", season, cache_path)
+
+    return X, y
+
+
 def main():
     print(f"\nMLB Betting Model — Training Pipeline")
     print(f"Seasons: {TRAINING_SEASONS}")
