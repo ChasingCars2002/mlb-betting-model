@@ -99,7 +99,7 @@ def get_or_build_season_features(
     return X, y
 
 
-def run_incremental_retrain(force: bool = False, current_year: int = None):
+def run_incremental_retrain(force: bool = False, current_year: int | None = None):
     """Retrain models using cached features for completed seasons.
 
     Completed seasons (year < current_year) load from parquet cache.
@@ -115,8 +115,8 @@ def run_incremental_retrain(force: bool = False, current_year: int = None):
         current_year = date.today().year
 
     print(f"\n{'='*60}")
-    label = "Full Rebuild" if force else "Incremental Retrain"
-    print(f"  MLB BETTING MODEL — {label}")
+    run_label = "Full Rebuild" if force else "Incremental Retrain"
+    print(f"  MLB BETTING MODEL — {run_label}")
     print(f"{'='*60}")
 
     current_hash = get_feature_columns_hash()
