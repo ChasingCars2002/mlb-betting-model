@@ -35,7 +35,7 @@ def load_training_state() -> dict:
     if not TRAINING_STATE_PATH.exists():
         return {}
     try:
-        with open(TRAINING_STATE_PATH) as f:
+        with open(TRAINING_STATE_PATH, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.warning("Could not read training_state.json: %s. Treating as first run.", e)
@@ -45,7 +45,7 @@ def load_training_state() -> dict:
 def save_training_state(state: dict):
     """Write state dict to training_state.json."""
     TRAINING_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(TRAINING_STATE_PATH, "w") as f:
+    with open(TRAINING_STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)
     logger.info("Training state saved to %s", TRAINING_STATE_PATH)
 
