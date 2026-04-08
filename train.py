@@ -13,14 +13,6 @@ from data import get_historical_game_data
 from features import build_training_features, FEATURE_COLUMNS
 from model import train_models
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler(str(LOG_FILE)),
-    ],
-)
 logger = logging.getLogger(__name__)
 
 
@@ -182,6 +174,14 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(str(LOG_FILE)),
+        ],
+    )
     print(f"\nMLB Betting Model — Full Training Pipeline")
     print(f"Seasons: {TRAINING_SEASONS} + current year (auto-detected)")
     print("=" * 50)
