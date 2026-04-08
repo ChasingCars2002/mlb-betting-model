@@ -182,34 +182,10 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
 
 
 def main():
-    print(f"\nMLB Betting Model — Training Pipeline")
-    print(f"Seasons: {TRAINING_SEASONS}")
+    print(f"\nMLB Betting Model — Full Training Pipeline")
+    print(f"Seasons: {TRAINING_SEASONS} + current year (auto-detected)")
     print("=" * 50)
-
-    # Step 1: Pull historical game data
-    logger.info("Step 1: Fetching historical game data...")
-    historical = get_historical_game_data(TRAINING_SEASONS)
-
-    if historical.empty:
-        logger.error("No historical data retrieved. Check your internet connection.")
-        sys.exit(1)
-
-    print(f"\nLoaded {len(historical)} games across {TRAINING_SEASONS}")
-    print(f"Home win rate: {historical['home_win'].mean():.3f}\n")
-
-    # Step 2: Engineer features
-    logger.info("Step 2: Engineering features...")
-    X, y = build_training_features(historical)
-
-    print(f"Feature matrix: {X.shape[0]} samples x {X.shape[1]} features")
-    print(f"Target distribution: {y.value_counts().to_dict()}\n")
-
-    # Step 3: Train and compare models
-    logger.info("Step 3: Training models...")
-    results = train_models(X, y)
-
-    print("Training complete! Models saved to models/ directory.")
-    print("You can now run: python main.py --run-now")
+    run_incremental_retrain(force=True)
 
 
 if __name__ == "__main__":
