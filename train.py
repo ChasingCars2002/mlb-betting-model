@@ -59,6 +59,12 @@ def get_or_build_season_features(
 
     Returns (X, y). Returns empty DataFrame/Series when no game data exists
     (e.g., off-season or season not yet started).
+
+    Args:
+        season: MLB season year to load or build features for.
+        force_rebuild: If True, bypass any existing cache file.
+        current_hash: SHA256 of FEATURE_COLUMNS (reserved for the caller's
+            schema-invalidation check; not used internally).
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_path = CACHE_DIR / f"features_{season}.parquet"
