@@ -99,6 +99,88 @@ def get_or_build_season_features(
     return X, y
 
 
+def run_incremental_retrain(force: bool = False, current_year: int = None):
+    """Retrain models using cached features for completed seasons.
+
+    Completed seasons (year < current_year) load from parquet cache.
+    The current season always re-fetches and rebuilds features.
+    Passing force=True or detecting a feature schema change triggers
+    a full rebuild of all season caches.
+
+    Args:
+        force: Wipe all caches and rebuild from scratch.
+        current_year: Override the current year (used in tests).
+    """
+    if current_year is None:
+        current_year = date.today().year
+
+    print(f"\n{'='*60}")
+    label = "Full Rebuild" if force else "Incremental Retrain"
+    print(f"  MLB BETTING MODEL — {label}")
+    print(f"{'='*60}")
+
+    current_hash = get_feature_columns_hash()
+    state = load_training_state()
+
+    stored_hash = state.get("feature_columns_hash", "")
+    if stored_hash and stored_hash != current_hash:
+        print("\n  WARNING: Feature schema changed — rebuilding all season caches.")
+        logger.warning(
+            "Feature hash mismatch: stored=%s current=%s. Forcing full rebuild.",
+            stored_hash, current_hash,
+        )
+        force = True
+
+    seasons = list(TRAINING_SEASONS)
+    if current_year not in seasons:
+        seasons.append(current_year)
+
+    all_X: list[pd.DataFrame] = []
+    all_y: list[pd.Series] = []
+    season_stats: dict[str, dict] = {}
+
+    for season in seasons:
+        is_current = (season == current_year)
+        rebuild = force or is_current
+        label = "rebuilding" if rebuild else "from cache"
+        print(f"\n  Season {season}: {label}...")
+
+        X, y = get_or_build_season_features(
+            season, force_rebuild=rebuild, current_hash=current_hash
+        )
+
+        if X.empty:
+            print(f"  Season {season}: no data available, skipping.")
+            logger.info("No data for season %d, skipping.", season)
+            continue
+
+        all_X.append(X)
+        all_y.append(y)
+        season_stats[str(season)] = {"rows": len(X), "cached": not rebuild}
+        print(f"           {len(X)} games loaded.")
+
+    if not all_X:
+        print("\n  ERROR: No training data available across all seasons. Aborting.")
+        logger.error("No training data available. Aborting retrain.")
+        return
+
+    X_combined = pd.concat(all_X, ignore_index=True)
+    y_combined = pd.concat(all_y, ignore_index=True)
+
+    print(f"\n  Combined: {len(X_combined)} games across {len(all_X)} seasons.")
+    print(f"  Home win rate: {y_combined.mean():.3f}\n")
+
+    train_models(X_combined, y_combined)
+
+    new_state = {
+        "last_trained": datetime.now().isoformat(timespec="seconds"),
+        "feature_columns_hash": current_hash,
+        "seasons": season_stats,
+    }
+    save_training_state(new_state)
+    print("\n  Training state saved. Models ready.")
+
+
 def main():
     print(f"\nMLB Betting Model — Training Pipeline")
     print(f"Seasons: {TRAINING_SEASONS}")

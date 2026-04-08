@@ -166,3 +166,140 @@ class TestGetOrBuildSeasonFeatures:
 
         assert result_X.empty
         assert len(result_y) == 0
+
+
+# ---------------------------------------------------------------------------
+# run_incremental_retrain
+# ---------------------------------------------------------------------------
+
+class TestRunIncrementalRetrain:
+    def _patch_context(self, tmp_path, seasons=None):
+        """Return a dict of patches for run_incremental_retrain tests."""
+        import train as train_mod
+        return {
+            "TRAINING_STATE_PATH": tmp_path / "state.json",
+            "CACHE_DIR": tmp_path / "cache",
+            "TRAINING_SEASONS": seasons or [2023, 2024],
+        }
+
+    def test_combines_multiple_seasons_and_trains(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(30)
+        ctx = self._patch_context(tmp_path, seasons=[2023, 2024])
+
+        call_count = {"n": 0}
+        def fake_build(season, force_rebuild, current_hash):
+            call_count["n"] += 1
+            return X, y
+
+        with patch.object(train_mod, "TRAINING_STATE_PATH", ctx["TRAINING_STATE_PATH"]), \
+             patch.object(train_mod, "CACHE_DIR", ctx["CACHE_DIR"]), \
+             patch.object(train_mod, "TRAINING_SEASONS", ctx["TRAINING_SEASONS"]), \
+             patch("train.get_or_build_season_features", side_effect=fake_build), \
+             patch("train.train_models") as mock_train:
+            train_mod.run_incremental_retrain(force=False, current_year=2026)
+
+        # 2023, 2024 (base) + 2026 (current) = 3 calls
+        assert call_count["n"] == 3
+        mock_train.assert_called_once()
+        combined_X = mock_train.call_args[0][0]
+        assert len(combined_X) == 90  # 3 seasons × 30 rows
+
+    def test_current_season_always_force_rebuilt(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(30)
+        ctx = self._patch_context(tmp_path, seasons=[2023])
+        rebuild_by_season = {}
+
+        def fake_build(season, force_rebuild, current_hash):
+            rebuild_by_season[season] = force_rebuild
+            return X, y
+
+        with patch.object(train_mod, "TRAINING_STATE_PATH", ctx["TRAINING_STATE_PATH"]), \
+             patch.object(train_mod, "CACHE_DIR", ctx["CACHE_DIR"]), \
+             patch.object(train_mod, "TRAINING_SEASONS", ctx["TRAINING_SEASONS"]), \
+             patch("train.get_or_build_season_features", side_effect=fake_build), \
+             patch("train.train_models"):
+            train_mod.run_incremental_retrain(force=False, current_year=2026)
+
+        assert rebuild_by_season[2023] is False   # completed season uses cache
+        assert rebuild_by_season[2026] is True    # current season always rebuilds
+
+    def test_force_rebuilds_all_seasons(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(30)
+        ctx = self._patch_context(tmp_path, seasons=[2023, 2024])
+        rebuild_flags = []
+
+        def fake_build(season, force_rebuild, current_hash):
+            rebuild_flags.append(force_rebuild)
+            return X, y
+
+        with patch.object(train_mod, "TRAINING_STATE_PATH", ctx["TRAINING_STATE_PATH"]), \
+             patch.object(train_mod, "CACHE_DIR", ctx["CACHE_DIR"]), \
+             patch.object(train_mod, "TRAINING_SEASONS", ctx["TRAINING_SEASONS"]), \
+             patch("train.get_or_build_season_features", side_effect=fake_build), \
+             patch("train.train_models"):
+            train_mod.run_incremental_retrain(force=True, current_year=2026)
+
+        assert all(rebuild_flags), "force=True should rebuild every season"
+
+    def test_hash_mismatch_triggers_force_rebuild(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(30)
+        state_path = tmp_path / "state.json"
+        state_path.write_text(json.dumps({"feature_columns_hash": "stale_hash_000"}))
+        cache_dir = tmp_path / "cache"
+        rebuild_flags = []
+
+        def fake_build(season, force_rebuild, current_hash):
+            rebuild_flags.append(force_rebuild)
+            return X, y
+
+        with patch.object(train_mod, "TRAINING_STATE_PATH", state_path), \
+             patch.object(train_mod, "CACHE_DIR", cache_dir), \
+             patch.object(train_mod, "TRAINING_SEASONS", [2023]), \
+             patch("train.get_or_build_season_features", side_effect=fake_build), \
+             patch("train.train_models"):
+            train_mod.run_incremental_retrain(force=False, current_year=2026)
+
+        assert all(rebuild_flags), "Hash mismatch must force a full rebuild"
+
+    def test_skips_empty_season_and_still_trains(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(30)
+        ctx = self._patch_context(tmp_path, seasons=[2023])
+
+        def fake_build(season, force_rebuild, current_hash):
+            if season == 2026:
+                return pd.DataFrame(columns=FEATURE_COLUMNS), pd.Series([], dtype=int)
+            return X, y
+
+        with patch.object(train_mod, "TRAINING_STATE_PATH", ctx["TRAINING_STATE_PATH"]), \
+             patch.object(train_mod, "CACHE_DIR", ctx["CACHE_DIR"]), \
+             patch.object(train_mod, "TRAINING_SEASONS", ctx["TRAINING_SEASONS"]), \
+             patch("train.get_or_build_season_features", side_effect=fake_build), \
+             patch("train.train_models") as mock_train:
+            train_mod.run_incremental_retrain(force=False, current_year=2026)
+
+        combined_X = mock_train.call_args[0][0]
+        assert len(combined_X) == 30  # only 2023, 2026 was empty
+
+    def test_saves_training_state_after_run(self, tmp_path):
+        import train as train_mod
+        X, y = make_feature_df(30)
+        ctx = self._patch_context(tmp_path, seasons=[2023])
+
+        with patch.object(train_mod, "TRAINING_STATE_PATH", ctx["TRAINING_STATE_PATH"]), \
+             patch.object(train_mod, "CACHE_DIR", ctx["CACHE_DIR"]), \
+             patch.object(train_mod, "TRAINING_SEASONS", ctx["TRAINING_SEASONS"]), \
+             patch("train.get_or_build_season_features", return_value=(X, y)), \
+             patch("train.train_models"):
+            train_mod.run_incremental_retrain(force=False, current_year=2026)
+
+        assert ctx["TRAINING_STATE_PATH"].exists()
+        state = json.loads(ctx["TRAINING_STATE_PATH"].read_text())
+        assert "last_trained" in state
+        assert "feature_columns_hash" in state
+        assert "2023" in state["seasons"]
+        assert "2026" in state["seasons"]
