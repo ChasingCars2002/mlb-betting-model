@@ -94,7 +94,7 @@ class TestGetOrBuildSeasonFeatures:
              patch("train.get_historical_game_data", return_value=pd.DataFrame({"dummy": [1]})), \
              patch("train.build_training_features", return_value=(X, y)):
             result_X, result_y = train_mod.get_or_build_season_features(
-                2023, force_rebuild=False, current_hash="abc"
+                2023, force_rebuild=False
             )
 
         assert (cache_dir / "features_2023.parquet").exists()
@@ -113,7 +113,7 @@ class TestGetOrBuildSeasonFeatures:
         with patch.object(train_mod, "CACHE_DIR", cache_dir), \
              patch("train.get_historical_game_data") as mock_fetch:
             result_X, result_y = train_mod.get_or_build_season_features(
-                2023, force_rebuild=False, current_hash="abc"
+                2023, force_rebuild=False
             )
             mock_fetch.assert_not_called()
 
@@ -133,7 +133,7 @@ class TestGetOrBuildSeasonFeatures:
              patch("train.get_historical_game_data", return_value=pd.DataFrame({"dummy": [1]})), \
              patch("train.build_training_features", return_value=(X_fresh, y_fresh)):
             result_X, _ = train_mod.get_or_build_season_features(
-                2023, force_rebuild=True, current_hash="abc"
+                2023, force_rebuild=True
             )
 
         assert len(result_X) == 30
@@ -149,7 +149,7 @@ class TestGetOrBuildSeasonFeatures:
              patch("train.get_historical_game_data", return_value=pd.DataFrame({"dummy": [1]})), \
              patch("train.build_training_features", return_value=(X, y)):
             result_X, _ = train_mod.get_or_build_season_features(
-                2023, force_rebuild=False, current_hash="abc"
+                2023, force_rebuild=False
             )
 
         assert len(result_X) == 20
@@ -161,7 +161,7 @@ class TestGetOrBuildSeasonFeatures:
         with patch.object(train_mod, "CACHE_DIR", cache_dir), \
              patch("train.get_historical_game_data", return_value=pd.DataFrame()):
             result_X, result_y = train_mod.get_or_build_season_features(
-                2026, force_rebuild=True, current_hash="abc"
+                2026, force_rebuild=True
             )
 
         assert result_X.empty
@@ -188,7 +188,7 @@ class TestRunIncrementalRetrain:
         ctx = self._patch_context(tmp_path, seasons=[2023, 2024])
 
         call_count = {"n": 0}
-        def fake_build(season, force_rebuild, current_hash):
+        def fake_build(season, force_rebuild):
             call_count["n"] += 1
             return X, y
 
@@ -211,7 +211,7 @@ class TestRunIncrementalRetrain:
         ctx = self._patch_context(tmp_path, seasons=[2023])
         rebuild_by_season = {}
 
-        def fake_build(season, force_rebuild, current_hash):
+        def fake_build(season, force_rebuild):
             rebuild_by_season[season] = force_rebuild
             return X, y
 
@@ -231,7 +231,7 @@ class TestRunIncrementalRetrain:
         ctx = self._patch_context(tmp_path, seasons=[2023, 2024])
         rebuild_flags = []
 
-        def fake_build(season, force_rebuild, current_hash):
+        def fake_build(season, force_rebuild):
             rebuild_flags.append(force_rebuild)
             return X, y
 
@@ -252,7 +252,7 @@ class TestRunIncrementalRetrain:
         cache_dir = tmp_path / "cache"
         rebuild_flags = []
 
-        def fake_build(season, force_rebuild, current_hash):
+        def fake_build(season, force_rebuild):
             rebuild_flags.append(force_rebuild)
             return X, y
 
@@ -270,7 +270,7 @@ class TestRunIncrementalRetrain:
         X, y = make_feature_df(30)
         ctx = self._patch_context(tmp_path, seasons=[2023])
 
-        def fake_build(season, force_rebuild, current_hash):
+        def fake_build(season, force_rebuild):
             if season == 2026:
                 return pd.DataFrame(columns=FEATURE_COLUMNS), pd.Series([], dtype=int)
             return X, y

@@ -45,7 +45,6 @@ def save_training_state(state: dict):
 def get_or_build_season_features(
     season: int,
     force_rebuild: bool,
-    current_hash: str,
 ) -> tuple[pd.DataFrame, pd.Series]:
     """Load season features from cache, or build from scratch if unavailable.
 
@@ -55,8 +54,6 @@ def get_or_build_season_features(
     Args:
         season: MLB season year to load or build features for.
         force_rebuild: If True, bypass any existing cache file.
-        current_hash: SHA256 of FEATURE_COLUMNS (reserved for the caller's
-            schema-invalidation check; not used internally).
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_path = CACHE_DIR / f"features_{season}.parquet"
@@ -137,9 +134,7 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
         label = "rebuilding" if rebuild else "from cache"
         print(f"\n  Season {season}: {label}...")
 
-        X, y = get_or_build_season_features(
-            season, force_rebuild=rebuild, current_hash=current_hash
-        )
+        X, y = get_or_build_season_features(season, force_rebuild=rebuild)
 
         if X.empty:
             print(f"  Season {season}: no data available, skipping.")

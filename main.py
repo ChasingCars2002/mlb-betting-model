@@ -240,9 +240,9 @@ def main():
     # Initialize database
     init_db()
 
-    # Guard: --force is only meaningful with --retrain or --train
-    if args.force and not args.retrain and not args.train:
-        parser.error("--force requires --retrain or --train")
+    # Guard: --force is only meaningful with --retrain
+    if args.force and not args.retrain:
+        parser.error("--force requires --retrain")
 
     # Determine action
     if args.train:
