@@ -1,0 +1,305 @@
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --border:    #30363d;
+  --text:      #e6edf3;
+  --muted:     #8b949e;
+  --green:     #3fb950;
+  --red:       #f85149;
+  --yellow:    #d29922;
+  --blue:      #58a6ff;
+  --accent:    #1f6feb;
+  --radius:    8px;
+  --font:      'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+
+/* ── Layout ───────────────────────────────────────────────── */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+  margin-bottom: 28px;
+}
+
+header .inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -.3px;
+}
+
+.logo span { color: var(--blue); }
+
+.last-updated {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Toggle ───────────────────────────────────────────────── */
+.toggle-group {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.toggle-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ── Stat cards ───────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+
+.stat-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-card .sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.neutral  { color: var(--text); }
+
+/* ── Chart ────────────────────────────────────────────────── */
+.chart-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 16px;
+}
+
+.chart-wrap {
+  position: relative;
+  height: 220px;
+}
+
+/* ── Today's picks banner ─────────────────────────────────── */
+.today-section {
+  margin-bottom: 28px;
+}
+
+.picks-empty {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.pick-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.pick-card .game-label {
+  font-weight: 600;
+  min-width: 140px;
+}
+
+.pick-card .pick-team {
+  font-weight: 700;
+  color: var(--blue);
+  min-width: 60px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.badge-pending { background: rgba(139,148,158,.15); color: var(--muted); }
+.badge-win     { background: rgba(63,185,80,.15);   color: var(--green); }
+.badge-loss    { background: rgba(248,81,73,.15);   color: var(--red);   }
+
+.pick-meta { color: var(--muted); font-size: 12px; }
+
+/* ── History table ────────────────────────────────────────── */
+.table-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-filter input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  padding: 6px 12px;
+  outline: none;
+  width: 200px;
+}
+
+.table-filter input:focus { border-color: var(--accent); }
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.03); }
+
+tbody td {
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+
+tr.row-win  td:first-child { border-left: 3px solid var(--green); }
+tr.row-loss td:first-child { border-left: 3px solid var(--red);   }
+tr.row-pending td:first-child { border-left: 3px solid var(--border); }
+
+.profit-pos { color: var(--green); font-weight: 600; }
+.profit-neg { color: var(--red);   font-weight: 600; }
+
+/* ── Loading / error states ───────────────────────────────── */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+}
+
+.error-banner {
+  background: rgba(248,81,73,.1);
+  border: 1px solid rgba(248,81,73,.3);
+  border-radius: var(--radius);
+  color: var(--red);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stat-card .value { font-size: 22px; }
+  .table-filter input { width: 140px; }
+}

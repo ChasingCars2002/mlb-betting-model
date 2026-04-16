@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Dashboard",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8080", "--directory", "docs"],
+      "port": 8080
+    },
+    {
+      "name": "Scheduler Daemon",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["main.py", "--schedule"],
+      "autoPort": true
+    },
+    {
+      "name": "Run Predictions",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["main.py", "--run-now"],
+      "autoPort": true
+    },
+    {
+      "name": "Grade Predictions",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["main.py", "--grade"],
+      "autoPort": true
+    },
+    {
+      "name": "Export Dashboard Data",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["main.py", "--export"],
+      "autoPort": true
+    }
+  ]
+}

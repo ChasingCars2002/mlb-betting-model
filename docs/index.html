@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLB Betting Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header>
+    <div class="container inner">
+      <div class="logo">⚾ <span>MLB</span> Model
+        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · Moneyline</span>
+      </div>
+      <div id="last-updated" class="last-updated">Loading…</div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- ── Error banner (hidden by default) ─────────────────── -->
+    <div id="error-banner" class="error-banner" style="display:none">
+      ⚠ <span id="error-text"></span>
+    </div>
+
+    <!-- ── Loading state ────────────────────────────────────── -->
+    <div id="loading" class="loading">Loading dashboard data…</div>
+
+    <!-- ── Main app (hidden until data loads) ───────────────── -->
+    <div id="app" style="display:none">
+
+      <!-- Mode toggle -->
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-mode="ytd">YTD</button>
+        <button class="toggle-btn"        data-mode="all_time">All-Time</button>
+      </div>
+
+      <!-- ── Stat cards ──────────────────────────────────────── -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Record</div>
+          <div id="card-record"><div class="value neutral">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Win Rate</div>
+          <div id="card-winrate"><div class="value neutral">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">ROI</div>
+          <div id="card-roi"><div class="value neutral">—</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Net Units</div>
+          <div id="card-profit"><div class="value neutral">—</div></div>
+        </div>
+      </div>
+
+      <!-- ── Cumulative P&L chart ────────────────────────────── -->
+      <div class="chart-section">
+        <div class="section-title">Cumulative P&amp;L (units)</div>
+        <div class="chart-wrap">
+          <canvas id="pnl-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- ── Today's picks ───────────────────────────────────── -->
+      <div class="today-section">
+        <div class="section-title" style="margin-bottom:12px">Today's Picks</div>
+        <div id="today-picks"><p class="picks-empty">Loading…</p></div>
+      </div>
+
+      <!-- ── Pick history table ──────────────────────────────── -->
+      <div class="table-section">
+        <div class="table-header">
+          <div class="section-title" style="margin-bottom:0">Pick History</div>
+          <div class="table-filter">
+            <input id="table-search" type="search" placeholder="Filter team or status…" />
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Game</th>
+                <th>Pick</th>
+                <th>Odds</th>
+                <th>Units</th>
+                <th>Model%</th>
+                <th>Edge</th>
+                <th>Status</th>
+                <th>Profit</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody">
+              <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /#app -->
+  </div><!-- /.container -->
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

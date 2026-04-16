@@ -18,7 +18,7 @@ from config import (
     RETRAIN_SCHEDULE_HOUR,
     RETRAIN_SCHEDULE_MINUTE,
 )
-from database import init_db, save_predictions, grade_predictions, get_roi_stats
+from database import init_db, save_predictions, grade_predictions, get_roi_stats, get_all_predictions
 from data import get_todays_games, get_yesterdays_results
 from features import build_game_features
 from model import load_model, predict_win_prob
@@ -94,6 +94,8 @@ def run_predictions(model_name: str = "xgboost"):
     else:
         print("  No +EV picks to save.\n")
 
+    export_dashboard_data()
+
 
 # ---------------------------------------------------------------------------
 # Phase 2: Grade yesterday's picks
@@ -118,6 +120,8 @@ def run_grading():
     # Show updated stats
     show_stats()
 
+    export_dashboard_data()
+
 
 # ---------------------------------------------------------------------------
 # Show lifetime stats
@@ -128,6 +132,49 @@ def show_stats():
     stats = get_roi_stats()
     output = format_stats(stats)
     print(output)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard JSON export
+# ---------------------------------------------------------------------------
+
+def _sanitize_json(obj):
+    """Recursively replace NaN/Inf floats with None so json.dumps produces valid JSON."""
+    import math
+    if isinstance(obj, float) and not math.isfinite(obj):
+        return None
+    if isinstance(obj, dict):
+        return {k: _sanitize_json(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_json(v) for v in obj]
+    return obj
+
+
+def export_dashboard_data():
+    """Write JSON files to docs/data/ for the GitHub Pages dashboard."""
+    import json
+    from pathlib import Path
+    from datetime import datetime
+
+    out = Path("docs/data")
+    out.mkdir(parents=True, exist_ok=True)
+
+    ytd_since = f"{date.today().year}-01-01"
+    stats = {
+        "ytd": {**get_roi_stats(since=ytd_since), "since": ytd_since},
+        "all_time": get_roi_stats(),
+        "last_updated": datetime.utcnow().isoformat() + "Z",
+    }
+    (out / "stats.json").write_text(json.dumps(_sanitize_json(stats), indent=2))
+
+    history = get_all_predictions()
+    (out / "picks_history.json").write_text(json.dumps(_sanitize_json(history), indent=2))
+
+    today_str = date.today().isoformat()
+    today_picks = [p for p in history if p["date"] == today_str]
+    (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_picks), indent=2))
+
+    logger.info("Dashboard JSON exported to %s", out)
 
 
 # ---------------------------------------------------------------------------
@@ -224,6 +271,10 @@ def main():
         "--schedule", action="store_true",
         help="Start the daily scheduler.",
     )
+    parser.add_argument(
+        "--export", action="store_true",
+        help="Export JSON files to docs/data/ for the GitHub Pages dashboard.",
+    )
 
     args = parser.parse_args()
 
@@ -258,6 +309,8 @@ def main():
         show_stats()
     elif args.schedule:
         run_scheduler()
+    elif args.export:
+        export_dashboard_data()
     else:
         # Default: run predictions
         parser.print_help()
