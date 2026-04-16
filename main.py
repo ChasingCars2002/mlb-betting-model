@@ -42,8 +42,8 @@ def run_predictions(model_name: str = "xgboost"):
     print("\n  [1/5] Fetching today's games...")
     games = get_todays_games()
     if not games:
-        print("  No games found today. Exiting.")
-        return
+        print("  No games found today (off day or no probable pitchers posted). Exiting.")
+        return  # Not an error — valid off day
     print(f"        Found {len(games)} games with probable pitchers.")
 
     # Step 2: Load model
@@ -53,7 +53,7 @@ def run_predictions(model_name: str = "xgboost"):
     except FileNotFoundError as e:
         print(f"  ERROR: {e}")
         print("  Run 'python train.py' first to train the models.")
-        return
+        sys.exit(1)
 
     # Step 3: Build features and predict
     print("\n  [3/5] Building features and predicting...")
@@ -71,12 +71,12 @@ def run_predictions(model_name: str = "xgboost"):
     print("\n  [4/5] Fetching live odds...")
     odds = fetch_live_odds()
     if not odds:
-        print("  WARNING: Could not fetch odds. Cannot calculate EV.")
-        return
+        print("  ERROR: Could not fetch odds (check ODDS_API_KEY). Cannot calculate EV.")
+        sys.exit(1)
     games_with_odds = match_odds_to_games(odds, games)
     if not games_with_odds:
-        print("  No games matched with odds. Exiting.")
-        return
+        print("  ERROR: No games matched with odds (possible team name mapping issue).")
+        sys.exit(1)
     print(f"        Matched odds for {len(games_with_odds)} games.")
 
     # Step 5: Calculate EV and filter

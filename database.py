@@ -167,9 +167,12 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
 
     if not rows:
         with get_connection() as conn:
-            pending_count = conn.execute(
-                "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
-            ).fetchone()["cnt"]
+            pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
+            pending_params = []
+            if since:
+                pending_sql += " AND date >= ?"
+                pending_params.append(since)
+            pending_count = conn.execute(pending_sql, pending_params).fetchone()["cnt"]
         return {
             "total_bets": 0, "wins": 0, "losses": 0, "pending": pending_count,
             "total_units_wagered": 0, "total_profit": 0.0,
@@ -189,9 +192,12 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
     brier_score = brier_sum / len(rows)
 
     with get_connection() as conn:
-        pending_count = conn.execute(
-            "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
-        ).fetchone()["cnt"]
+        pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
+        pending_params = []
+        if since:
+            pending_sql += " AND date >= ?"
+            pending_params.append(since)
+        pending_count = conn.execute(pending_sql, pending_params).fetchone()["cnt"]
 
     return {
         "total_bets": len(rows),
