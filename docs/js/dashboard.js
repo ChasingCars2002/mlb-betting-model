@@ -30,6 +30,7 @@ async function loadData() {
 
     renderLastUpdated(statsData.last_updated);
     renderStats(statsData[mode]);
+    renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
     renderChart(allHistory, mode);
     renderTable(allHistory);
@@ -264,6 +265,62 @@ function renderTable(history) {
         <td>${p.profit != null ? fmtProfit(p.profit) : '—'}</td>
       </tr>`;
   }).join('');
+}
+
+// ── Pick of the Day ────────────────────────────────────────────────────────
+function renderPickOfDay(picks) {
+  const el = document.getElementById('potd-card');
+  if (!picks || picks.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted)">No picks for today yet \u2014 check back after the morning run.</p>';
+    return;
+  }
+  const top = picks.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), picks[0]);
+  el.innerHTML = `
+    <div class="potd-label">\u2605 Best Edge Today</div>
+    <div class="potd-game">${top.away_team} @ ${top.home_team}</div>
+    <div class="potd-pick">${top.pick}</div>
+    <div class="potd-meta">
+      <span>Odds: ${fmtOdds(top.odds)}</span>
+      <span>Edge: +${fmt(top.edge * 100)}%</span>
+      <span>Model: ${fmt(top.model_prob * 100)}%</span>
+      <span>Units: ${top.units}u</span>
+    </div>`;
+}
+
+// ── Bitcoin tip jar ────────────────────────────────────────────────────────
+function copyBtc() {
+  const addr = 'bc1q9kwf5fc35ruuuvcpe8j0zsm856c6dxr7k4887n';
+  const done = () => showBtcToast('Bitcoin address copied!');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(addr).then(done).catch(() => fallbackCopy(addr, done));
+  } else {
+    fallbackCopy(addr, done);
+  }
+}
+
+function fallbackCopy(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  cb();
+}
+
+function showBtcToast(msg) {
+  let toast = document.getElementById('btc-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'btc-toast';
+    toast.className = 'btc-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
 // ── Error banner ───────────────────────────────────────────────────────────
