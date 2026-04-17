@@ -1,4 +1,4 @@
-/* dashboard.js — MLB Model GitHub Pages dashboard */
+/* dashboard.js — BaseballBetBot GitHub Pages dashboard */
 'use strict';
 
 // ── State ──────────────────────────────────────────────────────────────────
