@@ -242,17 +242,47 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
     return results
 
 
+def _compute_ece(y_true: pd.Series, y_prob: np.ndarray, n_bins: int = 10) -> float:
+    """Compute Expected Calibration Error (ECE).
+
+    Bins predicted probabilities into n_bins equal-width buckets.
+    For each bin, computes |mean_predicted - fraction_positive|.
+    ECE is the weighted average across bins (weight = bin size / total).
+
+    Lower ECE = better calibration. 0.0 is perfect.
+    """
+    bins = np.linspace(0, 1, n_bins + 1)
+    ece = 0.0
+    n = len(y_true)
+    y_true_arr = np.asarray(y_true)
+
+    for i in range(n_bins):
+        lo, hi = bins[i], bins[i + 1]
+        mask = (y_prob >= lo) & (y_prob < hi)
+        if i == n_bins - 1:
+            mask = (y_prob >= lo) & (y_prob <= hi)
+        if mask.sum() == 0:
+            continue
+        bin_prob = y_prob[mask].mean()
+        bin_actual = y_true_arr[mask].mean()
+        ece += (mask.sum() / n) * abs(bin_prob - bin_actual)
+
+    return round(float(ece), 4)
+
+
 def _evaluate_model(name: str, y_true: pd.Series, y_prob: np.ndarray) -> dict:
     """Compute evaluation metrics for a model."""
     y_pred = (y_prob >= 0.5).astype(int)
+    ece = _compute_ece(y_true, y_prob)
     metrics = {
         "name": name,
         "accuracy": round(accuracy_score(y_true, y_pred), 4),
         "brier_score": round(brier_score_loss(y_true, y_prob), 4),
         "log_loss": round(log_loss(y_true, y_prob), 4),
+        "ece": ece,
     }
-    logger.info("%s — Accuracy: %.4f, Brier: %.4f, LogLoss: %.4f",
-                name, metrics["accuracy"], metrics["brier_score"], metrics["log_loss"])
+    logger.info("%s — Accuracy: %.4f, Brier: %.4f, LogLoss: %.4f, ECE: %.4f",
+                name, metrics["accuracy"], metrics["brier_score"], metrics["log_loss"], ece)
     return metrics
 
 
@@ -268,6 +298,7 @@ def _print_comparison(results: dict):
         print(f"    Accuracy:    {m['accuracy']:.4f}")
         print(f"    Brier Score: {m['brier_score']:.4f}  (lower is better)")
         print(f"    Log Loss:    {m['log_loss']:.4f}  (lower is better)")
+        print(f"    ECE:         {m['ece']:.4f}  (lower is better, 0 = perfect)")
 
     # Determine recommended model
     candidates = {k: results[k]["brier_score"] for k in ["xgboost", "logistic_regression", "lightgbm"]}
