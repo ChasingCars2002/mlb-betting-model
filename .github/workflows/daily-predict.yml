@@ -24,6 +24,7 @@ jobs:
       - name: Run today's predictions
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: python main.py --run-now
 
       - name: Commit updated database and dashboard data

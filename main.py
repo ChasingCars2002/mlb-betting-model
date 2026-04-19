@@ -28,6 +28,41 @@ from evaluate import filter_positive_ev, format_picks, format_stats
 logger = logging.getLogger(__name__)
 
 
+def post_picks_to_discord(picks: list[dict]) -> None:
+    """POST today's picks to Discord via webhook.
+
+    Silently skips if DISCORD_WEBHOOK_URL is not configured.
+    Each pick is formatted as a Discord embed field.
+    """
+    from config import DISCORD_WEBHOOK_URL
+    if not DISCORD_WEBHOOK_URL:
+        return
+
+    if not picks:
+        content = "⚾ **BaseballBetBot** — No +EV picks for today."
+        payload = {"content": content}
+    else:
+        lines = ["⚾ **BaseballBetBot — Today's Picks**\n"]
+        for p in picks:
+            matchup = f"{p['away_team']} @ {p['home_team']}"
+            odds_str = f"+{p['odds']}" if p['odds'] > 0 else str(p['odds'])
+            lines.append(
+                f"🎯 **{p['pick']}** ({matchup})\n"
+                f"   Odds: `{odds_str}` · Edge: `+{p['edge']:.1%}` · "
+                f"Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
+            )
+        lines.append(f"\n_{len(picks)} pick(s) today — Good luck! 🍀_")
+        payload = {"content": "\n".join(lines)}
+
+    try:
+        import requests
+        resp = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+        resp.raise_for_status()
+        logger.info("Posted %d pick(s) to Discord.", len(picks))
+    except Exception as e:
+        logger.warning("Discord webhook failed: %s", e)
+
+
 # ---------------------------------------------------------------------------
 # Phase 1: Morning prediction run
 # ---------------------------------------------------------------------------
@@ -95,6 +130,7 @@ def run_predictions(model_name: str = "xgboost"):
         print("  No +EV picks to save.\n")
 
     export_dashboard_data()
+    post_picks_to_discord(picks)
 
 
 # ---------------------------------------------------------------------------

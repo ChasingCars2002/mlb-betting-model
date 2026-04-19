@@ -22,6 +22,9 @@ RETRAIN_SCHEDULE_MINUTE = 0
 # --- API Keys ---
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "")
 
+# --- Discord ---
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
+
 # --- Model Training ---
 TRAINING_SEASONS = [2023, 2024, 2025]
 
