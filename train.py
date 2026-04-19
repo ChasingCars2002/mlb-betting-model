@@ -151,6 +151,8 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
         logger.error("No training data available. Aborting retrain.")
         return
 
+    # Seasons are iterated in chronological order (TRAINING_SEASONS + current year),
+    # so ignore_index=True simply resets the integer index while preserving temporal order.
     X_combined = pd.concat(all_X, ignore_index=True)
     y_combined = pd.concat(all_y, ignore_index=True)
 

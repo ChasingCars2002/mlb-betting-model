@@ -9,7 +9,7 @@ import pandas as pd
 import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import cross_val_predict, StratifiedKFold
+from sklearn.model_selection import cross_val_predict, TimeSeriesSplit
 from sklearn.metrics import brier_score_loss, log_loss, accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -46,7 +46,7 @@ def _load_feature_medians() -> dict:
 def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
     """Train XGBClassifier and Logistic Regression, compare, and save both.
 
-    Uses 5-fold stratified CV to evaluate. Both models are calibrated
+    Uses 5-fold temporal CV (TimeSeriesSplit) to evaluate. Both models are calibrated
     via CalibratedClassifierCV for well-calibrated probabilities.
 
     Args:
@@ -57,7 +57,8 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
         Dict with comparison metrics for both models.
     """
     MODEL_DIR.mkdir(exist_ok=True)
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv = TimeSeriesSplit(n_splits=5)
+    logger.info("Training with TimeSeriesSplit CV (5 folds, temporal order preserved)")
 
     results = {}
 
