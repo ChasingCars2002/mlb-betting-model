@@ -133,6 +133,40 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
     joblib.dump(lr_calibrated, MODEL_DIR / "logistic_regression.joblib")
     logger.info("Logistic Regression saved to %s", MODEL_DIR / "logistic_regression.joblib")
 
+    # --- LightGBM ---
+    logger.info("Training LightGBM...")
+    from lightgbm import LGBMClassifier
+    lgbm_base = LGBMClassifier(
+        n_estimators=300,
+        max_depth=5,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
+        random_state=42,
+        verbosity=-1,
+    )
+    lgbm_calibrated = CalibratedClassifierCV(lgbm_base, cv=5, method="isotonic")
+    lgbm_calibrated.fit(X, y)
+
+    lgbm_cv_probs = cross_val_predict(
+        CalibratedClassifierCV(
+            LGBMClassifier(
+                n_estimators=300, max_depth=5, learning_rate=0.05,
+                subsample=0.8, colsample_bytree=0.8,
+                reg_alpha=0.1, reg_lambda=1.0,
+                random_state=42, verbosity=-1,
+            ),
+            cv=5, method="isotonic",
+        ),
+        X, y, cv=cv, method="predict_proba",
+    )[:, 1]
+
+    results["lightgbm"] = _evaluate_model("LightGBM", y, lgbm_cv_probs)
+    joblib.dump(lgbm_calibrated, MODEL_DIR / "lightgbm.joblib")
+    logger.info("LightGBM saved to %s", MODEL_DIR / "lightgbm.joblib")
+
     # --- Feature importance (XGBoost) ---
     # Refit a plain XGB to get feature importances
     xgb_plain = XGBClassifier(
@@ -172,7 +206,7 @@ def _print_comparison(results: dict):
     print("MODEL COMPARISON REPORT")
     print("=" * 60)
 
-    for key in ["xgboost", "logistic_regression"]:
+    for key in ["xgboost", "logistic_regression", "lightgbm"]:
         m = results[key]
         print(f"\n  {m['name']}:")
         print(f"    Accuracy:    {m['accuracy']:.4f}")
@@ -180,9 +214,8 @@ def _print_comparison(results: dict):
         print(f"    Log Loss:    {m['log_loss']:.4f}  (lower is better)")
 
     # Determine recommended model
-    xgb_brier = results["xgboost"]["brier_score"]
-    lr_brier = results["logistic_regression"]["brier_score"]
-    recommended = "xgboost" if xgb_brier <= lr_brier else "logistic_regression"
+    candidates = {k: results[k]["brier_score"] for k in ["xgboost", "logistic_regression", "lightgbm"]}
+    recommended = min(candidates, key=candidates.get)
     print(f"\n  >>> Recommended model: {results[recommended]['name']} "
           f"(Brier Score: {results[recommended]['brier_score']:.4f})")
 
@@ -197,7 +230,7 @@ def load_model(model_name: str = "xgboost"):
     """Load a saved model from disk.
 
     Args:
-        model_name: "xgboost" or "logistic_regression".
+        model_name: "xgboost", "logistic_regression", or "lightgbm".
 
     Returns:
         The loaded sklearn/xgboost model pipeline.
