@@ -43,15 +43,88 @@ def _load_feature_medians() -> dict:
     return _feature_medians_cache
 
 
-def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
-    """Train XGBClassifier and Logistic Regression, compare, and save both.
+def tune_hyperparameters(X: pd.DataFrame, y: pd.Series, n_trials: int = 50) -> dict:
+    """Run Optuna hyperparameter search for XGBoost and LightGBM.
 
-    Uses 5-fold temporal CV (TimeSeriesSplit) to evaluate. Both models are calibrated
+    Uses TimeSeriesSplit(n_splits=3) for speed. Returns best params for each model.
+    Silences Optuna's verbose logs.
+
+    Args:
+        X: Feature DataFrame.
+        y: Target Series.
+        n_trials: Number of Optuna trials per model (default 50).
+
+    Returns:
+        Dict with keys "xgboost" and "lightgbm", each containing best hyperparams.
+    """
+    import optuna
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    cv = TimeSeriesSplit(n_splits=3)
+
+    def xgb_objective(trial):
+        from xgboost import XGBClassifier
+        from sklearn.model_selection import cross_val_score
+        params = {
+            "n_estimators": trial.suggest_int("n_estimators", 100, 600),
+            "max_depth": trial.suggest_int("max_depth", 3, 8),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 2.0),
+            "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 2.0),
+            "random_state": 42,
+            "eval_metric": "logloss",
+            "verbosity": 0,
+        }
+        model = XGBClassifier(**params)
+        scores = cross_val_score(model, X, y, cv=cv, scoring="neg_brier_score", n_jobs=-1)
+        return scores.mean()
+
+    def lgbm_objective(trial):
+        from lightgbm import LGBMClassifier
+        from sklearn.model_selection import cross_val_score
+        params = {
+            "n_estimators": trial.suggest_int("n_estimators", 100, 600),
+            "max_depth": trial.suggest_int("max_depth", 3, 8),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+            "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+            "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+            "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 2.0),
+            "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 2.0),
+            "random_state": 42,
+            "verbosity": -1,
+        }
+        model = LGBMClassifier(**params)
+        scores = cross_val_score(model, X, y, cv=cv, scoring="neg_brier_score", n_jobs=-1)
+        return scores.mean()
+
+    logger.info("Running Optuna tuning (%d trials per model)...", n_trials)
+
+    xgb_study = optuna.create_study(direction="maximize")
+    xgb_study.optimize(xgb_objective, n_trials=n_trials, show_progress_bar=False)
+    xgb_best = xgb_study.best_params
+    logger.info("XGBoost best params: %s (Brier: %.4f)", xgb_best, -xgb_study.best_value)
+
+    lgbm_study = optuna.create_study(direction="maximize")
+    lgbm_study.optimize(lgbm_objective, n_trials=n_trials, show_progress_bar=False)
+    lgbm_best = lgbm_study.best_params
+    logger.info("LightGBM best params: %s (Brier: %.4f)", lgbm_best, -lgbm_study.best_value)
+
+    return {"xgboost": xgb_best, "lightgbm": lgbm_best}
+
+
+def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None) -> dict:
+    """Train XGBClassifier, LightGBM, and Logistic Regression, compare, and save all.
+
+    Uses 5-fold temporal CV (TimeSeriesSplit) to evaluate. All models are calibrated
     via CalibratedClassifierCV for well-calibrated probabilities.
 
     Args:
         X: Feature DataFrame (columns must match FEATURE_COLUMNS).
         y: Binary target Series (1 = home win).
+        tuned_params: Optional dict from tune_hyperparameters() with keys "xgboost"
+            and "lightgbm". When provided, overrides default hyperparameters.
 
     Returns:
         Dict with comparison metrics for both models.
@@ -73,18 +146,16 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
 
     # --- XGBoost ---
     logger.info("Training XGBClassifier...")
-    xgb_base = XGBClassifier(
-        n_estimators=300,
-        max_depth=5,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
-        random_state=42,
-        eval_metric="logloss",
-        verbosity=0,
-    )
+    xgb_params = {
+        "n_estimators": 300, "max_depth": 5, "learning_rate": 0.05,
+        "subsample": 0.8, "colsample_bytree": 0.8,
+        "reg_alpha": 0.1, "reg_lambda": 1.0,
+        "random_state": 42, "eval_metric": "logloss", "verbosity": 0,
+    }
+    if tuned_params and "xgboost" in tuned_params:
+        xgb_params.update(tuned_params["xgboost"])
+        logger.info("Using tuned XGBoost params: %s", tuned_params["xgboost"])
+    xgb_base = XGBClassifier(**xgb_params)
     xgb_calibrated = CalibratedClassifierCV(xgb_base, cv=5, method="isotonic")
     xgb_calibrated.fit(X, y)
 
@@ -92,12 +163,7 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
     # reported metrics (Brier, log-loss) reflect the model that gets saved.
     xgb_cv_probs = cross_val_predict(
         CalibratedClassifierCV(
-            XGBClassifier(
-                n_estimators=300, max_depth=5, learning_rate=0.05,
-                subsample=0.8, colsample_bytree=0.8,
-                reg_alpha=0.1, reg_lambda=1.0,
-                random_state=42, eval_metric="logloss", verbosity=0,
-            ),
+            XGBClassifier(**xgb_params),
             cv=5, method="isotonic",
         ),
         X, y, cv=cv, method="predict_proba",
@@ -136,28 +202,22 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
     # --- LightGBM ---
     logger.info("Training LightGBM...")
     from lightgbm import LGBMClassifier
-    lgbm_base = LGBMClassifier(
-        n_estimators=300,
-        max_depth=5,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
-        random_state=42,
-        verbosity=-1,
-    )
+    lgbm_params = {
+        "n_estimators": 300, "max_depth": 5, "learning_rate": 0.05,
+        "subsample": 0.8, "colsample_bytree": 0.8,
+        "reg_alpha": 0.1, "reg_lambda": 1.0,
+        "random_state": 42, "verbosity": -1,
+    }
+    if tuned_params and "lightgbm" in tuned_params:
+        lgbm_params.update(tuned_params["lightgbm"])
+        logger.info("Using tuned LightGBM params: %s", tuned_params["lightgbm"])
+    lgbm_base = LGBMClassifier(**lgbm_params)
     lgbm_calibrated = CalibratedClassifierCV(lgbm_base, cv=5, method="isotonic")
     lgbm_calibrated.fit(X, y)
 
     lgbm_cv_probs = cross_val_predict(
         CalibratedClassifierCV(
-            LGBMClassifier(
-                n_estimators=300, max_depth=5, learning_rate=0.05,
-                subsample=0.8, colsample_bytree=0.8,
-                reg_alpha=0.1, reg_lambda=1.0,
-                random_state=42, verbosity=-1,
-            ),
+            LGBMClassifier(**lgbm_params),
             cv=5, method="isotonic",
         ),
         X, y, cv=cv, method="predict_proba",
@@ -169,11 +229,7 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
 
     # --- Feature importance (XGBoost) ---
     # Refit a plain XGB to get feature importances
-    xgb_plain = XGBClassifier(
-        n_estimators=300, max_depth=5, learning_rate=0.05,
-        subsample=0.8, colsample_bytree=0.8,
-        random_state=42, eval_metric="logloss", verbosity=0,
-    )
+    xgb_plain = XGBClassifier(**xgb_params)
     xgb_plain.fit(X, y)
     importances = dict(zip(FEATURE_COLUMNS, xgb_plain.feature_importances_))
     results["feature_importances"] = dict(

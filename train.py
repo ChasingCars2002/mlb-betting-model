@@ -11,7 +11,7 @@ from datetime import date, datetime
 from config import TRAINING_SEASONS, LOG_FILE, CACHE_DIR, TRAINING_STATE_PATH
 from data import get_historical_game_data
 from features import build_training_features, FEATURE_COLUMNS
-from model import train_models
+from model import train_models, tune_hyperparameters
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ def get_or_build_season_features(
     return X, y
 
 
-def run_incremental_retrain(force: bool = False, current_year: int | None = None):
+def run_incremental_retrain(force: bool = False, current_year: int | None = None, tune: bool = False):
     """Retrain models using cached features for completed seasons.
 
     Completed seasons (year < current_year) load from parquet cache.
@@ -99,6 +99,7 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
     Args:
         force: Wipe all caches and rebuild from scratch.
         current_year: Override the current year (used in tests).
+        tune: If True, run Optuna hyperparameter tuning before training.
     """
     if current_year is None:
         current_year = date.today().year
@@ -159,7 +160,12 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
     print(f"\n  Combined: {len(X_combined)} games across {len(all_X)} seasons.")
     print(f"  Home win rate: {y_combined.mean():.3f}\n")
 
-    train_models(X_combined, y_combined)
+    tuned_params = None
+    if tune:
+        print("\n  Running Optuna hyperparameter tuning (this may take several minutes)...")
+        tuned_params = tune_hyperparameters(X_combined, y_combined)
+
+    train_models(X_combined, y_combined, tuned_params=tuned_params)
 
     new_state = {
         "last_trained": datetime.now().isoformat(timespec="seconds"),
@@ -171,6 +177,15 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="MLB Betting Model — Training Pipeline")
+    parser.add_argument(
+        "--tune",
+        action="store_true",
+        help="Run Optuna hyperparameter tuning before training (adds ~5-10 min on CPU).",
+    )
+    args = parser.parse_args()
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -182,7 +197,7 @@ def main():
     print(f"\nMLB Betting Model — Full Training Pipeline")
     print(f"Seasons: {TRAINING_SEASONS} + current year (auto-detected)")
     print("=" * 50)
-    run_incremental_retrain(force=True)
+    run_incremental_retrain(force=True, tune=args.tune)
 
 
 if __name__ == "__main__":
