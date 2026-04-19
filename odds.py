@@ -167,9 +167,10 @@ def match_odds_to_games(odds: list[dict], games: list[dict]) -> list[dict]:
             game_with_odds = {**game, **odds_lookup[key]}
             matched.append(game_with_odds)
         else:
+            available = list(odds_lookup.keys())[:8]
             logger.warning(
-                "No odds found for %s @ %s, skipping.",
-                game["away_team"], game["home_team"],
+                "No odds found for %s @ %s — available keys (first 8): %s",
+                game["away_team"], game["home_team"], available,
             )
 
     logger.info("Matched odds for %d / %d games.", len(matched), len(games))

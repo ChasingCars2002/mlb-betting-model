@@ -174,6 +174,17 @@ def export_dashboard_data():
     today_picks = [p for p in history if p["date"] == today_str]
     (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_picks), indent=2))
 
+    if today_picks:
+        top = max(today_picks, key=lambda p: p.get("edge") or 0)
+        odds = top.get("odds", "")
+        odds_str = f"+{odds}" if isinstance(odds, (int, float)) and odds > 0 else str(odds)
+        logger.info(
+            "PICK OF THE DAY: %s @ %s — Pick: %s %s (Edge: +%.1f%%)",
+            top.get("away_team"), top.get("home_team"),
+            top.get("pick"), odds_str,
+            (top.get("edge") or 0) * 100,
+        )
+
     logger.info("Dashboard JSON exported to %s", out)
 
 
