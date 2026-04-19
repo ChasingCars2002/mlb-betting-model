@@ -12,6 +12,7 @@ from data import (
     get_team_hitting_splits,
     _get_pitcher_hand,
     get_park_factor,
+    get_pitcher_days_rest,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,9 @@ FEATURE_COLUMNS = [
     "away_hit_wrc_plus", "away_hit_ops",
     # Park factor
     "park_factor",
+    # Pitcher rest/fatigue
+    "home_p_days_rest",
+    "away_p_days_rest",
 ]
 
 
@@ -96,6 +100,13 @@ def build_game_features(game: dict) -> Optional[dict]:
             "away_hit_ops": away_hitting["ops"],
             "park_factor": get_park_factor(game["home_team"]),
         }
+
+        features["home_p_days_rest"] = get_pitcher_days_rest(
+            game["home_pitcher_id"], game["game_date"]
+        )
+        features["away_p_days_rest"] = get_pitcher_days_rest(
+            game["away_pitcher_id"], game["game_date"]
+        )
 
         return features
 
@@ -220,6 +231,8 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
             "away_hit_wrc_plus": away_hitting["wrc_plus"],
             "away_hit_ops": away_hitting["ops"],
             "park_factor": get_park_factor(game["home_team"]),
+            "home_p_days_rest": 5.0,  # historical games: default rest (API too slow for batch)
+            "away_p_days_rest": 5.0,
         }
 
         feature_rows.append(row)

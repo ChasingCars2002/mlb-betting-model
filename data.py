@@ -175,6 +175,49 @@ def _get_pitcher_hand(pitcher_id: int) -> str:
         return "R"
 
 
+def get_pitcher_days_rest(pitcher_id: int, game_date_str: str) -> float:
+    """Return days since pitcher's last appearance before game_date.
+
+    Queries MLB Stats API for the pitcher's recent game log.
+    Returns days since last start (capped at 10 for "fresh" pitchers).
+    Returns 5.0 (league-average rest) on API failure or no data.
+
+    Args:
+        pitcher_id: MLB player ID.
+        game_date_str: Game date as YYYY-MM-DD string.
+    """
+    DEFAULT_REST = 5.0
+    try:
+        game_date = date.fromisoformat(game_date_str)
+        season = game_date.year
+        data = _mlb_api_get(
+            f"people/{pitcher_id}/stats",
+            params={
+                "stats": "gameLog",
+                "group": "pitching",
+                "season": season,
+                "gameType": "R",
+            },
+        )
+        splits = data.get("stats", [{}])[0].get("splits", [])
+        # Filter to starts (inningsPitched > 0) before game_date
+        past_games = [
+            s for s in splits
+            if s.get("date") and s["date"] < game_date_str
+        ]
+        if not past_games:
+            return DEFAULT_REST
+        # Most recent game
+        last_game_date = date.fromisoformat(
+            max(past_games, key=lambda s: s["date"])["date"]
+        )
+        days = (game_date - last_game_date).days
+        return float(min(days, 10))  # cap at 10
+    except Exception as e:
+        logger.debug("Could not get days rest for pitcher %d: %s", pitcher_id, e)
+        return DEFAULT_REST
+
+
 # ---------------------------------------------------------------------------
 # Pitcher stats via pybaseball (FanGraphs / Statcast)
 # ---------------------------------------------------------------------------
