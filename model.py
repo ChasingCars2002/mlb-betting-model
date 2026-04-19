@@ -87,13 +87,17 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
     xgb_calibrated = CalibratedClassifierCV(xgb_base, cv=5, method="isotonic")
     xgb_calibrated.fit(X, y)
 
-    # CV predictions for evaluation
+    # CV predictions for evaluation — use the same calibrated wrapper so
+    # reported metrics (Brier, log-loss) reflect the model that gets saved.
     xgb_cv_probs = cross_val_predict(
-        XGBClassifier(
-            n_estimators=300, max_depth=5, learning_rate=0.05,
-            subsample=0.8, colsample_bytree=0.8,
-            reg_alpha=0.1, reg_lambda=1.0,
-            random_state=42, eval_metric="logloss", verbosity=0,
+        CalibratedClassifierCV(
+            XGBClassifier(
+                n_estimators=300, max_depth=5, learning_rate=0.05,
+                subsample=0.8, colsample_bytree=0.8,
+                reg_alpha=0.1, reg_lambda=1.0,
+                random_state=42, eval_metric="logloss", verbosity=0,
+            ),
+            cv=5, method="isotonic",
         ),
         X, y, cv=cv, method="predict_proba",
     )[:, 1]
@@ -114,10 +118,13 @@ def train_models(X: pd.DataFrame, y: pd.Series) -> dict:
     lr_calibrated.fit(X, y)
 
     lr_cv_probs = cross_val_predict(
-        Pipeline([
-            ("scaler", StandardScaler()),
-            ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
-        ]),
+        CalibratedClassifierCV(
+            Pipeline([
+                ("scaler", StandardScaler()),
+                ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
+            ]),
+            cv=5, method="sigmoid",
+        ),
         X, y, cv=cv, method="predict_proba",
     )[:, 1]
 
