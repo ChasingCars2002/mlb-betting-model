@@ -28,6 +28,41 @@ from evaluate import filter_positive_ev, format_picks, format_stats
 logger = logging.getLogger(__name__)
 
 
+def post_picks_to_discord(picks: list[dict]) -> None:
+    """POST today's picks to Discord via webhook.
+
+    Silently skips if DISCORD_WEBHOOK_URL is not configured.
+    Each pick is formatted as a Discord embed field.
+    """
+    from config import DISCORD_WEBHOOK_URL
+    if not DISCORD_WEBHOOK_URL:
+        return
+
+    if not picks:
+        content = "⚾ **BaseballBetBot** — No +EV picks for today."
+        payload = {"content": content}
+    else:
+        lines = ["⚾ **BaseballBetBot — Today's Picks**\n"]
+        for p in picks:
+            matchup = f"{p['away_team']} @ {p['home_team']}"
+            odds_str = f"+{p['odds']}" if p['odds'] > 0 else str(p['odds'])
+            lines.append(
+                f"🎯 **{p['pick']}** ({matchup})\n"
+                f"   Odds: `{odds_str}` · Edge: `+{p['edge']:.1%}` · "
+                f"Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
+            )
+        lines.append(f"\n_{len(picks)} pick(s) today — Good luck! 🍀_")
+        payload = {"content": "\n".join(lines)}
+
+    try:
+        import requests
+        resp = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+        resp.raise_for_status()
+        logger.info("Posted %d pick(s) to Discord.", len(picks))
+    except Exception as e:
+        logger.warning("Discord webhook failed: %s", e)
+
+
 # ---------------------------------------------------------------------------
 # Phase 1: Morning prediction run
 # ---------------------------------------------------------------------------
@@ -95,6 +130,7 @@ def run_predictions(model_name: str = "xgboost"):
         print("  No +EV picks to save.\n")
 
     export_dashboard_data()
+    post_picks_to_discord(picks)
 
 
 # ---------------------------------------------------------------------------
@@ -192,10 +228,10 @@ def export_dashboard_data():
 # Incremental retrain
 # ---------------------------------------------------------------------------
 
-def run_retrain(force: bool = False):
+def run_retrain(force: bool = False, tune: bool = False):
     """Incremental model retrain entry point (used by CLI and scheduler)."""
     from train import run_incremental_retrain
-    run_incremental_retrain(force=force)
+    run_incremental_retrain(force=force, tune=tune)
 
 
 # ---------------------------------------------------------------------------
@@ -275,8 +311,12 @@ def main():
     )
     parser.add_argument(
         "--model", type=str, default="xgboost",
-        choices=["xgboost", "logistic_regression"],
+        choices=["xgboost", "logistic_regression", "lightgbm"],
         help="Which model to use for predictions (default: xgboost).",
+    )
+    parser.add_argument(
+        "--tune", action="store_true",
+        help="With --train/--retrain: run Optuna hyperparameter tuning first (~5-10 min).",
     )
     parser.add_argument(
         "--schedule", action="store_true",
@@ -308,10 +348,10 @@ def main():
 
     # Determine action
     if args.train:
-        from train import main as train_main
-        train_main()
+        from train import run_incremental_retrain
+        run_incremental_retrain(force=True, tune=args.tune)
     elif args.retrain:
-        run_retrain(force=args.force)
+        run_retrain(force=args.force, tune=args.tune)
     elif args.run_now:
         run_predictions(model_name=args.model)
     elif args.grade:

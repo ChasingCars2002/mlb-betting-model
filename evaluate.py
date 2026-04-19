@@ -2,7 +2,7 @@
 
 import logging
 
-from config import EV_THRESHOLD, EDGE_TIERS
+from config import EV_THRESHOLD
 from odds import american_to_implied_prob, american_to_decimal
 
 logger = logging.getLogger(__name__)
@@ -39,16 +39,29 @@ def calculate_edge(model_prob: float, implied_prob: float) -> float:
     return round(model_prob - implied_prob, 4)
 
 
-def size_bet(edge: float) -> int:
-    """Determine bet size in units based on edge tiers.
+def size_bet(model_prob: float, american_odds: int) -> float:
+    """Determine bet size using half-Kelly criterion.
 
-    Tiers defined in config.EDGE_TIERS: [(min, max, units), ...]
-    Default: 2-4% → 1u, 4-6% → 2u, 6%+ → 3u.
+    Kelly fraction = edge / (decimal_odds - 1)
+    Half-Kelly = Kelly * 0.5  (reduces variance while preserving growth)
+
+    Result is capped at 3.0 units. Minimum is the raw half-Kelly value
+    (no artificial floor) so small-edge bets are sized proportionally small.
+    Returned as a float (e.g., 0.3u or 1.5u).
+
+    Args:
+        model_prob: Model's predicted win probability for this side.
+        american_odds: American moneyline odds for this bet.
     """
-    for min_edge, max_edge, units in EDGE_TIERS:
-        if min_edge <= edge < max_edge:
-            return units
-    return EDGE_TIERS[-1][2]
+    decimal_odds = american_to_decimal(american_odds)
+    if decimal_odds <= 1.0:
+        return 0.5
+    # Kelly: f* = (model_prob * (decimal_odds - 1) - (1 - model_prob)) / (decimal_odds - 1)
+    #           = edge / (decimal_odds - 1)
+    kelly = (model_prob * (decimal_odds - 1) - (1 - model_prob)) / (decimal_odds - 1)
+    half_kelly = kelly * 0.5
+    # Clamp to (0, 3.0] — no artificial floor so low-edge bets stay small
+    return round(max(0.0, min(3.0, half_kelly)), 2)
 
 
 def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
@@ -85,7 +98,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
                 "implied_prob": round(home_implied, 4),
                 "ev": home_ev,
                 "edge": home_edge,
-                "units": size_bet(home_edge),
+                "units": size_bet(model_prob_home, game["home_odds"]),
                 "odds": game["home_odds"],
                 "model_name": game.get("model_name", "xgboost"),
                 "home_pitcher": game.get("home_pitcher_name", ""),
@@ -107,7 +120,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
                 "implied_prob": round(away_implied, 4),
                 "ev": away_ev,
                 "edge": away_edge,
-                "units": size_bet(away_edge),
+                "units": size_bet(model_prob_away, game["away_odds"]),
                 "odds": game["away_odds"],
                 "model_name": game.get("model_name", "xgboost"),
                 "home_pitcher": game.get("home_pitcher_name", ""),
@@ -132,18 +145,18 @@ def format_picks(picks: list[dict]) -> str:
                  f"{'EDGE':>6} {'EV':>7} {'UNITS':>5} {'ODDS':>7}")
     lines.append("-" * 85)
 
-    total_units = 0
+    total_units = 0.0
     for p in picks:
         matchup = f"{p['away_team']} @ {p['home_team']}"
         lines.append(
             f"  {matchup:<25} {p['pick']:<8} {p['model_prob']:>5.1%} "
             f"{p['implied_prob']:>7.1%} {p['edge']:>5.1%} "
-            f"{p['ev']:>+6.1%} {p['units']:>5d}u  {p['odds']:>+7d}"
+            f"{p['ev']:>+6.1%} {p['units']:>5.1f}u  {p['odds']:>+7d}"
         )
         total_units += p["units"]
 
     lines.append("-" * 85)
-    lines.append(f"  Total: {len(picks)} picks, {total_units} units wagered")
+    lines.append(f"  Total: {len(picks)} picks, {total_units:.1f} units wagered")
     lines.append("=" * 85)
     lines.append("")
 

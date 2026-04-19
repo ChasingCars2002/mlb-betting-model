@@ -22,18 +22,14 @@ RETRAIN_SCHEDULE_MINUTE = 0
 # --- API Keys ---
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "")
 
+# --- Discord ---
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
+
 # --- Model Training ---
 TRAINING_SEASONS = [2023, 2024, 2025]
 
 # --- EV & Bet Sizing ---
 EV_THRESHOLD = 0.02  # Minimum edge to place a bet (2%)
-
-# Edge tiers: (min_edge, max_edge, units)
-EDGE_TIERS = [
-    (0.02, 0.04, 1),
-    (0.04, 0.06, 2),
-    (0.06, 1.00, 3),
-]
 
 # --- Feature Engineering Windows ---
 PITCHER_ROLLING_DAYS = 30
