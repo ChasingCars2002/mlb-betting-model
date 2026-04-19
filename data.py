@@ -44,7 +44,8 @@ def _to_fg_team(mlb_abbrev: str) -> str:
 # 5-year park run factors (1.00 = league average, >1.00 = hitter-friendly)
 # Source: Baseball Reference 2023-2025 multi-year park factors
 PARK_FACTORS = {
-    "ARI": 1.03, "ATL": 0.99, "BAL": 1.01, "BOS": 1.03, "CHC": 1.02,
+    "ARI": 1.03, "AZ": 1.03,  # both abbreviations used for Diamondbacks
+    "ATL": 0.99, "BAL": 1.01, "BOS": 1.03, "CHC": 1.02,
     "CWS": 0.98, "CIN": 1.04, "CLE": 0.97, "COL": 1.22, "DET": 0.98,
     "HOU": 0.98, "KC":  1.01, "LAA": 0.99, "LAD": 0.97, "MIA": 0.96,
     "MIL": 1.00, "MIN": 1.01, "NYM": 0.99, "NYY": 1.01, "ATH": 0.97,

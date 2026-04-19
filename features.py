@@ -244,8 +244,8 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
             "park_factor": get_park_factor(game["home_team"]),
             "home_p_days_rest": 5.0,  # historical games: default rest (API too slow for batch)
             "away_p_days_rest": 5.0,
-            "home_team_ops_10": 0.720,  # league-average default for training batch
-            "away_team_ops_10": 0.720,
+            "home_team_ops_10": 0.735,  # league-average default (~2023-2025 MLB avg OPS)
+            "away_team_ops_10": 0.735,
         }
 
         feature_rows.append(row)

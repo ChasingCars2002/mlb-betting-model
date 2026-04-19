@@ -228,10 +228,10 @@ def export_dashboard_data():
 # Incremental retrain
 # ---------------------------------------------------------------------------
 
-def run_retrain(force: bool = False):
+def run_retrain(force: bool = False, tune: bool = False):
     """Incremental model retrain entry point (used by CLI and scheduler)."""
     from train import run_incremental_retrain
-    run_incremental_retrain(force=force)
+    run_incremental_retrain(force=force, tune=tune)
 
 
 # ---------------------------------------------------------------------------
@@ -311,8 +311,12 @@ def main():
     )
     parser.add_argument(
         "--model", type=str, default="xgboost",
-        choices=["xgboost", "logistic_regression"],
+        choices=["xgboost", "logistic_regression", "lightgbm"],
         help="Which model to use for predictions (default: xgboost).",
+    )
+    parser.add_argument(
+        "--tune", action="store_true",
+        help="With --train/--retrain: run Optuna hyperparameter tuning first (~5-10 min).",
     )
     parser.add_argument(
         "--schedule", action="store_true",
@@ -344,10 +348,10 @@ def main():
 
     # Determine action
     if args.train:
-        from train import main as train_main
-        train_main()
+        from train import run_incremental_retrain
+        run_incremental_retrain(force=True, tune=args.tune)
     elif args.retrain:
-        run_retrain(force=args.force)
+        run_retrain(force=args.force, tune=args.tune)
     elif args.run_now:
         run_predictions(model_name=args.model)
     elif args.grade:

@@ -45,8 +45,9 @@ def size_bet(model_prob: float, american_odds: int) -> float:
     Kelly fraction = edge / (decimal_odds - 1)
     Half-Kelly = Kelly * 0.5  (reduces variance while preserving growth)
 
-    Result is capped at 3.0 units and floored at 0.5 units.
-    Returned as a float (e.g., 1.5u is valid).
+    Result is capped at 3.0 units. Minimum is the raw half-Kelly value
+    (no artificial floor) so small-edge bets are sized proportionally small.
+    Returned as a float (e.g., 0.3u or 1.5u).
 
     Args:
         model_prob: Model's predicted win probability for this side.
@@ -54,13 +55,13 @@ def size_bet(model_prob: float, american_odds: int) -> float:
     """
     decimal_odds = american_to_decimal(american_odds)
     if decimal_odds <= 1.0:
-        return 1.0
+        return 0.5
     # Kelly: f* = (model_prob * (decimal_odds - 1) - (1 - model_prob)) / (decimal_odds - 1)
     #           = edge / (decimal_odds - 1)
     kelly = (model_prob * (decimal_odds - 1) - (1 - model_prob)) / (decimal_odds - 1)
     half_kelly = kelly * 0.5
-    # Clamp to [0.5, 3.0]
-    return round(max(0.5, min(3.0, half_kelly)), 2)
+    # Clamp to (0, 3.0] — no artificial floor so low-edge bets stay small
+    return round(max(0.0, min(3.0, half_kelly)), 2)
 
 
 def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
