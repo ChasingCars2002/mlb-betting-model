@@ -11,6 +11,7 @@ from data import (
     get_bullpen_stats,
     get_team_hitting_splits,
     _get_pitcher_hand,
+    get_park_factor,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,8 @@ FEATURE_COLUMNS = [
     "home_hit_wrc_plus", "home_hit_ops",
     # Away team hitting vs home pitcher hand
     "away_hit_wrc_plus", "away_hit_ops",
+    # Park factor
+    "park_factor",
 ]
 
 
@@ -91,6 +94,7 @@ def build_game_features(game: dict) -> Optional[dict]:
             "home_hit_ops": home_hitting["ops"],
             "away_hit_wrc_plus": away_hitting["wrc_plus"],
             "away_hit_ops": away_hitting["ops"],
+            "park_factor": get_park_factor(game["home_team"]),
         }
 
         return features
@@ -215,6 +219,7 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
             "home_hit_ops": home_hitting["ops"],
             "away_hit_wrc_plus": away_hitting["wrc_plus"],
             "away_hit_ops": away_hitting["ops"],
+            "park_factor": get_park_factor(game["home_team"]),
         }
 
         feature_rows.append(row)
