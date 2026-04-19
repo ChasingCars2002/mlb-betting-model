@@ -57,6 +57,56 @@ def get_park_factor(team_abbrev: str) -> float:
     return PARK_FACTORS.get(team_abbrev, 1.0)
 
 
+def get_team_rolling_ops(team_id: int, game_date_str: str, n_games: int = 10) -> float:
+    """Fetch a team's OPS over their last n_games before game_date.
+
+    Uses MLB Stats API team game logs. Returns league-average OPS (0.720)
+    on API failure or insufficient data.
+
+    Args:
+        team_id: MLB team ID (integer).
+        game_date_str: Game date as YYYY-MM-DD string.
+        n_games: Number of recent games to average (default 10).
+    """
+    DEFAULT_OPS = 0.720
+    try:
+        game_date = date.fromisoformat(game_date_str)
+        season = game_date.year
+        data = _mlb_api_get(
+            f"teams/{team_id}/stats",
+            params={
+                "stats": "gameLog",
+                "group": "hitting",
+                "season": season,
+                "gameType": "R",
+            },
+        )
+        splits = data.get("stats", [{}])[0].get("splits", [])
+        # Keep only games before game_date
+        past = [
+            s for s in splits
+            if s.get("date") and s["date"] < game_date_str
+        ]
+        if len(past) < 3:  # Need at least 3 games
+            return DEFAULT_OPS
+        recent = sorted(past, key=lambda s: s["date"])[-n_games:]
+        # Simpler: use OPS directly from each split's stat block if available
+        ops_values = []
+        for g in recent:
+            stat = g.get("stat", {})
+            ops_str = stat.get("ops", "")
+            try:
+                ops_values.append(float(ops_str))
+            except (ValueError, TypeError):
+                pass
+        if not ops_values:
+            return DEFAULT_OPS
+        return round(sum(ops_values) / len(ops_values), 4)
+    except Exception as e:
+        logger.debug("Could not get rolling OPS for team %d: %s", team_id, e)
+        return DEFAULT_OPS
+
+
 # ---------------------------------------------------------------------------
 # Retry decorator
 # ---------------------------------------------------------------------------
