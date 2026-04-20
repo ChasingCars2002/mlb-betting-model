@@ -53,7 +53,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add models/*.joblib models/training_state.json 2>/dev/null || true
-          git diff --cached --quiet || (git commit -m "chore: retrain models (schema change) $(date -u +%Y-%m-%d)" && git push)
+          git diff --cached --quiet || git commit -m "chore: retrain models (schema change) $(date -u +%Y-%m-%d)"
 
       - name: Run today's predictions
         env:
@@ -67,4 +67,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add mlb_bets.db docs/data/
           git diff --cached --quiet || git commit -m "chore: predictions $(date -u +%Y-%m-%d)"
-          git push
+          git pull --rebase origin master
+          git push origin master
