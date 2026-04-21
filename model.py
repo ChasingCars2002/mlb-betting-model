@@ -9,7 +9,7 @@ import pandas as pd
 import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import cross_val_predict, TimeSeriesSplit, KFold
+from sklearn.model_selection import TimeSeriesSplit
 from sklearn.metrics import brier_score_loss, log_loss, accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -130,8 +130,7 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
         Dict with comparison metrics for both models.
     """
     MODEL_DIR.mkdir(exist_ok=True)
-    cv = TimeSeriesSplit(n_splits=5)
-    logger.info("Training with TimeSeriesSplit CV (5 folds, temporal order preserved)")
+    logger.info("Training on full dataset; evaluating on last-20%% temporal holdout.")
 
     results = {}
 
@@ -144,6 +143,12 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
     global _feature_medians_cache
     _feature_medians_cache = medians
 
+    # Temporal holdout for evaluation: train on first 80%, test on last 20%.
+    # The final saved models are trained on the FULL dataset below.
+    split = int(0.8 * len(X))
+    X_tr, X_te = X.iloc[:split], X.iloc[split:]
+    y_tr, y_te = y.iloc[:split], y.iloc[split:]
+
     # --- XGBoost ---
     logger.info("Training XGBClassifier...")
     xgb_params = {
@@ -155,22 +160,13 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
     if tuned_params and "xgboost" in tuned_params:
         xgb_params.update(tuned_params["xgboost"])
         logger.info("Using tuned XGBoost params: %s", tuned_params["xgboost"])
-    xgb_base = XGBClassifier(**xgb_params)
-    xgb_calibrated = CalibratedClassifierCV(xgb_base, cv=5, method="isotonic")
+
+    xgb_eval = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="isotonic")
+    xgb_eval.fit(X_tr, y_tr)
+    results["xgboost"] = _evaluate_model("XGBoost", y_te, xgb_eval.predict_proba(X_te)[:, 1])
+
+    xgb_calibrated = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="isotonic")
     xgb_calibrated.fit(X, y)
-
-    # CV predictions for evaluation — use the same calibrated wrapper so
-    # reported metrics (Brier, log-loss) reflect the model that gets saved.
-    eval_cv = KFold(n_splits=5, shuffle=False)
-    xgb_cv_probs = cross_val_predict(
-        CalibratedClassifierCV(
-            XGBClassifier(**xgb_params),
-            cv=5, method="isotonic",
-        ),
-        X, y, cv=eval_cv, method="predict_proba",
-    )[:, 1]
-
-    results["xgboost"] = _evaluate_model("XGBoost", y, xgb_cv_probs)
     joblib.dump(xgb_calibrated, MODEL_DIR / "xgboost.joblib")
     logger.info("XGBoost saved to %s", MODEL_DIR / "xgboost.joblib")
 
@@ -178,25 +174,23 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
     logger.info("Training Logistic Regression...")
     lr_pipeline = Pipeline([
         ("scaler", StandardScaler()),
-        ("lr", LogisticRegression(
-            C=1.0, max_iter=1000, random_state=42, solver="lbfgs",
-        )),
+        ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
     ])
-    lr_calibrated = CalibratedClassifierCV(lr_pipeline, cv=5, method="sigmoid")
+
+    lr_eval = CalibratedClassifierCV(lr_pipeline, cv=5, method="sigmoid")
+    lr_eval.fit(X_tr, y_tr)
+    results["logistic_regression"] = _evaluate_model(
+        "Logistic Regression", y_te, lr_eval.predict_proba(X_te)[:, 1]
+    )
+
+    lr_calibrated = CalibratedClassifierCV(
+        Pipeline([
+            ("scaler", StandardScaler()),
+            ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
+        ]),
+        cv=5, method="sigmoid",
+    )
     lr_calibrated.fit(X, y)
-
-    lr_cv_probs = cross_val_predict(
-        CalibratedClassifierCV(
-            Pipeline([
-                ("scaler", StandardScaler()),
-                ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
-            ]),
-            cv=5, method="sigmoid",
-        ),
-        X, y, cv=eval_cv, method="predict_proba",
-    )[:, 1]
-
-    results["logistic_regression"] = _evaluate_model("Logistic Regression", y, lr_cv_probs)
     joblib.dump(lr_calibrated, MODEL_DIR / "logistic_regression.joblib")
     logger.info("Logistic Regression saved to %s", MODEL_DIR / "logistic_regression.joblib")
 
@@ -212,19 +206,13 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
     if tuned_params and "lightgbm" in tuned_params:
         lgbm_params.update(tuned_params["lightgbm"])
         logger.info("Using tuned LightGBM params: %s", tuned_params["lightgbm"])
-    lgbm_base = LGBMClassifier(**lgbm_params)
-    lgbm_calibrated = CalibratedClassifierCV(lgbm_base, cv=5, method="isotonic")
+
+    lgbm_eval = CalibratedClassifierCV(LGBMClassifier(**lgbm_params), cv=5, method="isotonic")
+    lgbm_eval.fit(X_tr, y_tr)
+    results["lightgbm"] = _evaluate_model("LightGBM", y_te, lgbm_eval.predict_proba(X_te)[:, 1])
+
+    lgbm_calibrated = CalibratedClassifierCV(LGBMClassifier(**lgbm_params), cv=5, method="isotonic")
     lgbm_calibrated.fit(X, y)
-
-    lgbm_cv_probs = cross_val_predict(
-        CalibratedClassifierCV(
-            LGBMClassifier(**lgbm_params),
-            cv=5, method="isotonic",
-        ),
-        X, y, cv=eval_cv, method="predict_proba",
-    )[:, 1]
-
-    results["lightgbm"] = _evaluate_model("LightGBM", y, lgbm_cv_probs)
     joblib.dump(lgbm_calibrated, MODEL_DIR / "lightgbm.joblib")
     logger.info("LightGBM saved to %s", MODEL_DIR / "lightgbm.joblib")
 
