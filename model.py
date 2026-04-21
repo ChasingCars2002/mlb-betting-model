@@ -341,12 +341,25 @@ def predict_win_prob(model, features: dict) -> float:
     else:
         X = X.fillna(0.0)
 
-    # If the saved model was trained on a different (older) feature set, restrict
-    # the input to only the columns it knows about so XGBoost doesn't raise a
-    # feature-name mismatch error.  New columns are silently dropped; any columns
-    # the model expects that are somehow absent are filled with 0.
+    # Restrict X to only the features the model was actually trained with.
+    # We try three places in order:
+    #   1. sklearn's feature_names_in_ (set by _validate_data, sklearn 1.0+)
+    #   2. XGBoost booster feature_names (always stored, version-independent)
+    #   3. Give up and pass X as-is (XGBoost will raise if there's a mismatch)
+    model_cols = None
     if hasattr(model, "feature_names_in_"):
         model_cols = list(model.feature_names_in_)
+    elif hasattr(model, "calibrated_classifiers_") and model.calibrated_classifiers_:
+        try:
+            inner = model.calibrated_classifiers_[0].estimator
+            if hasattr(inner, "get_booster"):
+                fn = inner.get_booster().feature_names
+                if fn:
+                    model_cols = fn
+        except Exception:
+            pass
+
+    if model_cols is not None:
         X = X.reindex(columns=model_cols, fill_value=0.0)
 
     prob = model.predict_proba(X)[0][1]  # probability of class 1 (home win)
