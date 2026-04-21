@@ -58,9 +58,13 @@ def fetch_live_odds() -> list[dict]:
         "oddsFormat": "american",
     }
 
-    resp = requests.get(url, params=params, timeout=30)
-    resp.raise_for_status()
-    raw = resp.json()
+    try:
+        resp = requests.get(url, params=params, timeout=30)
+        resp.raise_for_status()
+        raw = resp.json()
+    except Exception as e:
+        logger.error("The-Odds-API request failed: %s", e)
+        return []
 
     odds_list = []
     for event in raw:

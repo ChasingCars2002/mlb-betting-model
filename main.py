@@ -75,7 +75,13 @@ def run_predictions(model_name: str = "xgboost"):
 
     # Step 1: Fetch today's games
     print("\n  [1/5] Fetching today's games...")
-    games = get_todays_games()
+    try:
+        games = get_todays_games()
+    except Exception as e:
+        print(f"  ERROR: MLB Stats API unavailable — {e}")
+        export_dashboard_data()
+        post_picks_to_discord([])
+        return
     if not games:
         print("  No games found today (off day or no probable pitchers posted). Exiting.")
         return  # Not an error — valid off day
@@ -87,8 +93,10 @@ def run_predictions(model_name: str = "xgboost"):
         model = load_model(model_name)
     except FileNotFoundError as e:
         print(f"  ERROR: {e}")
-        print("  Run 'python train.py' first to train the models.")
-        sys.exit(1)
+        print("  Models must be trained before running predictions.")
+        export_dashboard_data()
+        post_picks_to_discord([])
+        return
 
     # Step 3: Build features and predict
     print("\n  [3/5] Building features and predicting...")
@@ -99,19 +107,28 @@ def run_predictions(model_name: str = "xgboost"):
             logger.warning("Using default 0.5 prob for %s @ %s",
                            game["away_team"], game["home_team"])
         else:
-            game["model_prob"] = predict_win_prob(model, features)
+            try:
+                game["model_prob"] = predict_win_prob(model, features)
+            except Exception as e:
+                logger.warning("Prediction failed for %s @ %s: %s — using 0.5",
+                               game["away_team"], game["home_team"], e)
+                game["model_prob"] = 0.5
         game["model_name"] = model_name
 
     # Step 4: Fetch odds and match
     print("\n  [4/5] Fetching live odds...")
     odds = fetch_live_odds()
     if not odds:
-        print("  ERROR: Could not fetch odds (check ODDS_API_KEY). Cannot calculate EV.")
-        sys.exit(1)
+        print("  WARNING: Could not fetch odds (check ODDS_API_KEY). No picks today.")
+        export_dashboard_data()
+        post_picks_to_discord([])
+        return
     games_with_odds = match_odds_to_games(odds, games)
     if not games_with_odds:
-        print("  ERROR: No games matched with odds (possible team name mapping issue).")
-        sys.exit(1)
+        print("  WARNING: No games matched with odds (possible team name mapping issue). No picks today.")
+        export_dashboard_data()
+        post_picks_to_discord([])
+        return
     print(f"        Matched odds for {len(games_with_odds)} games.")
 
     # Step 5: Calculate EV and filter
@@ -144,7 +161,12 @@ def run_grading():
     print(f"{'='*60}")
 
     print("\n  Fetching yesterday's results...")
-    results = get_yesterdays_results()
+    try:
+        results = get_yesterdays_results()
+    except Exception as e:
+        print(f"  ERROR: MLB Stats API unavailable — {e}")
+        export_dashboard_data()
+        return
     if not results:
         print("  No results found for yesterday. Exiting.")
         return

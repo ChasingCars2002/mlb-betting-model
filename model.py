@@ -353,13 +353,19 @@ def predict_win_prob(model, features: dict) -> float:
         try:
             inner = model.calibrated_classifiers_[0].estimator
             if hasattr(inner, "get_booster"):
+                # XGBoost: booster always stores feature names regardless of sklearn version
                 fn = inner.get_booster().feature_names
+                if fn:
+                    model_cols = fn
+            elif hasattr(inner, "feature_names_in_"):
+                # Pipeline (e.g. Logistic Regression): sklearn sets this when fit with a DataFrame
+                fn = list(inner.feature_names_in_)
                 if fn:
                     model_cols = fn
         except Exception:
             pass
 
-    if model_cols is not None:
+    if model_cols:  # empty list is falsy — avoids zero-column DataFrame crash
         X = X.reindex(columns=model_cols, fill_value=0.0)
 
     prob = model.predict_proba(X)[0][1]  # probability of class 1 (home win)
