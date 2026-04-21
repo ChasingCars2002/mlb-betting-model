@@ -29,7 +29,10 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 TRAINING_SEASONS = [2023, 2024, 2025]
 
 # --- EV & Bet Sizing ---
-EV_THRESHOLD = 0.02  # Minimum edge to place a bet (2%)
+EV_THRESHOLD  = 0.02  # Minimum edge to place a bet (2%)
+KELLY_SCALE   = 40    # Multiplier: translates half-Kelly fraction → intuitive units
+MIN_BET_UNITS = 0.5   # Floor: any qualifying pick bets at least this many units
+MAX_BET_UNITS = 3.0   # Cap: never risk more than this per pick
 
 # --- Feature Engineering Windows ---
 PITCHER_ROLLING_DAYS = 30
