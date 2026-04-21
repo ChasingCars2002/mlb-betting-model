@@ -2,7 +2,7 @@
 
 import logging
 
-from config import EV_THRESHOLD
+from config import EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS
 from odds import american_to_implied_prob, american_to_decimal
 
 logger = logging.getLogger(__name__)
@@ -60,8 +60,7 @@ def size_bet(model_prob: float, american_odds: int) -> float:
     #           = edge / (decimal_odds - 1)
     kelly = (model_prob * (decimal_odds - 1) - (1 - model_prob)) / (decimal_odds - 1)
     half_kelly = kelly * 0.5
-    # Clamp to (0, 3.0] — no artificial floor so low-edge bets stay small
-    return round(max(0.0, min(3.0, half_kelly)), 2)
+    return round(max(MIN_BET_UNITS, min(MAX_BET_UNITS, half_kelly * KELLY_SCALE)), 2)
 
 
 def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
