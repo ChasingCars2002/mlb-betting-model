@@ -352,5 +352,13 @@ def predict_win_prob(model, features: dict) -> float:
     else:
         X = X.fillna(0.0)
 
+    # If the saved model was trained on a different (older) feature set, restrict
+    # the input to only the columns it knows about so XGBoost doesn't raise a
+    # feature-name mismatch error.  New columns are silently dropped; any columns
+    # the model expects that are somehow absent are filled with 0.
+    if hasattr(model, "feature_names_in_"):
+        model_cols = list(model.feature_names_in_)
+        X = X.reindex(columns=model_cols, fill_value=0.0)
+
     prob = model.predict_proba(X)[0][1]  # probability of class 1 (home win)
     return float(prob)
