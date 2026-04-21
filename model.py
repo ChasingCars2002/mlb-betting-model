@@ -9,7 +9,7 @@ import pandas as pd
 import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import cross_val_predict, TimeSeriesSplit
+from sklearn.model_selection import cross_val_predict, TimeSeriesSplit, KFold
 from sklearn.metrics import brier_score_loss, log_loss, accuracy_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
@@ -161,12 +161,13 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
 
     # CV predictions for evaluation — use the same calibrated wrapper so
     # reported metrics (Brier, log-loss) reflect the model that gets saved.
+    eval_cv = KFold(n_splits=5, shuffle=False)
     xgb_cv_probs = cross_val_predict(
         CalibratedClassifierCV(
             XGBClassifier(**xgb_params),
             cv=5, method="isotonic",
         ),
-        X, y, cv=cv, method="predict_proba",
+        X, y, cv=eval_cv, method="predict_proba",
     )[:, 1]
 
     results["xgboost"] = _evaluate_model("XGBoost", y, xgb_cv_probs)
@@ -192,7 +193,7 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
             ]),
             cv=5, method="sigmoid",
         ),
-        X, y, cv=cv, method="predict_proba",
+        X, y, cv=eval_cv, method="predict_proba",
     )[:, 1]
 
     results["logistic_regression"] = _evaluate_model("Logistic Regression", y, lr_cv_probs)
@@ -220,7 +221,7 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
             LGBMClassifier(**lgbm_params),
             cv=5, method="isotonic",
         ),
-        X, y, cv=cv, method="predict_proba",
+        X, y, cv=eval_cv, method="predict_proba",
     )[:, 1]
 
     results["lightgbm"] = _evaluate_model("LightGBM", y, lgbm_cv_probs)
