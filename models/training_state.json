@@ -1,5 +1,5 @@
 {
-  "last_trained": "2026-04-21T01:33:24",
+  "last_trained": "2026-04-27T11:47:07",
   "feature_columns_hash": "42d670185de45df5",
   "seasons": {
     "2023": {
@@ -15,7 +15,7 @@
       "cached": true
     },
     "2026": {
-      "rows": 333,
+      "rows": 421,
       "cached": false
     }
   }
