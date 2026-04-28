@@ -28,6 +28,54 @@ from evaluate import filter_positive_ev, format_picks, format_stats
 logger = logging.getLogger(__name__)
 
 
+def post_picks_to_github_issue(picks: list[dict]) -> None:
+    """Create a GitHub Issue with today's picks.
+
+    Requires GITHUB_TOKEN and GITHUB_REPOSITORY env vars (set automatically in Actions).
+    Silently skips if either is missing.
+    """
+    import os
+    token = os.getenv("GITHUB_TOKEN", "")
+    repo = os.getenv("GITHUB_REPOSITORY", "")
+    if not token or not repo:
+        return
+
+    today = date.today().isoformat()
+
+    if not picks:
+        title = f"⚾ MLB Picks — No picks for {today}"
+        body = "No +EV picks found today."
+    else:
+        title = f"⚾ MLB Picks — {len(picks)} pick(s) for {today}"
+        rows = ["| Game | Pick | Odds | Edge | EV | Units |",
+                "|------|------|-----:|-----:|---:|------:|"]
+        for p in picks:
+            matchup = f"{p['away_team']} @ {p['home_team']}"
+            odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+            rows.append(
+                f"| {matchup} | **{p['pick']}** | {odds_str} "
+                f"| +{p['edge']:.1%} | {p['ev']:+.1%} | {p['units']:.1f}u |"
+            )
+        total_units = sum(p["units"] for p in picks)
+        body = "\n".join(rows) + f"\n\n**{len(picks)} picks · {total_units:.1f} units wagered**"
+
+    try:
+        import requests
+        resp = requests.post(
+            f"https://api.github.com/repos/{repo}/issues",
+            headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github+json",
+            },
+            json={"title": title, "body": body},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        logger.info("Posted picks to GitHub Issue #%d.", resp.json().get("number"))
+    except Exception as e:
+        logger.warning("GitHub Issue post failed: %s", e)
+
+
 def post_picks_to_discord(picks: list[dict]) -> None:
     """POST today's picks to Discord via webhook.
 
@@ -148,6 +196,7 @@ def run_predictions(model_name: str = "xgboost"):
 
     export_dashboard_data()
     post_picks_to_discord(picks)
+    post_picks_to_github_issue(picks)
 
 
 # ---------------------------------------------------------------------------
