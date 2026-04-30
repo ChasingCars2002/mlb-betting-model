@@ -7,6 +7,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand:   { 900: '#05080f', 800: '#0a1020', 700: '#111827' },
+            surface: '#161b22',
+            border:  '#30363d',
+            muted:   '#8b949e',
+            accent:  '#00c2ff',
+            gold:    '#f0b429',
+            emerald: '#00e5a0',
+            crimson: '#ff4b6e',
+            green:   '#3fb950',
+            red:     '#f85149',
+            blue:    '#58a6ff',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
 </head>
 <body>
 
@@ -14,7 +37,7 @@
   <header>
     <div class="container inner">
       <div class="logo">⚾ <span>BaseballBet</span>Bot
-        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · Moneyline</span>
+        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · ML + O/U</span>
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
@@ -77,7 +100,7 @@
         </div>
       </div>
 
-      <!-- ── Today's picks ───────────────────────────────────── -->
+      <!-- ── Pick of the Day ────────────────────────────────── -->
       <div class="potd-section">
         <div class="section-title" style="margin-bottom:12px">Pick of the Day</div>
         <div class="potd-inner">
@@ -87,15 +110,31 @@
           <div class="subscribe-banner">
             <div class="sub-title">Get full analysis &amp; exclusive picks</div>
             <div class="sub-desc">Support the model and unlock deeper breakdowns — $4/month.</div>
-            <!-- Replace this URL once your Ko-fi/Patreon page is live -->
             <a href="https://ko-fi.com/mlbgenius" target="_blank" rel="noopener" class="subscribe-btn">Subscribe — $4/mo</a>
           </div>
         </div>
       </div>
 
-      <div class="today-section">
-        <div class="section-title" style="margin-bottom:12px">Today's Picks</div>
+      <!-- ── Market type tabs ───────────────────────────────── -->
+      <div class="market-tab-bar">
+        <button class="market-tab active" data-market="moneyline">
+          Moneyline Picks
+          <span id="ml-count" class="tab-count"></span>
+        </button>
+        <button class="market-tab" data-market="totals">
+          Totals (O/U)
+          <span id="ou-count" class="tab-count"></span>
+        </button>
+      </div>
+
+      <!-- ── Moneyline picks section ────────────────────────── -->
+      <div id="today-ml-section" class="today-section">
         <div id="today-picks"><p class="picks-empty">Loading…</p></div>
+      </div>
+
+      <!-- ── Totals picks section ───────────────────────────── -->
+      <div id="today-ou-section" class="today-section" style="display:none">
+        <div id="today-totals"><p class="picks-empty">Loading…</p></div>
       </div>
 
       <!-- ── Pick history table ──────────────────────────────── -->
@@ -103,7 +142,7 @@
         <div class="table-header">
           <div class="section-title" style="margin-bottom:0">Pick History</div>
           <div class="table-filter">
-            <input id="table-search" type="search" placeholder="Filter team or status…" />
+            <input id="table-search" type="search" placeholder="Filter team, status, or ML/O/U…" />
           </div>
         </div>
         <div class="table-wrap">
@@ -111,18 +150,20 @@
             <thead>
               <tr>
                 <th>Date</th>
+                <th>Type</th>
                 <th>Game</th>
                 <th>Pick</th>
                 <th>Odds</th>
                 <th>Units</th>
                 <th>Model%</th>
                 <th>Edge</th>
+                <th>Conf</th>
                 <th>Status</th>
                 <th>Profit</th>
               </tr>
             </thead>
             <tbody id="history-tbody">
-              <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr>
+              <tr><td colspan="11" style="text-align:center;color:var(--muted);padding:30px">Loading…</td></tr>
             </tbody>
           </table>
         </div>

@@ -27,8 +27,8 @@ class TestFeatureColumns:
         )
 
     def test_expected_count(self):
-        # 8 home pitcher + 8 away pitcher + 4 bullpen + 4 hitting = 24
-        assert len(FEATURE_COLUMNS) == 24
+        # 8 home pitcher + 8 away pitcher + 4 bullpen + 4 hitting + 2 rest + 2 rolling OPS + 1 park = 29
+        assert len(FEATURE_COLUMNS) == 29
 
     def test_rolling_and_season_both_present(self):
         season_feats = [f for f in FEATURE_COLUMNS if "_season" in f]
@@ -59,7 +59,7 @@ class TestEvaluateModel:
     def test_returns_dict_with_expected_keys(self):
         y, probs = self._random_preds()
         result = _evaluate_model("TestModel", y, probs)
-        assert set(result.keys()) == {"name", "accuracy", "brier_score", "log_loss"}
+        assert set(result.keys()) == {"name", "accuracy", "brier_score", "log_loss", "ece"}
 
     def test_perfect_model_has_zero_brier(self):
         y, probs = self._perfect_preds()

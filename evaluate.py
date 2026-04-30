@@ -1,8 +1,12 @@
 """EV calculation, bet sizing, and pick filtering."""
 
 import logging
+import math
 
-from config import EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS
+from config import (
+    EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS,
+    TOTALS_STARTER_WEIGHT, TOTALS_BULLPEN_WEIGHT, TOTALS_SCALE, TOTALS_EV_THRESHOLD,
+)
 from odds import american_to_implied_prob, american_to_decimal
 
 logger = logging.getLogger(__name__)
@@ -132,6 +136,122 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
     return picks
 
 
+def predict_game_score(features: dict) -> tuple[float, float]:
+    """Analytically estimate expected runs scored by home and away teams.
+
+    Blends the opposing starter's xFIP (rolling preferred, season fallback)
+    with the opponent bullpen ERA, then scales by the batting team's wRC+
+    and the home park factor.
+
+    Returns: (predicted_home_runs, predicted_away_runs)
+    """
+    away_xfip   = features.get("away_p_xFIP_rolling") or features.get("away_p_xFIP_season", 4.20)
+    away_bp_era = features.get("away_bullpen_era", 4.00)
+    home_wrc    = features.get("home_hit_wrc_plus", 100.0) or 100.0
+    park        = features.get("park_factor", 1.0) or 1.0
+
+    home_p_xfip  = features.get("home_p_xFIP_rolling") or features.get("home_p_xFIP_season", 4.20)
+    home_bp_era  = features.get("home_bullpen_era", 4.00)
+    away_wrc     = features.get("away_hit_wrc_plus", 100.0) or 100.0
+
+    blended_away_era = away_xfip  * TOTALS_STARTER_WEIGHT + away_bp_era  * TOTALS_BULLPEN_WEIGHT
+    blended_home_era = home_p_xfip * TOTALS_STARTER_WEIGHT + home_bp_era * TOTALS_BULLPEN_WEIGHT
+
+    home_runs = round(blended_away_era * TOTALS_SCALE * (home_wrc / 100.0) * park, 2)
+    away_runs = round(blended_home_era * TOTALS_SCALE * (away_wrc / 100.0), 2)
+
+    return home_runs, away_runs
+
+
+def _delta_to_prob(abs_delta: float, listed_total: float) -> float:
+    """Convert a |predicted - listed| run delta into a model probability.
+
+    Clamped to [0.50, 0.80] to prevent Kelly oversizing from overconfident
+    estimates. A delta of ~1 run maps to roughly 0.55–0.60.
+    """
+    scale = max(listed_total * 0.10, 1.0)
+    prob = 0.5 + (1.0 / (1.0 + math.exp(-abs_delta / scale * 2.0)) - 0.5) * 0.6
+    return round(max(0.50, min(0.80, prob)), 4)
+
+
+def filter_totals_picks(games: list[dict]) -> list[dict]:
+    """Filter games to +EV over/under picks.
+
+    Expects each game dict to contain: predicted_home_runs, predicted_away_runs,
+    predicted_total, listed_total, over_odds, under_odds, game_date, home_team,
+    away_team, model_name, home_pitcher_name, away_pitcher_name.
+    """
+    picks = []
+
+    for game in games:
+        if game.get("listed_total") is None:
+            continue
+        if game.get("over_odds") is None or game.get("under_odds") is None:
+            continue
+
+        pred_total = game.get("predicted_total", 0.0)
+        listed     = game["listed_total"]
+        delta      = round(pred_total - listed, 2)
+
+        def _make_total_pick(direction: str, american_odds: int) -> None:
+            abs_delta    = abs(delta)
+            model_prob   = _delta_to_prob(abs_delta, listed)
+            implied_prob = american_to_implied_prob(american_odds)
+            ev           = calculate_ev(model_prob, implied_prob, american_odds)
+            edge         = calculate_edge(model_prob, implied_prob)
+            if ev > 0 and edge >= TOTALS_EV_THRESHOLD:
+                picks.append({
+                    "date": game["game_date"],
+                    "home_team": game["home_team"],
+                    "away_team": game["away_team"],
+                    "pick": direction,
+                    "pick_side": direction,
+                    "listed_total": listed,
+                    "predicted_total": round(pred_total, 2),
+                    "total_delta": delta,
+                    "model_prob": model_prob,
+                    "implied_prob": round(implied_prob, 4),
+                    "ev": ev,
+                    "edge": edge,
+                    "units": size_bet(model_prob, american_odds),
+                    "odds": american_odds,
+                    "model_name": game.get("model_name", "analytical"),
+                    "home_pitcher": game.get("home_pitcher_name", ""),
+                    "away_pitcher": game.get("away_pitcher_name", ""),
+                    "predicted_home_runs": game.get("predicted_home_runs"),
+                    "predicted_away_runs": game.get("predicted_away_runs"),
+                })
+
+        if delta > 0:
+            _make_total_pick("Over", game["over_odds"])
+        elif delta < 0:
+            _make_total_pick("Under", game["under_odds"])
+
+    picks.sort(key=lambda x: x["ev"], reverse=True)
+    logger.info("Found %d +EV totals picks.", len(picks))
+    return picks
+
+
+def compute_confidence(edge: float, ev: float) -> int:
+    """Return a 1–5 star rating based on edge and EV thresholds.
+
+    5 stars: edge >= 10% AND ev >= 0.20
+    4 stars: edge >= 7%  AND ev >= 0.12
+    3 stars: edge >= 5%  AND ev >= 0.08
+    2 stars: edge >= 3%  AND ev >= 0.04
+    1 star:  anything that cleared the EV threshold
+    """
+    if edge >= 0.10 and ev >= 0.20:
+        return 5
+    if edge >= 0.07 and ev >= 0.12:
+        return 4
+    if edge >= 0.05 and ev >= 0.08:
+        return 3
+    if edge >= 0.03 and ev >= 0.04:
+        return 2
+    return 1
+
+
 def format_picks(picks: list[dict]) -> str:
     """Format picks into a console-friendly table string."""
     if not picks:
@@ -159,6 +279,35 @@ def format_picks(picks: list[dict]) -> str:
     lines.append("=" * 85)
     lines.append("")
 
+    return "\n".join(lines)
+
+
+def format_picks_totals(picks: list[dict]) -> str:
+    """Format totals picks into a console-friendly table."""
+    if not picks:
+        return "\n  No +EV totals picks found today.\n"
+
+    lines = []
+    lines.append("")
+    lines.append("=" * 95)
+    lines.append(f"  {'GAME':<25} {'DIR':<6} {'LINE':>5} {'PRED':>5} {'DELTA':>6} "
+                 f"{'EDGE':>6} {'EV':>7} {'UNITS':>5} {'ODDS':>7} {'CONF':>5}")
+    lines.append("-" * 95)
+
+    for p in picks:
+        matchup  = f"{p['away_team']} @ {p['home_team']}"
+        delta    = f"{p['total_delta']:+.1f}"
+        conf     = "★" * p.get("confidence", 1)
+        lines.append(
+            f"  {matchup:<25} {p['pick']:<6} {p['listed_total']:>5.1f} "
+            f"{p['predicted_total']:>5.1f} {delta:>6} {p['edge']:>5.1%} "
+            f"{p['ev']:>+6.1%} {p['units']:>5.1f}u  {p['odds']:>+7d} {conf:>5}"
+        )
+
+    lines.append("-" * 95)
+    lines.append(f"  Total: {len(picks)} totals picks")
+    lines.append("=" * 95)
+    lines.append("")
     return "\n".join(lines)
 
 

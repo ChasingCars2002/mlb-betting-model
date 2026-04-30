@@ -47,9 +47,18 @@ def _migrate_db(conn: sqlite3.Connection):
     """Add columns introduced after initial schema without dropping existing data."""
     existing = {row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()}
     new_columns = [
+        # Original migrations
         ("pick_side", "TEXT"),
         ("home_pitcher", "TEXT"),
         ("away_pitcher", "TEXT"),
+        # Totals & confidence columns
+        ("bet_type", "TEXT DEFAULT 'moneyline'"),
+        ("listed_total", "REAL"),
+        ("predicted_total", "REAL"),
+        ("predicted_home_runs", "REAL"),
+        ("predicted_away_runs", "REAL"),
+        ("total_delta", "REAL"),
+        ("confidence", "INTEGER"),
     ]
     for col, col_type in new_columns:
         if col not in existing:
@@ -65,12 +74,13 @@ def init_db():
     logger.info("Database initialized at %s", DB_PATH)
 
 
-def save_predictions(picks: list[dict]):
+def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
     """Insert today's picks into the database with 'Pending' status.
 
-    Each pick dict should have keys: date, home_team, away_team, pick,
+    Each pick dict should have at minimum: date, home_team, away_team, pick,
     pick_side, model_prob, implied_prob, ev, edge, units, odds, model_name,
-    home_pitcher, away_pitcher.
+    home_pitcher, away_pitcher. Totals picks additionally carry listed_total,
+    predicted_total, predicted_home_runs, predicted_away_runs, total_delta.
     """
     if not picks:
         logger.info("No picks to save.")
@@ -79,13 +89,29 @@ def save_predictions(picks: list[dict]):
     sql = """
     INSERT INTO predictions
         (date, home_team, away_team, pick, pick_side, model_prob, implied_prob,
-         ev, edge, units, odds, status, model_name, home_pitcher, away_pitcher)
+         ev, edge, units, odds, status, model_name, home_pitcher, away_pitcher,
+         bet_type, listed_total, predicted_total, predicted_home_runs,
+         predicted_away_runs, total_delta, confidence)
     VALUES
         (:date, :home_team, :away_team, :pick, :pick_side, :model_prob, :implied_prob,
-         :ev, :edge, :units, :odds, 'Pending', :model_name, :home_pitcher, :away_pitcher)
+         :ev, :edge, :units, :odds, 'Pending', :model_name, :home_pitcher, :away_pitcher,
+         :bet_type, :listed_total, :predicted_total, :predicted_home_runs,
+         :predicted_away_runs, :total_delta, :confidence)
     """
+    normalized = []
+    for p in picks:
+        row = dict(p)
+        row.setdefault("bet_type", bet_type)
+        row.setdefault("listed_total", None)
+        row.setdefault("predicted_total", None)
+        row.setdefault("predicted_home_runs", None)
+        row.setdefault("predicted_away_runs", None)
+        row.setdefault("total_delta", None)
+        row.setdefault("confidence", None)
+        normalized.append(row)
+
     with get_connection() as conn:
-        conn.executemany(sql, picks)
+        conn.executemany(sql, normalized)
     logger.info("Saved %d predictions to database.", len(picks))
 
 
@@ -98,7 +124,8 @@ def grade_predictions(results: dict[str, dict]):
     """
     with get_connection() as conn:
         pending = conn.execute(
-            "SELECT id, home_team, away_team, pick, units, odds "
+            "SELECT id, home_team, away_team, pick, units, odds, "
+            "bet_type, listed_total "
             "FROM predictions WHERE status = 'Pending'"
         ).fetchall()
 
@@ -114,12 +141,26 @@ def grade_predictions(results: dict[str, dict]):
                 continue
 
             result = results[game_key]
-            winner = result["winner"]
-            pick = row["pick"]
+            pick  = row["pick"]
             units = row["units"]
-            odds = row["odds"]
+            odds  = row["odds"]
 
-            if winner == pick:
+            # Determine winner depending on bet type
+            bet_type = row["bet_type"] if "bet_type" in row.keys() else "moneyline"
+            if bet_type == "totals":
+                actual_total = result.get("home_score", 0) + result.get("away_score", 0)
+                listed = row["listed_total"] if "listed_total" in row.keys() else None
+                if listed is not None:
+                    actual_winner = "Over" if actual_total > listed else "Under"
+                else:
+                    actual_winner = None
+            else:
+                actual_winner = result["winner"]
+
+            if actual_winner is None:
+                continue
+
+            if actual_winner == pick:
                 status = "Win"
                 if odds > 0:
                     profit = units * (odds / 100)
@@ -131,7 +172,7 @@ def grade_predictions(results: dict[str, dict]):
 
             conn.execute(
                 "UPDATE predictions SET status = ?, result = ?, profit = ? WHERE id = ?",
-                (status, winner, profit, row["id"]),
+                (status, actual_winner, profit, row["id"]),
             )
             graded += 1
 
@@ -230,12 +271,18 @@ def get_all_predictions() -> list[dict]:
         df = pd.read_sql_query(
             """SELECT date, home_team, away_team, pick, pick_side,
                       model_prob, implied_prob, edge, ev, units, odds,
-                      status, result, profit, home_pitcher, away_pitcher
+                      status, result, profit, home_pitcher, away_pitcher,
+                      bet_type, listed_total, predicted_total,
+                      predicted_home_runs, predicted_away_runs, total_delta, confidence
                FROM predictions
                ORDER BY date DESC, id DESC""",
             conn,
         )
-    float_cols = ["model_prob", "implied_prob", "edge", "ev", "units", "profit"]
+    float_cols = [
+        "model_prob", "implied_prob", "edge", "ev", "units", "profit",
+        "listed_total", "predicted_total", "predicted_home_runs",
+        "predicted_away_runs", "total_delta",
+    ]
     for col in float_cols:
         if col in df.columns:
             df[col] = df[col].round(4)

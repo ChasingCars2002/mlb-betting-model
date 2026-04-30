@@ -68,31 +68,30 @@ class TestCalculateEdge:
 # ---------------------------------------------------------------------------
 
 class TestSizeBet:
-    def test_tier_1(self):
-        assert size_bet(0.02) == 1
-        assert size_bet(0.03) == 1
-        assert size_bet(0.0399) == 1
+    def test_returns_float(self):
+        result = size_bet(0.55, -110)
+        assert isinstance(result, float)
 
-    def test_tier_2(self):
-        assert size_bet(0.04) == 2
-        assert size_bet(0.05) == 2
-        assert size_bet(0.0599) == 2
+    def test_capped_at_max(self):
+        # Strong edge should be capped at MAX_BET_UNITS (3.0)
+        result = size_bet(0.90, +300)
+        assert result <= 3.0
 
-    def test_tier_3(self):
-        assert size_bet(0.06) == 3
-        assert size_bet(0.10) == 3
-        assert size_bet(0.99) == 3
+    def test_floored_at_min(self):
+        # Negative Kelly (model prob < implied prob) → MIN_BET_UNITS
+        result = size_bet(0.40, -200)
+        assert result >= 0.5
 
     def test_exact_tier_boundaries(self):
-        # Lower bound is inclusive, upper bound is exclusive
-        assert size_bet(0.04) == 2  # enters tier 2
-        assert size_bet(0.06) == 3  # enters tier 3
+        # Higher probability at same odds → more units
+        low  = size_bet(0.52, -110)
+        high = size_bet(0.65, -110)
+        assert high >= low
 
     def test_below_threshold_still_returns_value(self):
-        # size_bet is only called for picks that already passed EV_THRESHOLD,
-        # but it should not crash on any positive edge value.
-        result = size_bet(0.001)
-        assert isinstance(result, int)
+        # size_bet should not crash on any valid inputs
+        result = size_bet(0.50, +100)
+        assert isinstance(result, float)
 
 
 # ---------------------------------------------------------------------------
