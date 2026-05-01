@@ -285,7 +285,7 @@ def get_all_predictions() -> list[dict]:
     ]
     for col in float_cols:
         if col in df.columns:
-            df[col] = df[col].round(4)
+            df[col] = pd.to_numeric(df[col], errors="coerce").round(4)
     # to_dict() on float64 columns silently keeps NaN even after .where().
     # Fix: clean each value explicitly after converting to records.
     records = df.to_dict(orient="records")
