@@ -1,5 +1,505 @@
 [
   {
+    "date": "2026-05-01",
+    "home_team": "MIA",
+    "away_team": "PHI",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7995,
+    "implied_prob": 0.5349,
+    "edge": 0.2646,
+    "ev": 0.4947,
+    "units": 3.0,
+    "odds": -115,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Eury P\u00e9rez",
+    "away_pitcher": "Zack Wheeler",
+    "bet_type": "totals",
+    "listed_total": 8.0,
+    "predicted_total": 4.45,
+    "predicted_home_runs": 2.18,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.55,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "STL",
+    "away_team": "LAD",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7997,
+    "implied_prob": 0.5349,
+    "edge": 0.2648,
+    "ev": 0.4951,
+    "units": 3.0,
+    "odds": -115,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Matthew Liberatore",
+    "away_pitcher": "Emmet Sheehan",
+    "bet_type": "totals",
+    "listed_total": 8.4,
+    "predicted_total": 4.51,
+    "predicted_home_runs": 2.24,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.89,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "COL",
+    "away_team": "ATL",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.8,
+    "implied_prob": 0.5349,
+    "edge": 0.2651,
+    "ev": 0.4957,
+    "units": 3.0,
+    "odds": -115,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Jose Quintana",
+    "away_pitcher": "Grant Holmes",
+    "bet_type": "totals",
+    "listed_total": 11.0,
+    "predicted_total": 5.03,
+    "predicted_home_runs": 2.76,
+    "predicted_away_runs": 2.27,
+    "total_delta": -5.97,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "WSH",
+    "away_team": "MIL",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7994,
+    "implied_prob": 0.5305,
+    "edge": 0.2689,
+    "ev": 0.5068,
+    "units": 3.0,
+    "odds": -113,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Jake Irvin",
+    "away_pitcher": "Jacob Misiorowski",
+    "bet_type": "totals",
+    "listed_total": 8.0,
+    "predicted_total": 4.54,
+    "predicted_home_runs": 2.27,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.46,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "DET",
+    "away_team": "TEX",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7992,
+    "implied_prob": 0.5261,
+    "edge": 0.2731,
+    "ev": 0.5192,
+    "units": 3.0,
+    "odds": -111,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Jack Flaherty",
+    "away_pitcher": "MacKenzie Gore",
+    "bet_type": "totals",
+    "listed_total": 7.8,
+    "predicted_total": 4.49,
+    "predicted_home_runs": 2.22,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.31,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "CHC",
+    "away_team": "AZ",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7953,
+    "implied_prob": 0.5215,
+    "edge": 0.2738,
+    "ev": 0.5249,
+    "units": 3.0,
+    "odds": -109,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Colin Rea",
+    "away_pitcher": "Zac Gallen",
+    "bet_type": "totals",
+    "listed_total": 7.0,
+    "predicted_total": 4.58,
+    "predicted_home_runs": 2.31,
+    "predicted_away_runs": 2.27,
+    "total_delta": -2.42,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "ATH",
+    "away_team": "CLE",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.8,
+    "implied_prob": 0.5238,
+    "edge": 0.2762,
+    "ev": 0.5273,
+    "units": 3.0,
+    "odds": -110,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "J.T. Ginn",
+    "away_pitcher": "Joey Cantillo",
+    "bet_type": "totals",
+    "listed_total": 9.4,
+    "predicted_total": 4.47,
+    "predicted_home_runs": 2.2,
+    "predicted_away_runs": 2.27,
+    "total_delta": -4.93,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "SEA",
+    "away_team": "KC",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7962,
+    "implied_prob": 0.5192,
+    "edge": 0.277,
+    "ev": 0.5334,
+    "units": 3.0,
+    "odds": -108,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Bryan Woo",
+    "away_pitcher": "Cole Ragans",
+    "bet_type": "totals",
+    "listed_total": 7.0,
+    "predicted_total": 4.47,
+    "predicted_home_runs": 2.2,
+    "predicted_away_runs": 2.27,
+    "total_delta": -2.53,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "PIT",
+    "away_team": "CIN",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7997,
+    "implied_prob": 0.5215,
+    "edge": 0.2782,
+    "ev": 0.5334,
+    "units": 3.0,
+    "odds": -109,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Mitch Keller",
+    "away_pitcher": "Brady Singer",
+    "bet_type": "totals",
+    "listed_total": 8.3,
+    "predicted_total": 4.51,
+    "predicted_home_runs": 2.24,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.79,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "LAA",
+    "away_team": "NYM",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7999,
+    "implied_prob": 0.5215,
+    "edge": 0.2784,
+    "ev": 0.5338,
+    "units": 3.0,
+    "odds": -109,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Walbert Urena",
+    "away_pitcher": "Christian Scott",
+    "bet_type": "totals",
+    "listed_total": 9.0,
+    "predicted_total": 4.51,
+    "predicted_home_runs": 2.24,
+    "predicted_away_runs": 2.27,
+    "total_delta": -4.49,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "TB",
+    "away_team": "SF",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7985,
+    "implied_prob": 0.5146,
+    "edge": 0.2839,
+    "ev": 0.5518,
+    "units": 3.0,
+    "odds": -106,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Shane McClanahan",
+    "away_pitcher": "Robbie Ray",
+    "bet_type": "totals",
+    "listed_total": 7.5,
+    "predicted_total": 4.49,
+    "predicted_home_runs": 2.22,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.01,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "SD",
+    "away_team": "CWS",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7995,
+    "implied_prob": 0.5146,
+    "edge": 0.2849,
+    "ev": 0.5537,
+    "units": 3.0,
+    "odds": -106,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Germ\u00e1n M\u00e1rquez",
+    "away_pitcher": "Noah Schultz",
+    "bet_type": "totals",
+    "listed_total": 8.0,
+    "predicted_total": 4.47,
+    "predicted_home_runs": 2.2,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.53,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "MIN",
+    "away_team": "TOR",
+    "pick": "Under",
+    "pick_side": "Under",
+    "model_prob": 0.7998,
+    "implied_prob": 0.505,
+    "edge": 0.2948,
+    "ev": 0.5839,
+    "units": 3.0,
+    "odds": -102,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Simeon Woods Richardson",
+    "away_pitcher": "Patrick Corbin",
+    "bet_type": "totals",
+    "listed_total": 8.5,
+    "predicted_total": 4.56,
+    "predicted_home_runs": 2.29,
+    "predicted_away_runs": 2.27,
+    "total_delta": -3.94,
+    "confidence": 5.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "PIT",
+    "away_team": "CIN",
+    "pick": "CIN",
+    "pick_side": "Away",
+    "model_prob": 0.4852,
+    "implied_prob": 0.4651,
+    "edge": 0.0201,
+    "ev": 0.0432,
+    "units": 0.75,
+    "odds": 115,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Mitch Keller",
+    "away_pitcher": "Brady Singer",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 4.51,
+    "predicted_home_runs": 2.24,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 1.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "COL",
+    "away_team": "ATL",
+    "pick": "COL",
+    "pick_side": "Home",
+    "model_prob": 0.4094,
+    "implied_prob": 0.3861,
+    "edge": 0.0233,
+    "ev": 0.0602,
+    "units": 0.76,
+    "odds": 159,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Jose Quintana",
+    "away_pitcher": "Grant Holmes",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 5.03,
+    "predicted_home_runs": 2.76,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 1.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "LAA",
+    "away_team": "NYM",
+    "pick": "LAA",
+    "pick_side": "Home",
+    "model_prob": 0.5148,
+    "implied_prob": 0.4854,
+    "edge": 0.0294,
+    "ev": 0.0605,
+    "units": 1.14,
+    "odds": 106,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Walbert Urena",
+    "away_pitcher": "Christian Scott",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 4.51,
+    "predicted_home_runs": 2.24,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 1.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "TB",
+    "away_team": "SF",
+    "pick": "SF",
+    "pick_side": "Away",
+    "model_prob": 0.5056,
+    "implied_prob": 0.4484,
+    "edge": 0.0572,
+    "ev": 0.1275,
+    "units": 2.07,
+    "odds": 123,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Shane McClanahan",
+    "away_pitcher": "Robbie Ray",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 4.49,
+    "predicted_home_runs": 2.22,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 3.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "ATH",
+    "away_team": "CLE",
+    "pick": "ATH",
+    "pick_side": "Home",
+    "model_prob": 0.5864,
+    "implied_prob": 0.5098,
+    "edge": 0.0766,
+    "ev": 0.1503,
+    "units": 3.0,
+    "odds": -104,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "J.T. Ginn",
+    "away_pitcher": "Joey Cantillo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 4.47,
+    "predicted_home_runs": 2.2,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 4.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "WSH",
+    "away_team": "MIL",
+    "pick": "WSH",
+    "pick_side": "Home",
+    "model_prob": 0.4944,
+    "implied_prob": 0.4274,
+    "edge": 0.0671,
+    "ev": 0.1569,
+    "units": 2.34,
+    "odds": 134,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Jake Irvin",
+    "away_pitcher": "Jacob Misiorowski",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 4.54,
+    "predicted_home_runs": 2.27,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 3.0
+  },
+  {
+    "date": "2026-05-01",
+    "home_team": "STL",
+    "away_team": "LAD",
+    "pick": "STL",
+    "pick_side": "Home",
+    "model_prob": 0.5148,
+    "implied_prob": 0.3984,
+    "edge": 0.1164,
+    "ev": 0.2922,
+    "units": 3.0,
+    "odds": 151,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Matthew Liberatore",
+    "away_pitcher": "Emmet Sheehan",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": 4.51,
+    "predicted_home_runs": 2.24,
+    "predicted_away_runs": 2.27,
+    "total_delta": null,
+    "confidence": 5.0
+  },
+  {
     "date": "2026-04-30",
     "home_team": "MIL",
     "away_team": "AZ",
@@ -15,7 +515,14 @@
     "result": "MIL",
     "profit": -0.87,
     "home_pitcher": "Brandon Woodruff",
-    "away_pitcher": "Michael Soroka"
+    "away_pitcher": "Michael Soroka",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-30",
@@ -33,7 +540,14 @@
     "result": "ATH",
     "profit": 1.1855,
     "home_pitcher": "Jeffrey Springs",
-    "away_pitcher": "Noah Cameron"
+    "away_pitcher": "Noah Cameron",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-30",
@@ -51,7 +565,14 @@
     "result": "MIN",
     "profit": 3.0245,
     "home_pitcher": "Bailey Ober",
-    "away_pitcher": "Kevin Gausman"
+    "away_pitcher": "Kevin Gausman",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-30",
@@ -69,7 +590,14 @@
     "result": "CIN",
     "profit": -2.92,
     "home_pitcher": "Andrew Abbott",
-    "away_pitcher": "Michael Lorenzen"
+    "away_pitcher": "Michael Lorenzen",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-30",
@@ -87,7 +615,14 @@
     "result": "WSH",
     "profit": 4.86,
     "home_pitcher": "Freddy Peralta",
-    "away_pitcher": "Miles Mikolas"
+    "away_pitcher": "Miles Mikolas",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-30",
@@ -105,7 +640,14 @@
     "result": "STL",
     "profit": 5.97,
     "home_pitcher": "Paul Skenes",
-    "away_pitcher": "Hunter Dobbins"
+    "away_pitcher": "Hunter Dobbins",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -123,7 +665,14 @@
     "result": "AZ",
     "profit": 1.0368,
     "home_pitcher": "Brandon Sproat",
-    "away_pitcher": "Eduardo Rodriguez"
+    "away_pitcher": "Eduardo Rodriguez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -141,7 +690,14 @@
     "result": "ATH",
     "profit": 1.5882,
     "home_pitcher": "Luis Severino",
-    "away_pitcher": "Michael Wacha"
+    "away_pitcher": "Michael Wacha",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -159,7 +715,14 @@
     "result": "CLE",
     "profit": 1.7521,
     "home_pitcher": "Gavin Williams",
-    "away_pitcher": "Drew Rasmussen"
+    "away_pitcher": "Drew Rasmussen",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -177,7 +740,14 @@
     "result": "CHC",
     "profit": -3.0,
     "home_pitcher": "Matt Waldron",
-    "away_pitcher": "Jameson Taillon"
+    "away_pitcher": "Jameson Taillon",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -195,7 +765,14 @@
     "result": "SEA",
     "profit": -2.56,
     "home_pitcher": "Taj Bradley",
-    "away_pitcher": "George Kirby"
+    "away_pitcher": "George Kirby",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -213,7 +790,14 @@
     "result": "WSH",
     "profit": 3.0003,
     "home_pitcher": "David Peterson",
-    "away_pitcher": "Cade Cavalli"
+    "away_pitcher": "Cade Cavalli",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -231,7 +815,14 @@
     "result": "ATL",
     "profit": 3.0628,
     "home_pitcher": "JR Ritchie",
-    "away_pitcher": "Tarik Skubal"
+    "away_pitcher": "Tarik Skubal",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -249,7 +840,14 @@
     "result": "COL",
     "profit": 3.146,
     "home_pitcher": "Brandon Williamson",
-    "away_pitcher": "Tomoyuki Sugano"
+    "away_pitcher": "Tomoyuki Sugano",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -267,7 +865,14 @@
     "result": "TEX",
     "profit": 2.9703,
     "home_pitcher": "Nathan Eovaldi",
-    "away_pitcher": "Elmer Rodr\u00edguez"
+    "away_pitcher": "Elmer Rodr\u00edguez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-29",
@@ -285,7 +890,14 @@
     "result": "MIA",
     "profit": 3.9123,
     "home_pitcher": "Tyler Glasnow",
-    "away_pitcher": "Sandy Alcantara"
+    "away_pitcher": "Sandy Alcantara",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -303,7 +915,14 @@
     "result": "TB",
     "profit": -1.06,
     "home_pitcher": "Tanner Bibee",
-    "away_pitcher": "Nick Martinez"
+    "away_pitcher": "Nick Martinez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -321,7 +940,14 @@
     "result": "CWS",
     "profit": 1.0622,
     "home_pitcher": "Davis Martin",
-    "away_pitcher": "Jos\u00e9 Soriano"
+    "away_pitcher": "Jos\u00e9 Soriano",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -339,7 +965,14 @@
     "result": "SEA",
     "profit": -1.94,
     "home_pitcher": "Joe Ryan",
-    "away_pitcher": "Logan Gilbert"
+    "away_pitcher": "Logan Gilbert",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -357,7 +990,14 @@
     "result": "CHC",
     "profit": -3.0,
     "home_pitcher": "Walker Buehler",
-    "away_pitcher": "Edward Cabrera"
+    "away_pitcher": "Edward Cabrera",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -375,7 +1015,14 @@
     "result": "NYY",
     "profit": -3.0,
     "home_pitcher": "Jacob deGrom",
-    "away_pitcher": "Cam Schlittler"
+    "away_pitcher": "Cam Schlittler",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -393,7 +1040,14 @@
     "result": "NYM",
     "profit": -3.0,
     "home_pitcher": "Clay Holmes",
-    "away_pitcher": "Zack Littell"
+    "away_pitcher": "Zack Littell",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-28",
@@ -411,7 +1065,14 @@
     "result": "MIA",
     "profit": 7.11,
     "home_pitcher": "Shohei Ohtani",
-    "away_pitcher": "Janson Junk"
+    "away_pitcher": "Janson Junk",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-27",
@@ -429,7 +1090,14 @@
     "result": "SD",
     "profit": 2.0175,
     "home_pitcher": "Randy V\u00e1squez",
-    "away_pitcher": "Matthew Boyd"
+    "away_pitcher": "Matthew Boyd",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-27",
@@ -447,7 +1115,14 @@
     "result": "MIN",
     "profit": 2.6992,
     "home_pitcher": "Connor Prielipp",
-    "away_pitcher": "Luis Castillo"
+    "away_pitcher": "Luis Castillo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-27",
@@ -465,7 +1140,14 @@
     "result": "LAD",
     "profit": -3.0,
     "home_pitcher": "Yoshinobu Yamamoto",
-    "away_pitcher": "Chris Paddack"
+    "away_pitcher": "Chris Paddack",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-27",
@@ -483,7 +1165,14 @@
     "result": "NYY",
     "profit": -3.0,
     "home_pitcher": "Jack Leiter",
-    "away_pitcher": "Max Fried"
+    "away_pitcher": "Max Fried",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -501,7 +1190,14 @@
     "result": "BOS",
     "profit": 0.8906,
     "home_pitcher": "Kyle Bradish",
-    "away_pitcher": "Connelly Early"
+    "away_pitcher": "Connelly Early",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -519,7 +1215,14 @@
     "result": "HOU",
     "profit": 1.0622,
     "home_pitcher": "Spencer Arrighetti",
-    "away_pitcher": "Luis Gil"
+    "away_pitcher": "Luis Gil",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -537,7 +1240,14 @@
     "result": "LAD",
     "profit": 1.1667,
     "home_pitcher": "Justin Wrobleski",
-    "away_pitcher": "Shota Imanaga"
+    "away_pitcher": "Shota Imanaga",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -555,7 +1265,14 @@
     "result": "ATH",
     "profit": -1.91,
     "home_pitcher": "Kumar Rocker",
-    "away_pitcher": "J.T. Ginn"
+    "away_pitcher": "J.T. Ginn",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -573,7 +1290,14 @@
     "result": "AZ",
     "profit": 2.3278,
     "home_pitcher": "Ryne Nelson",
-    "away_pitcher": "Michael King"
+    "away_pitcher": "Michael King",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -591,7 +1315,14 @@
     "result": "SEA",
     "profit": -2.21,
     "home_pitcher": "Michael McGreevy",
-    "away_pitcher": "Emerson Hancock"
+    "away_pitcher": "Emerson Hancock",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -609,7 +1340,14 @@
     "result": "TB",
     "profit": -2.07,
     "home_pitcher": "Jesse Scholtens",
-    "away_pitcher": "Simeon Woods Richardson"
+    "away_pitcher": "Simeon Woods Richardson",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -627,7 +1365,14 @@
     "result": "COL",
     "profit": 4.1734,
     "home_pitcher": "Nolan McLean",
-    "away_pitcher": "Jose Quintana"
+    "away_pitcher": "Jose Quintana",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-26",
@@ -645,7 +1390,14 @@
     "result": "ATL",
     "profit": -2.79,
     "home_pitcher": "Chris Sale",
-    "away_pitcher": "Aaron Nola"
+    "away_pitcher": "Aaron Nola",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -663,7 +1415,14 @@
     "result": "TEX",
     "profit": 0.7594,
     "home_pitcher": "MacKenzie Gore",
-    "away_pitcher": "Jeffrey Springs"
+    "away_pitcher": "Jeffrey Springs",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -681,7 +1440,14 @@
     "result": "TOR",
     "profit": -0.8,
     "home_pitcher": "Kevin Gausman",
-    "away_pitcher": "Joey Cantillo"
+    "away_pitcher": "Joey Cantillo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -699,7 +1465,14 @@
     "result": "KC",
     "profit": -1.33,
     "home_pitcher": "Cole Ragans",
-    "away_pitcher": "Walbert Urena"
+    "away_pitcher": "Walbert Urena",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -717,7 +1490,14 @@
     "result": "TB",
     "profit": -1.59,
     "home_pitcher": "Shane McClanahan",
-    "away_pitcher": "Bailey Ober"
+    "away_pitcher": "Bailey Ober",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -735,7 +1515,14 @@
     "result": "PIT",
     "profit": 2.0414,
     "home_pitcher": "Jacob Misiorowski",
-    "away_pitcher": "Mitch Keller"
+    "away_pitcher": "Mitch Keller",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -753,7 +1540,14 @@
     "result": "WSH",
     "profit": 2.3474,
     "home_pitcher": "Noah Schultz",
-    "away_pitcher": "Jake Irvin"
+    "away_pitcher": "Jake Irvin",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -771,7 +1565,14 @@
     "result": "NYY",
     "profit": -1.92,
     "home_pitcher": "Mike Burrows",
-    "away_pitcher": "Ryan Weathers"
+    "away_pitcher": "Ryan Weathers",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-25",
@@ -789,7 +1590,14 @@
     "result": "SEA",
     "profit": -2.93,
     "home_pitcher": "Matthew Liberatore",
-    "away_pitcher": "Bryan Woo"
+    "away_pitcher": "Bryan Woo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -807,7 +1615,14 @@
     "result": "CIN",
     "profit": 0.9632,
     "home_pitcher": "Andrew Abbott",
-    "away_pitcher": "Framber Valdez"
+    "away_pitcher": "Framber Valdez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -825,7 +1640,14 @@
     "result": "CWS",
     "profit": -0.96,
     "home_pitcher": "Bryan Hudson",
-    "away_pitcher": "Miles Mikolas"
+    "away_pitcher": "Miles Mikolas",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -843,7 +1665,14 @@
     "result": "TB",
     "profit": -1.04,
     "home_pitcher": "Drew Rasmussen",
-    "away_pitcher": "Taj Bradley"
+    "away_pitcher": "Taj Bradley",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -861,7 +1690,14 @@
     "result": "ATL",
     "profit": -0.99,
     "home_pitcher": "Grant Holmes",
-    "away_pitcher": "Andrew Painter"
+    "away_pitcher": "Andrew Painter",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -879,7 +1715,14 @@
     "result": "CLE",
     "profit": -1.88,
     "home_pitcher": "Max Scherzer",
-    "away_pitcher": "Gavin Williams"
+    "away_pitcher": "Gavin Williams",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -897,7 +1740,14 @@
     "result": "NYY",
     "profit": -1.8,
     "home_pitcher": "Lance McCullers Jr.",
-    "away_pitcher": "Will Warren"
+    "away_pitcher": "Will Warren",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -915,7 +1765,14 @@
     "result": "SEA",
     "profit": -2.99,
     "home_pitcher": "Andre Pallante",
-    "away_pitcher": "George Kirby"
+    "away_pitcher": "George Kirby",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-24",
@@ -933,7 +1790,14 @@
     "result": "COL",
     "profit": 5.52,
     "home_pitcher": "Freddy Peralta",
-    "away_pitcher": "Michael Lorenzen"
+    "away_pitcher": "Michael Lorenzen",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-23",
@@ -951,7 +1815,14 @@
     "result": "ATL",
     "profit": -1.09,
     "home_pitcher": "Cade Cavalli",
-    "away_pitcher": "JR Ritchie"
+    "away_pitcher": "JR Ritchie",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-23",
@@ -969,7 +1840,14 @@
     "result": "CWS",
     "profit": 2.1679,
     "home_pitcher": "Michael Soroka",
-    "away_pitcher": "Davis Martin"
+    "away_pitcher": "Davis Martin",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-23",
@@ -987,7 +1865,14 @@
     "result": "NYY",
     "profit": -2.87,
     "home_pitcher": "Payton Tolle",
-    "away_pitcher": "Cam Schlittler"
+    "away_pitcher": "Cam Schlittler",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-23",
@@ -1005,7 +1890,14 @@
     "result": "CHC",
     "profit": 3.09,
     "home_pitcher": "Edward Cabrera",
-    "away_pitcher": "Cristopher S\u00e1nchez"
+    "away_pitcher": "Cristopher S\u00e1nchez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-23",
@@ -1023,7 +1915,14 @@
     "result": "LAD",
     "profit": -3.0,
     "home_pitcher": "Logan Webb",
-    "away_pitcher": "Tyler Glasnow"
+    "away_pitcher": "Tyler Glasnow",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-23",
@@ -1041,7 +1940,14 @@
     "result": "DET",
     "profit": -3.0,
     "home_pitcher": "Tarik Skubal",
-    "away_pitcher": "Brandon Sproat"
+    "away_pitcher": "Brandon Sproat",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1059,7 +1965,14 @@
     "result": "DET",
     "profit": -1.36,
     "home_pitcher": "Casey Mize",
-    "away_pitcher": "Chad Patrick"
+    "away_pitcher": "Chad Patrick",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1077,7 +1990,14 @@
     "result": "AZ",
     "profit": -1.45,
     "home_pitcher": "Eduardo Rodriguez",
-    "away_pitcher": "Anthony Kay"
+    "away_pitcher": "Anthony Kay",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1095,7 +2015,14 @@
     "result": "LAA",
     "profit": -1.51,
     "home_pitcher": "Jos\u00e9 Soriano",
-    "away_pitcher": "Eric Lauer"
+    "away_pitcher": "Eric Lauer",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1113,7 +2040,14 @@
     "result": "TB",
     "profit": -1.8,
     "home_pitcher": "Nick Martinez",
-    "away_pitcher": "Brandon Williamson"
+    "away_pitcher": "Brandon Williamson",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1131,7 +2065,14 @@
     "result": "MIA",
     "profit": -1.87,
     "home_pitcher": "Janson Junk",
-    "away_pitcher": "Kyle Leahy"
+    "away_pitcher": "Kyle Leahy",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1149,7 +2090,14 @@
     "result": "NYM",
     "profit": -1.75,
     "home_pitcher": "Clay Holmes",
-    "away_pitcher": "Connor Prielipp"
+    "away_pitcher": "Connor Prielipp",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1167,7 +2115,14 @@
     "result": "ATL",
     "profit": -1.92,
     "home_pitcher": "Zack Littell",
-    "away_pitcher": "Didier Fuentes"
+    "away_pitcher": "Didier Fuentes",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1185,7 +2140,14 @@
     "result": "NYY",
     "profit": -2.62,
     "home_pitcher": "Ranger Suarez",
-    "away_pitcher": "Max Fried"
+    "away_pitcher": "Max Fried",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1203,7 +2165,14 @@
     "result": "PIT",
     "profit": -3.0,
     "home_pitcher": "Jack Leiter",
-    "away_pitcher": "Braxton Ashcraft"
+    "away_pitcher": "Braxton Ashcraft",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-22",
@@ -1221,7 +2190,14 @@
     "result": "SF",
     "profit": 5.37,
     "home_pitcher": "Tyler Mahle",
-    "away_pitcher": "Shohei Ohtani"
+    "away_pitcher": "Shohei Ohtani",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1239,7 +2215,14 @@
     "result": "WSH",
     "profit": 1.3572,
     "home_pitcher": "Foster Griffin",
-    "away_pitcher": "Reynaldo L\u00f3pez"
+    "away_pitcher": "Reynaldo L\u00f3pez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1257,7 +2240,14 @@
     "result": "CHC",
     "profit": 1.725,
     "home_pitcher": "Shota Imanaga",
-    "away_pitcher": "Jes\u00fas Luzardo"
+    "away_pitcher": "Jes\u00fas Luzardo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1275,7 +2265,14 @@
     "result": "CWS",
     "profit": 2.0724,
     "home_pitcher": "Merrill Kelly",
-    "away_pitcher": "Sean Burke"
+    "away_pitcher": "Sean Burke",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1293,7 +2290,14 @@
     "result": "MIN",
     "profit": 3.4986,
     "home_pitcher": "Nolan McLean",
-    "away_pitcher": "Simeon Woods Richardson"
+    "away_pitcher": "Simeon Woods Richardson",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1311,7 +2315,14 @@
     "result": "SF",
     "profit": 4.62,
     "home_pitcher": "Landen Roupp",
-    "away_pitcher": "Yoshinobu Yamamoto"
+    "away_pitcher": "Yoshinobu Yamamoto",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1329,7 +2340,14 @@
     "result": "ATL",
     "profit": -1.09,
     "home_pitcher": "Foster Griffin",
-    "away_pitcher": "Reynaldo L\u00f3pez"
+    "away_pitcher": "Reynaldo L\u00f3pez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1347,7 +2365,14 @@
     "result": "CHC",
     "profit": 1.6446,
     "home_pitcher": "Shota Imanaga",
-    "away_pitcher": "Jes\u00fas Luzardo"
+    "away_pitcher": "Jes\u00fas Luzardo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1365,7 +2390,14 @@
     "result": "CWS",
     "profit": 1.7024,
     "home_pitcher": "Merrill Kelly",
-    "away_pitcher": "Sean Burke"
+    "away_pitcher": "Sean Burke",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1383,7 +2415,14 @@
     "result": "MIN",
     "profit": 3.6952,
     "home_pitcher": "Nolan McLean",
-    "away_pitcher": "Simeon Woods Richardson"
+    "away_pitcher": "Simeon Woods Richardson",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-21",
@@ -1401,7 +2440,14 @@
     "result": "SF",
     "profit": 4.5,
     "home_pitcher": "Landen Roupp",
-    "away_pitcher": "Yoshinobu Yamamoto"
+    "away_pitcher": "Yoshinobu Yamamoto",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1419,7 +2465,14 @@
     "result": "TOR",
     "profit": -1.0,
     "home_pitcher": "Ryne Nelson",
-    "away_pitcher": "Kevin Gausman"
+    "away_pitcher": "Kevin Gausman",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1437,7 +2490,14 @@
     "result": "NYY",
     "profit": -1.0,
     "home_pitcher": "Ryan Weathers",
-    "away_pitcher": "Cole Ragans"
+    "away_pitcher": "Cole Ragans",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1455,7 +2515,14 @@
     "result": "CWS",
     "profit": 1.33,
     "home_pitcher": "Jeffrey Springs",
-    "away_pitcher": "Noah Schultz"
+    "away_pitcher": "Noah Schultz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1473,7 +2540,14 @@
     "result": "SD",
     "profit": -2.0,
     "home_pitcher": "Reid Detmers",
-    "away_pitcher": "Michael King"
+    "away_pitcher": "Michael King",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1491,7 +2565,14 @@
     "result": "MIA",
     "profit": 2.06,
     "home_pitcher": "Eury P\u00e9rez",
-    "away_pitcher": "Jacob Misiorowski"
+    "away_pitcher": "Jacob Misiorowski",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1509,7 +2590,14 @@
     "result": "WSH",
     "profit": 3.87,
     "home_pitcher": "Miles Mikolas",
-    "away_pitcher": "Robbie Ray"
+    "away_pitcher": "Robbie Ray",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-19",
@@ -1527,7 +2615,14 @@
     "result": "COL",
     "profit": 6.93,
     "home_pitcher": "Michael Lorenzen",
-    "away_pitcher": "Roki Sasaki"
+    "away_pitcher": "Roki Sasaki",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1545,7 +2640,14 @@
     "result": "SD",
     "profit": -1.0,
     "home_pitcher": "Yusei Kikuchi",
-    "away_pitcher": "Germ\u00e1n M\u00e1rquez"
+    "away_pitcher": "Germ\u00e1n M\u00e1rquez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1563,7 +2665,14 @@
     "result": "CHC",
     "profit": 0.9174,
     "home_pitcher": "Jameson Taillon",
-    "away_pitcher": "Freddy Peralta"
+    "away_pitcher": "Freddy Peralta",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1581,7 +2690,14 @@
     "result": "SF",
     "profit": -1.0,
     "home_pitcher": "Cade Cavalli",
-    "away_pitcher": "Adrian Houser"
+    "away_pitcher": "Adrian Houser",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1599,7 +2715,14 @@
     "result": "ATH",
     "profit": -1.0,
     "home_pitcher": "Luis Severino",
-    "away_pitcher": "Erick Fedde"
+    "away_pitcher": "Erick Fedde",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1617,7 +2740,14 @@
     "result": "NYY",
     "profit": -2.0,
     "home_pitcher": "Will Warren",
-    "away_pitcher": "Noah Cameron"
+    "away_pitcher": "Noah Cameron",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1635,7 +2765,14 @@
     "result": "TB",
     "profit": 2.82,
     "home_pitcher": "Paul Skenes",
-    "away_pitcher": "Drew Rasmussen"
+    "away_pitcher": "Drew Rasmussen",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1653,7 +2790,14 @@
     "result": "DET",
     "profit": -3.0,
     "home_pitcher": "Brayan Bello",
-    "away_pitcher": "Tarik Skubal"
+    "away_pitcher": "Tarik Skubal",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-18",
@@ -1671,7 +2815,14 @@
     "result": "COL",
     "profit": 7.2,
     "home_pitcher": "Ryan Feltner",
-    "away_pitcher": "Emmet Sheehan"
+    "away_pitcher": "Emmet Sheehan",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1689,7 +2840,14 @@
     "result": "CHC",
     "profit": -1.0,
     "home_pitcher": "Edward Cabrera",
-    "away_pitcher": "Kodai Senga"
+    "away_pitcher": "Kodai Senga",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1707,7 +2865,14 @@
     "result": "ATL",
     "profit": -1.0,
     "home_pitcher": "Taijuan Walker",
-    "away_pitcher": "Mart\u00edn P\u00e9rez"
+    "away_pitcher": "Mart\u00edn P\u00e9rez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1725,7 +2890,14 @@
     "result": "CWS",
     "profit": 1.36,
     "home_pitcher": "Aaron Civale",
-    "away_pitcher": "Davis Martin"
+    "away_pitcher": "Davis Martin",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1743,7 +2915,14 @@
     "result": "CIN",
     "profit": 2.96,
     "home_pitcher": "Joe Ryan",
-    "away_pitcher": "Brandon Williamson"
+    "away_pitcher": "Brandon Williamson",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1761,7 +2940,14 @@
     "result": "NYY",
     "profit": -3.0,
     "home_pitcher": "Cam Schlittler",
-    "away_pitcher": "Michael Wacha"
+    "away_pitcher": "Michael Wacha",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1779,7 +2965,14 @@
     "result": "SF",
     "profit": -3.0,
     "home_pitcher": "Zack Littell",
-    "away_pitcher": "Logan Webb"
+    "away_pitcher": "Logan Webb",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-17",
@@ -1797,7 +2990,14 @@
     "result": "LAD",
     "profit": -3.0,
     "home_pitcher": "Tomoyuki Sugano",
-    "away_pitcher": "Tyler Glasnow"
+    "away_pitcher": "Tyler Glasnow",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1815,7 +3015,14 @@
     "result": "WSH",
     "profit": 1.36,
     "home_pitcher": "Braxton Ashcraft",
-    "away_pitcher": "Foster Griffin"
+    "away_pitcher": "Foster Griffin",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1833,7 +3040,14 @@
     "result": "TEX",
     "profit": -2.0,
     "home_pitcher": "Jacob Lopez",
-    "away_pitcher": "Jack Leiter"
+    "away_pitcher": "Jack Leiter",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1851,7 +3065,14 @@
     "result": "DET",
     "profit": 2.02,
     "home_pitcher": "Keider Montero",
-    "away_pitcher": "Kris Bubic"
+    "away_pitcher": "Kris Bubic",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1869,7 +3090,14 @@
     "result": "SD",
     "profit": 2.06,
     "home_pitcher": "Walker Buehler",
-    "away_pitcher": "Luis Castillo"
+    "away_pitcher": "Luis Castillo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1887,7 +3115,14 @@
     "result": "COL",
     "profit": 2.92,
     "home_pitcher": "Ryan Weiss",
-    "away_pitcher": "Juan Mejia"
+    "away_pitcher": "Juan Mejia",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1905,7 +3140,14 @@
     "result": "TB",
     "profit": -3.0,
     "home_pitcher": "Jordan Leasure",
-    "away_pitcher": "Steven Matz"
+    "away_pitcher": "Steven Matz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1923,7 +3165,14 @@
     "result": "LAA",
     "profit": 7.08,
     "home_pitcher": "Max Fried",
-    "away_pitcher": "Brent Suter"
+    "away_pitcher": "Brent Suter",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1941,7 +3190,14 @@
     "result": "WSH",
     "profit": 1.32,
     "home_pitcher": "Braxton Ashcraft",
-    "away_pitcher": "Foster Griffin"
+    "away_pitcher": "Foster Griffin",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1959,7 +3215,14 @@
     "result": "TEX",
     "profit": -2.0,
     "home_pitcher": "Jacob Lopez",
-    "away_pitcher": "Jack Leiter"
+    "away_pitcher": "Jack Leiter",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1977,7 +3240,14 @@
     "result": "SD",
     "profit": 2.04,
     "home_pitcher": "Walker Buehler",
-    "away_pitcher": "Luis Castillo"
+    "away_pitcher": "Luis Castillo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -1995,7 +3265,14 @@
     "result": "DET",
     "profit": 2.06,
     "home_pitcher": "Keider Montero",
-    "away_pitcher": "Kris Bubic"
+    "away_pitcher": "Kris Bubic",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -2013,7 +3290,14 @@
     "result": "TB",
     "profit": -3.0,
     "home_pitcher": "Jordan Leasure",
-    "away_pitcher": "Steven Matz"
+    "away_pitcher": "Steven Matz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-16",
@@ -2031,7 +3315,14 @@
     "result": "COL",
     "profit": 4.77,
     "home_pitcher": "Ryan Weiss",
-    "away_pitcher": "Juan Mejia"
+    "away_pitcher": "Juan Mejia",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2049,7 +3340,14 @@
     "result": "TEX",
     "profit": -2.0,
     "home_pitcher": "J.T. Ginn",
-    "away_pitcher": "Kumar Rocker"
+    "away_pitcher": "Kumar Rocker",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2067,7 +3365,14 @@
     "result": "SD",
     "profit": 2.04,
     "home_pitcher": "Randy V\u00e1squez",
-    "away_pitcher": "Emerson Hancock"
+    "away_pitcher": "Emerson Hancock",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2085,7 +3390,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Shohei Ohtani",
-    "away_pitcher": "Clay Holmes"
+    "away_pitcher": "Clay Holmes",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2103,7 +3415,14 @@
     "result": "ATH",
     "profit": 2.04,
     "home_pitcher": "J.T. Ginn",
-    "away_pitcher": "Kumar Rocker"
+    "away_pitcher": "Kumar Rocker",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2121,7 +3440,14 @@
     "result": "SD",
     "profit": 2.04,
     "home_pitcher": "Randy V\u00e1squez",
-    "away_pitcher": "Emerson Hancock"
+    "away_pitcher": "Emerson Hancock",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2139,7 +3465,14 @@
     "result": "HOU",
     "profit": -3.0,
     "home_pitcher": "Spencer Arrighetti",
-    "away_pitcher": "Jose Quintana"
+    "away_pitcher": "Jose Quintana",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-15",
@@ -2157,7 +3490,14 @@
     "result": "LAD",
     "profit": -3.0,
     "home_pitcher": "Shohei Ohtani",
-    "away_pitcher": "Clay Holmes"
+    "away_pitcher": "Clay Holmes",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2175,7 +3515,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Carmen Mlodzinski",
-    "away_pitcher": "Shane Baz"
+    "away_pitcher": "Shane Baz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2193,7 +3540,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Landen Roupp",
-    "away_pitcher": "Clay Holmes"
+    "away_pitcher": "Clay Holmes",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2211,7 +3565,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Connelly Early",
-    "away_pitcher": "Randy V\u00e1squez"
+    "away_pitcher": "Randy V\u00e1squez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2229,7 +3590,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Jack Kochanowicz",
-    "away_pitcher": "Emerson Hancock"
+    "away_pitcher": "Emerson Hancock",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2247,7 +3615,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Ryan Weathers",
-    "away_pitcher": "Max Meyer"
+    "away_pitcher": "Max Meyer",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2265,7 +3640,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Slade Cecconi",
-    "away_pitcher": "Shota Imanaga"
+    "away_pitcher": "Shota Imanaga",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2283,7 +3665,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Mick Abel",
-    "away_pitcher": "Steven Matz"
+    "away_pitcher": "Steven Matz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2301,7 +3690,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Grant Taylor",
-    "away_pitcher": "Mason Fluharty"
+    "away_pitcher": "Mason Fluharty",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2319,7 +3715,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Seth Lugo",
-    "away_pitcher": "Brandon Sproat"
+    "away_pitcher": "Brandon Sproat",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2337,7 +3740,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Luis Morales",
-    "away_pitcher": "Tatsuya Imai"
+    "away_pitcher": "Tatsuya Imai",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2355,7 +3765,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Jake Irvin",
-    "away_pitcher": "Tyler Glasnow"
+    "away_pitcher": "Tyler Glasnow",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2373,7 +3790,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Carmen Mlodzinski",
-    "away_pitcher": "Shane Baz"
+    "away_pitcher": "Shane Baz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2391,7 +3815,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Connelly Early",
-    "away_pitcher": "Randy V\u00e1squez"
+    "away_pitcher": "Randy V\u00e1squez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2409,7 +3840,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Jack Kochanowicz",
-    "away_pitcher": "Emerson Hancock"
+    "away_pitcher": "Emerson Hancock",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2427,7 +3865,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Ryan Weathers",
-    "away_pitcher": "Max Meyer"
+    "away_pitcher": "Max Meyer",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2445,7 +3890,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Slade Cecconi",
-    "away_pitcher": "Shota Imanaga"
+    "away_pitcher": "Shota Imanaga",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2463,7 +3915,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Landen Roupp",
-    "away_pitcher": "Clay Holmes"
+    "away_pitcher": "Clay Holmes",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2481,7 +3940,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Mick Abel",
-    "away_pitcher": "Steven Matz"
+    "away_pitcher": "Steven Matz",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2499,7 +3965,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Seth Lugo",
-    "away_pitcher": "Brandon Sproat"
+    "away_pitcher": "Brandon Sproat",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2517,7 +3990,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Luis Morales",
-    "away_pitcher": "Tatsuya Imai"
+    "away_pitcher": "Tatsuya Imai",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2535,7 +4015,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Grant Taylor",
-    "away_pitcher": "Mason Fluharty"
+    "away_pitcher": "Mason Fluharty",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-04",
@@ -2553,7 +4040,14 @@
     "result": null,
     "profit": null,
     "home_pitcher": "Jake Irvin",
-    "away_pitcher": "Tyler Glasnow"
+    "away_pitcher": "Tyler Glasnow",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2571,7 +4065,14 @@
     "result": "SEA",
     "profit": 0.6211,
     "home_pitcher": "Reid Detmers",
-    "away_pitcher": "Bryan Woo"
+    "away_pitcher": "Bryan Woo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2589,7 +4090,14 @@
     "result": "PIT",
     "profit": 3.21,
     "home_pitcher": "Mitch Keller",
-    "away_pitcher": "Kyle Bradish"
+    "away_pitcher": "Kyle Bradish",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2607,7 +4115,14 @@
     "result": "PHI",
     "profit": -2.0,
     "home_pitcher": "Michael Lorenzen",
-    "away_pitcher": "Aaron Nola"
+    "away_pitcher": "Aaron Nola",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2625,7 +4140,14 @@
     "result": "MIN",
     "profit": -3.0,
     "home_pitcher": "Bailey Ober",
-    "away_pitcher": "Joe Boyle"
+    "away_pitcher": "Joe Boyle",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2643,7 +4165,14 @@
     "result": "BOS",
     "profit": -3.0,
     "home_pitcher": "Sonny Gray",
-    "away_pitcher": "Michael King"
+    "away_pitcher": "Michael King",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2661,7 +4190,14 @@
     "result": "NYY",
     "profit": -3.0,
     "home_pitcher": "Will Warren",
-    "away_pitcher": "Eury P\u00e9rez"
+    "away_pitcher": "Eury P\u00e9rez",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-03",
@@ -2679,7 +4215,14 @@
     "result": "DET",
     "profit": -3.0,
     "home_pitcher": "Framber Valdez",
-    "away_pitcher": "Michael McGreevy"
+    "away_pitcher": "Michael McGreevy",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-02",
@@ -2697,7 +4240,14 @@
     "result": "SF",
     "profit": 3.39,
     "home_pitcher": "Robbie Ray",
-    "away_pitcher": "David Peterson"
+    "away_pitcher": "David Peterson",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-02",
@@ -2715,7 +4265,14 @@
     "result": "SF",
     "profit": 0.83,
     "home_pitcher": null,
-    "away_pitcher": null
+    "away_pitcher": null,
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-02",
@@ -2733,7 +4290,14 @@
     "result": "KC",
     "profit": -1.0,
     "home_pitcher": null,
-    "away_pitcher": null
+    "away_pitcher": null,
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   },
   {
     "date": "2026-04-01",
@@ -2751,6 +4315,13 @@
     "result": "KC",
     "profit": -3.0,
     "home_pitcher": null,
-    "away_pitcher": null
+    "away_pitcher": null,
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": null,
+    "predicted_away_runs": null,
+    "total_delta": null,
+    "confidence": null
   }
 ]
