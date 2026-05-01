@@ -2,19 +2,21 @@
 'use strict';
 
 // ── State ──────────────────────────────────────────────────────────────────
-let allHistory = [];
-let statsData  = {};
-let chart      = null;
-let mode       = 'ytd'; // 'ytd' | 'all_time'
-let filterText = '';
+let allHistory  = [];
+let statsData   = {};
+let chart       = null;
+let mode        = 'ytd';    // 'ytd' | 'all_time'
+let market      = 'moneyline'; // 'moneyline' | 'totals'
+let filterText  = '';
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const [statsRes, historyRes, todayRes] = await Promise.all([
+    const [statsRes, historyRes, todayRes, totalsRes] = await Promise.all([
       fetch('data/stats.json'),
       fetch('data/picks_history.json'),
       fetch('data/picks_today.json'),
+      fetch('data/totals_today.json').catch(() => null),
     ]);
 
     if (!statsRes.ok || !historyRes.ok || !todayRes.ok) {
@@ -23,15 +25,18 @@ async function loadData() {
 
     statsData  = await statsRes.json();
     allHistory = await historyRes.json();
-    const todayPicks = await todayRes.json();
+    const todayPicks  = await todayRes.json();
+    const todayTotals = (totalsRes && totalsRes.ok) ? await totalsRes.json() : [];
 
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+    document.getElementById('app').style.display     = 'block';
 
     renderLastUpdated(statsData.last_updated);
     renderStats(statsData[mode]);
     renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
+    renderTodayTotals(todayTotals);
+    updateTabCounts(todayPicks.length, todayTotals.length);
     renderChart(allHistory, mode);
     renderTable(allHistory);
 
@@ -73,12 +78,41 @@ function valueClass(n) {
   return n > 0 ? 'positive' : n < 0 ? 'negative' : 'neutral';
 }
 
+function confidenceBadge(n) {
+  if (n == null) return '';
+  const stars = '★'.repeat(n) + '☆'.repeat(5 - n);
+  const cls   = n >= 4 ? 'conf-high' : n >= 3 ? 'conf-mid' : 'conf-low';
+  return `<span class="badge ${cls}" title="${n}/5 confidence">${stars}</span>`;
+}
+
+function evBadge(ev) {
+  if (ev == null) return '—';
+  const pct = (ev * 100).toFixed(1);
+  const cls = ev >= 0 ? 'ev-positive' : 'ev-negative';
+  return `<span class="${cls}">${ev >= 0 ? '+' : ''}${pct}%</span>`;
+}
+
+function betTypeLabel(bet_type) {
+  if (!bet_type || bet_type === 'moneyline') return '<span class="badge badge-pending">ML</span>';
+  return '<span class="badge badge-ou">O/U</span>';
+}
+
+function updateTabCounts(mlCount, ouCount) {
+  const mlEl = document.getElementById('ml-count');
+  const ouEl = document.getElementById('ou-count');
+  if (mlEl) mlEl.textContent = mlCount > 0 ? mlCount : '';
+  if (ouEl) ouEl.textContent = ouCount > 0 ? ouCount : '';
+}
+
 // ── Last updated ───────────────────────────────────────────────────────────
 function renderLastUpdated(iso) {
   if (!iso) return;
   const d = new Date(iso);
   document.getElementById('last-updated').textContent =
-    'Updated ' + d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+    'Updated ' + d.toLocaleString('en-US', {
+      month: 'short', day: 'numeric',
+      hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+    });
 }
 
 // ── Stats cards ────────────────────────────────────────────────────────────
@@ -92,7 +126,7 @@ function renderStats(s) {
   const profit  = s.total_profit ?? 0;
   const winRate = s.win_rate ?? 0;
 
-  const other = mode === 'ytd' ? statsData.all_time : statsData.ytd;
+  const other      = mode === 'ytd' ? statsData.all_time : statsData.ytd;
   const otherLabel = mode === 'ytd' ? 'All-time' : 'YTD';
 
   document.getElementById('card-record').innerHTML =
@@ -112,26 +146,64 @@ function renderStats(s) {
      <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other?.total_profit >= 0 ? '+' : ''}${fmt(other?.total_profit, 2)}u</div>`;
 }
 
-// ── Today's picks ──────────────────────────────────────────────────────────
+// ── Today's moneyline picks ────────────────────────────────────────────────
 function renderTodayPicks(picks) {
   const el = document.getElementById('today-picks');
   if (!picks || picks.length === 0) {
-    el.innerHTML = '<p class="picks-empty">No picks for today yet — check back after the morning run.</p>';
+    el.innerHTML = '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>';
     return;
   }
 
   el.innerHTML = picks.map(p => {
-    const game = `${p.away_team} @ ${p.home_team}`;
-    const edge = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
-    const ev   = p.ev   != null ? `EV: +${fmt(p.ev   * 100)}%` : '';
+    const game  = `${p.away_team} @ ${p.home_team}`;
+    const edge  = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
+    const ev    = evBadge(p.ev);
+    const conf  = confidenceBadge(p.confidence);
+    const pred  = (p.predicted_home_runs != null && p.predicted_away_runs != null)
+      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)} · Total: ${fmt(p.predicted_total)}</span>`
+      : '';
     return `
       <div class="pick-card">
         <span class="game-label">${game}</span>
         <span class="pick-team">${p.pick}</span>
         <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
-        <span class="pick-meta">${edge} · ${ev}</span>
+        <span class="pick-meta">${edge} · EV: ${ev}</span>
         <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
-        ${statusBadge(p.status)}
+        ${pred}
+        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Today's totals picks ───────────────────────────────────────────────────
+function renderTodayTotals(picks) {
+  const el = document.getElementById('today-totals');
+  if (!picks || picks.length === 0) {
+    el.innerHTML = '<p class="picks-empty">No O/U picks for today — either no totals odds fetched or no +EV opportunities found.</p>';
+    return;
+  }
+
+  el.innerHTML = picks.map(p => {
+    const game     = `${p.away_team} @ ${p.home_team}`;
+    const line     = p.listed_total != null ? p.listed_total : '—';
+    const pred     = p.predicted_total != null ? fmt(p.predicted_total) : '—';
+    const deltaRaw = p.total_delta;
+    const deltaStr = deltaRaw != null
+      ? `<span class="${deltaRaw > 0 ? 'delta-over' : 'delta-under'}">${deltaRaw > 0 ? '+' : ''}${fmt(deltaRaw)}</span>`
+      : '—';
+    const scorePred = (p.predicted_home_runs != null && p.predicted_away_runs != null)
+      ? `(${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)})`
+      : '';
+    const conf = confidenceBadge(p.confidence);
+    const ev   = evBadge(p.ev);
+    return `
+      <div class="pick-card">
+        <span class="game-label">${game}</span>
+        <span class="pick-team ou-pick">${p.pick} ${line}</span>
+        <span class="pick-meta">Predicted: ${pred} ${scorePred} · Delta: ${deltaStr}</span>
+        <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
+        <span class="pick-meta">Edge: +${fmt(p.edge * 100)}% · EV: ${ev}</span>
+        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
       </div>`;
   }).join('');
 }
@@ -140,12 +212,10 @@ function renderTodayPicks(picks) {
 function renderChart(history, currentMode) {
   const ytdYear = new Date().getFullYear();
 
-  // Only graded bets; optionally filter to current year for YTD
   let graded = history.filter(p => p.status === 'Win' || p.status === 'Loss');
   if (currentMode === 'ytd') {
     graded = graded.filter(p => p.date && p.date.startsWith(String(ytdYear)));
   }
-  // Sort oldest → newest for cumulative sum
   graded = [...graded].sort((a, b) => a.date.localeCompare(b.date));
 
   let cumulative = 0;
@@ -153,15 +223,16 @@ function renderChart(history, currentMode) {
   const values = [];
   graded.forEach((p, i) => {
     cumulative += p.profit ?? 0;
-    // Label every ~10th point or first/last to keep x-axis readable
-    labels.push(i === 0 || i === graded.length - 1 || i % Math.max(1, Math.floor(graded.length / 20)) === 0
-      ? p.date.slice(5) // MM-DD
-      : '');
+    labels.push(
+      i === 0 || i === graded.length - 1 ||
+      i % Math.max(1, Math.floor(graded.length / 20)) === 0
+        ? p.date.slice(5)
+        : ''
+    );
     values.push(parseFloat(cumulative.toFixed(2)));
   });
 
   const ctx = document.getElementById('pnl-chart').getContext('2d');
-
   if (chart) chart.destroy();
 
   const finalValue = values[values.length - 1] ?? 0;
@@ -237,16 +308,17 @@ function renderTable(history) {
   if (filterText) {
     const q = filterText.toLowerCase();
     rows = rows.filter(p =>
-      (p.away_team  ?? '').toLowerCase().includes(q) ||
-      (p.home_team  ?? '').toLowerCase().includes(q) ||
-      (p.pick       ?? '').toLowerCase().includes(q) ||
-      (p.status     ?? '').toLowerCase().includes(q)
+      (p.away_team ?? '').toLowerCase().includes(q) ||
+      (p.home_team ?? '').toLowerCase().includes(q) ||
+      (p.pick      ?? '').toLowerCase().includes(q) ||
+      (p.status    ?? '').toLowerCase().includes(q) ||
+      (p.bet_type  ?? '').toLowerCase().includes(q)
     );
   }
 
   const tbody = document.getElementById('history-tbody');
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`;
     return;
   }
 
@@ -255,12 +327,14 @@ function renderTable(history) {
     return `
       <tr class="${rowClass(p.status)}">
         <td>${p.date ?? '—'}</td>
+        <td>${betTypeLabel(p.bet_type)}</td>
         <td>${game}</td>
         <td style="font-weight:600">${p.pick ?? '—'}</td>
         <td>${fmtOdds(p.odds)}</td>
         <td>${p.units ?? '—'}u</td>
         <td>${p.model_prob != null ? fmt(p.model_prob * 100) + '%' : '—'}</td>
         <td>${p.edge != null ? '+' + fmt(p.edge * 100) + '%' : '—'}</td>
+        <td>${confidenceBadge(p.confidence)}</td>
         <td>${statusBadge(p.status)}</td>
         <td>${p.profit != null ? fmtProfit(p.profit) : '—'}</td>
       </tr>`;
@@ -271,12 +345,13 @@ function renderTable(history) {
 function renderPickOfDay(picks) {
   const el = document.getElementById('potd-card');
   if (!picks || picks.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted)">No picks for today yet \u2014 check back after the morning run.</p>';
+    el.innerHTML = '<p style="color:var(--muted)">No picks for today yet — check back after the morning run.</p>';
     return;
   }
   const top = picks.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), picks[0]);
+  const conf = confidenceBadge(top.confidence);
   el.innerHTML = `
-    <div class="potd-label">\u2605 Best Edge Today</div>
+    <div class="potd-label">★ Best Edge Today</div>
     <div class="potd-game">${top.away_team} @ ${top.home_team}</div>
     <div class="potd-pick">${top.pick}</div>
     <div class="potd-meta">
@@ -284,7 +359,20 @@ function renderPickOfDay(picks) {
       <span>Edge: +${fmt(top.edge * 100)}%</span>
       <span>Model: ${fmt(top.model_prob * 100)}%</span>
       <span>Units: ${top.units}u</span>
-    </div>`;
+    </div>
+    <div style="margin-top:8px">${conf}</div>`;
+}
+
+// ── Market tab toggle ──────────────────────────────────────────────────────
+function setMarket(newMarket) {
+  market = newMarket;
+  document.querySelectorAll('.market-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.market === market);
+  });
+  document.getElementById('today-ml-section').style.display =
+    market === 'moneyline' ? 'block' : 'none';
+  document.getElementById('today-ou-section').style.display =
+    market === 'totals' ? 'block' : 'none';
 }
 
 // ── Bitcoin tip jar ────────────────────────────────────────────────────────
@@ -342,12 +430,14 @@ function setMode(newMode) {
 
 // ── Init ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Toggle buttons
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
   });
 
-  // Search filter
+  document.querySelectorAll('.market-tab').forEach(btn => {
+    btn.addEventListener('click', () => setMarket(btn.dataset.market));
+  });
+
   const searchInput = document.getElementById('table-search');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {

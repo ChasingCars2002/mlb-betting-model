@@ -22,10 +22,93 @@ from database import init_db, save_predictions, grade_predictions, get_roi_stats
 from data import get_todays_games, get_yesterdays_results
 from features import build_game_features
 from model import load_model, predict_win_prob
-from odds import fetch_live_odds, match_odds_to_games
-from evaluate import filter_positive_ev, format_picks, format_stats
+from odds import fetch_live_odds, match_odds_to_games, fetch_totals_odds, match_totals_to_games
+from evaluate import (
+    filter_positive_ev, format_picks, format_stats,
+    filter_totals_picks, format_picks_totals,
+    predict_game_score, compute_confidence,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def post_picks_to_github_issue(picks: list[dict]) -> None:
+    """Create a GitHub Issue with today's picks.
+
+    Requires GITHUB_TOKEN and GITHUB_REPOSITORY env vars (set automatically in Actions).
+    Silently skips if either is missing.
+    """
+    import os
+    token = os.getenv("GITHUB_TOKEN", "")
+    repo = os.getenv("GITHUB_REPOSITORY", "")
+    if not token or not repo:
+        return
+
+    today = date.today().isoformat()
+
+    ml = [p for p in picks if p.get("bet_type", "moneyline") == "moneyline"]
+    ou = [p for p in picks if p.get("bet_type") == "totals"]
+
+    if not picks:
+        title = f"⚾ MLB Picks — No picks for {today}"
+        body = "No +EV picks found today."
+    else:
+        title = f"⚾ MLB Picks — {len(ml)} ML + {len(ou)} O/U picks for {today}"
+        sections = []
+
+        if ml:
+            ml_rows = ["## Moneyline Picks",
+                       "| Game | Pick | Conf | Odds | Edge | EV | Units |",
+                       "|------|------|:----:|-----:|-----:|---:|------:|"]
+            for p in ml:
+                matchup  = f"{p['away_team']} @ {p['home_team']}"
+                odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+                stars    = "★" * p.get("confidence", 1)
+                ml_rows.append(
+                    f"| {matchup} | **{p['pick']}** | {stars} | {odds_str} "
+                    f"| +{p['edge']:.1%} | {p['ev']:+.1%} | {p['units']:.1f}u |"
+                )
+            ml_units = sum(p["units"] for p in ml)
+            ml_rows.append(f"\n_{len(ml)} moneyline picks · {ml_units:.1f} units_")
+            sections.append("\n".join(ml_rows))
+
+        if ou:
+            ou_rows = ["## Totals (O/U) Picks",
+                       "| Game | Pick | Line | Predicted | Delta | Odds | Edge | EV | Units |",
+                       "|------|------|-----:|----------:|------:|-----:|-----:|---:|------:|"]
+            for p in ou:
+                matchup  = f"{p['away_team']} @ {p['home_team']}"
+                odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+                pred     = p.get("predicted_total")
+                pred_str = f"{pred:.1f}" if pred is not None else "—"
+                delta_str = f"{p.get('total_delta', 0):+.1f}"
+                ou_rows.append(
+                    f"| {matchup} | **{p['pick']}** | {p['listed_total']} "
+                    f"| {pred_str} | {delta_str} | {odds_str} "
+                    f"| +{p['edge']:.1%} | {p['ev']:+.1%} | {p['units']:.1f}u |"
+                )
+            ou_units = sum(p["units"] for p in ou)
+            ou_rows.append(f"\n_{len(ou)} totals picks · {ou_units:.1f} units_")
+            sections.append("\n".join(ou_rows))
+
+        total_units = sum(p["units"] for p in picks)
+        body = "\n\n".join(sections) + f"\n\n**Total: {len(picks)} picks · {total_units:.1f} units wagered**"
+
+    try:
+        import requests
+        resp = requests.post(
+            f"https://api.github.com/repos/{repo}/issues",
+            headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github+json",
+            },
+            json={"title": title, "body": body},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        logger.info("Posted picks to GitHub Issue #%d.", resp.json().get("number"))
+    except Exception as e:
+        logger.warning("GitHub Issue post failed: %s", e)
 
 
 def post_picks_to_discord(picks: list[dict]) -> None:
@@ -38,19 +121,36 @@ def post_picks_to_discord(picks: list[dict]) -> None:
     if not DISCORD_WEBHOOK_URL:
         return
 
+    ml = [p for p in picks if p.get("bet_type", "moneyline") == "moneyline"]
+    ou = [p for p in picks if p.get("bet_type") == "totals"]
     if not picks:
         content = "⚾ **BaseballBetBot** — No +EV picks for today."
         payload = {"content": content}
     else:
         lines = ["⚾ **BaseballBetBot — Today's Picks**\n"]
-        for p in picks:
-            matchup = f"{p['away_team']} @ {p['home_team']}"
-            odds_str = f"+{p['odds']}" if p['odds'] > 0 else str(p['odds'])
-            lines.append(
-                f"🎯 **{p['pick']}** ({matchup})\n"
-                f"   Odds: `{odds_str}` · Edge: `+{p['edge']:.1%}` · "
-                f"Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
-            )
+        if ml:
+            lines.append("**Moneyline**")
+            for p in ml:
+                matchup = f"{p['away_team']} @ {p['home_team']}"
+                odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+                stars = "★" * p.get("confidence", 1)
+                lines.append(
+                    f"🎯 **{p['pick']}** ({matchup}) {stars}\n"
+                    f"   Odds: `{odds_str}` · Edge: `+{p['edge']:.1%}` · "
+                    f"Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
+                )
+        if ou:
+            lines.append("\n**Totals (O/U)**")
+            for p in ou:
+                matchup = f"{p['away_team']} @ {p['home_team']}"
+                odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+                pred = p.get("predicted_total")
+                pred_str = f" · Pred: `{pred:.1f}`" if pred else ""
+                lines.append(
+                    f"📊 **{p['pick']} {p['listed_total']}** ({matchup}){pred_str}\n"
+                    f"   Odds: `{odds_str}` · Edge: `+{p['edge']:.1%}` · "
+                    f"Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
+                )
         lines.append(f"\n_{len(picks)} pick(s) today — Good luck! 🍀_")
         payload = {"content": "\n".join(lines)}
 
@@ -98,12 +198,15 @@ def run_predictions(model_name: str = "xgboost"):
         post_picks_to_discord([])
         return
 
-    # Step 3: Build features and predict
+    # Step 3: Build features, predict win probability, and compute score estimates
     print("\n  [3/5] Building features and predicting...")
     for game in games:
         features = build_game_features(game)
         if features is None:
-            game["model_prob"] = 0.5  # default if features fail
+            game["model_prob"] = 0.5
+            game["predicted_home_runs"] = None
+            game["predicted_away_runs"] = None
+            game["predicted_total"] = None
             logger.warning("Using default 0.5 prob for %s @ %s",
                            game["away_team"], game["home_team"])
         else:
@@ -113,41 +216,89 @@ def run_predictions(model_name: str = "xgboost"):
                 logger.warning("Prediction failed for %s @ %s: %s — using 0.5",
                                game["away_team"], game["home_team"], e)
                 game["model_prob"] = 0.5
+            try:
+                h_runs, a_runs = predict_game_score(features)
+                game["predicted_home_runs"] = h_runs
+                game["predicted_away_runs"] = a_runs
+                game["predicted_total"] = round(h_runs + a_runs, 2)
+            except Exception as e:
+                logger.warning("Score prediction failed for %s @ %s: %s",
+                               game["away_team"], game["home_team"], e)
+                game["predicted_home_runs"] = None
+                game["predicted_away_runs"] = None
+                game["predicted_total"] = None
         game["model_name"] = model_name
 
-    # Step 4: Fetch odds and match
+    # Step 4: Fetch moneyline odds and match
     print("\n  [4/5] Fetching live odds...")
     odds = fetch_live_odds()
     if not odds:
         print("  WARNING: Could not fetch odds (check ODDS_API_KEY). No picks today.")
         export_dashboard_data()
         post_picks_to_discord([])
+        post_picks_to_github_issue([])
         return
     games_with_odds = match_odds_to_games(odds, games)
     if not games_with_odds:
         print("  WARNING: No games matched with odds (possible team name mapping issue). No picks today.")
         export_dashboard_data()
         post_picks_to_discord([])
+        post_picks_to_github_issue([])
         return
     print(f"        Matched odds for {len(games_with_odds)} games.")
 
-    # Step 5: Calculate EV and filter
+    # Step 4b: Fetch totals odds and enrich games (best-effort)
+    print("\n  [4b/5] Fetching totals (O/U) odds...")
+    try:
+        totals_odds = fetch_totals_odds()
+        if totals_odds:
+            match_totals_to_games(totals_odds, games_with_odds)
+            print(f"        Fetched totals for {len(totals_odds)} games.")
+        else:
+            print("        No totals odds available.")
+    except Exception as e:
+        logger.warning("Totals odds fetch failed: %s — skipping O/U section.", e)
+        totals_odds = []
+
+    # Step 5: Calculate EV, attach confidence, and filter picks
     print("\n  [5/5] Calculating EV and filtering picks...")
-    picks = filter_positive_ev(games_with_odds)
+    ml_picks = filter_positive_ev(games_with_odds)
+    for p in ml_picks:
+        p["confidence"] = compute_confidence(p["edge"], p["ev"])
+        matched = next(
+            (g for g in games_with_odds
+             if g["home_team"] == p["home_team"] and g["away_team"] == p["away_team"]),
+            {},
+        )
+        p["predicted_home_runs"] = matched.get("predicted_home_runs")
+        p["predicted_away_runs"] = matched.get("predicted_away_runs")
+        p["predicted_total"] = matched.get("predicted_total")
+
+    totals_picks = filter_totals_picks(games_with_odds) if totals_odds else []
+    for p in totals_picks:
+        p["confidence"] = compute_confidence(p["edge"], p["ev"])
 
     # Display picks
-    output = format_picks(picks)
-    print(output)
+    print(format_picks(ml_picks))
+    if totals_odds:
+        print(format_picks_totals(totals_picks))
 
     # Save to database
-    if picks:
-        save_predictions(picks)
-        print(f"  Saved {len(picks)} picks to database.\n")
+    if ml_picks:
+        save_predictions(ml_picks, bet_type="moneyline")
+        print(f"  Saved {len(ml_picks)} moneyline picks to database.")
     else:
-        print("  No +EV picks to save.\n")
+        print("  No +EV moneyline picks to save.")
+    if totals_picks:
+        save_predictions(totals_picks, bet_type="totals")
+        print(f"  Saved {len(totals_picks)} totals picks to database.\n")
+    else:
+        print("  No +EV totals picks to save.\n")
 
+    all_picks = ml_picks + totals_picks
     export_dashboard_data()
-    post_picks_to_discord(picks)
+    post_picks_to_discord(all_picks)
+    post_picks_to_github_issue(all_picks)
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +381,10 @@ def export_dashboard_data():
 
     today_str = date.today().isoformat()
     today_picks = [p for p in history if p["date"] == today_str]
-    (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_picks), indent=2))
+    today_ml = [p for p in today_picks if p.get("bet_type", "moneyline") == "moneyline"]
+    today_ou = [p for p in today_picks if p.get("bet_type") == "totals"]
+    (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_ml), indent=2))
+    (out / "totals_today.json").write_text(json.dumps(_sanitize_json(today_ou), indent=2))
 
     if today_picks:
         top = max(today_picks, key=lambda p: p.get("edge") or 0)

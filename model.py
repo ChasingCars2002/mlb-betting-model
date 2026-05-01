@@ -368,5 +368,7 @@ def predict_win_prob(model, features: dict) -> float:
     if model_cols:  # empty list is falsy — avoids zero-column DataFrame crash
         X = X.reindex(columns=model_cols, fill_value=0.0)
 
-    prob = model.predict_proba(X)[0][1]  # probability of class 1 (home win)
-    return float(prob)
+    proba = model.predict_proba(X)
+    if proba.shape[1] != 2:
+        raise ValueError(f"Expected binary classifier, got {proba.shape[1]} classes")
+    return float(proba[0][1])
