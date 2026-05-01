@@ -25,9 +25,9 @@ from model import load_model, predict_win_prob
 from odds import fetch_live_odds, match_odds_to_games, fetch_totals_odds, match_totals_to_games
 from evaluate import (
     filter_positive_ev, format_picks, format_stats,
-    filter_totals_picks, format_picks_totals,
-    predict_game_score, compute_confidence,
+    filter_totals_picks, format_picks_totals, compute_confidence,
 )
+from score import predict_game_scores
 
 logger = logging.getLogger(__name__)
 
@@ -217,10 +217,10 @@ def run_predictions(model_name: str = "xgboost"):
                                game["away_team"], game["home_team"], e)
                 game["model_prob"] = 0.5
             try:
-                h_runs, a_runs = predict_game_score(features)
-                game["predicted_home_runs"] = h_runs
-                game["predicted_away_runs"] = a_runs
-                game["predicted_total"] = round(h_runs + a_runs, 2)
+                scores = predict_game_scores(features)
+                game["predicted_home_runs"] = scores["predicted_home_score"]
+                game["predicted_away_runs"] = scores["predicted_away_score"]
+                game["predicted_total"] = scores["predicted_total"]
             except Exception as e:
                 logger.warning("Score prediction failed for %s @ %s: %s",
                                game["away_team"], game["home_team"], e)
