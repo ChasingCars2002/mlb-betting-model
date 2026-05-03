@@ -6,17 +6,15 @@ let allHistory  = [];
 let statsData   = {};
 let chart       = null;
 let mode        = 'ytd';    // 'ytd' | 'all_time'
-let market      = 'moneyline'; // 'moneyline' | 'totals'
 let filterText  = '';
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const [statsRes, historyRes, todayRes, totalsRes] = await Promise.all([
+    const [statsRes, historyRes, todayRes] = await Promise.all([
       fetch('data/stats.json'),
       fetch('data/picks_history.json'),
       fetch('data/picks_today.json'),
-      fetch('data/totals_today.json').catch(() => null),
     ]);
 
     if (!statsRes.ok || !historyRes.ok || !todayRes.ok) {
@@ -25,8 +23,7 @@ async function loadData() {
 
     statsData  = await statsRes.json();
     allHistory = await historyRes.json();
-    const todayPicks  = await todayRes.json();
-    const todayTotals = (totalsRes && totalsRes.ok) ? await totalsRes.json() : [];
+    const todayPicks = await todayRes.json();
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display     = 'block';
@@ -35,8 +32,6 @@ async function loadData() {
     renderStats(statsData[mode]);
     renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
-    renderTodayTotals(todayTotals);
-    updateTabCounts(todayPicks.length, todayTotals.length);
     renderChart(allHistory, mode);
     renderTable(allHistory);
 
@@ -97,13 +92,6 @@ function betTypeLabel(bet_type) {
   return '<span class="badge badge-ou">O/U</span>';
 }
 
-function updateTabCounts(mlCount, ouCount) {
-  const mlEl = document.getElementById('ml-count');
-  const ouEl = document.getElementById('ou-count');
-  if (mlEl) mlEl.textContent = mlCount > 0 ? mlCount : '';
-  if (ouEl) ouEl.textContent = ouCount > 0 ? ouCount : '';
-}
-
 // ── Last updated ───────────────────────────────────────────────────────────
 function renderLastUpdated(iso) {
   if (!iso) return;
@@ -160,7 +148,7 @@ function renderTodayPicks(picks) {
     const ev    = evBadge(p.ev);
     const conf  = confidenceBadge(p.confidence);
     const pred  = (p.predicted_home_runs != null && p.predicted_away_runs != null)
-      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)} · Total: ${fmt(p.predicted_total)}</span>`
+      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)}</span>`
       : '';
     return `
       <div class="pick-card">
@@ -170,39 +158,6 @@ function renderTodayPicks(picks) {
         <span class="pick-meta">${edge} · EV: ${ev}</span>
         <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
         ${pred}
-        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
-      </div>`;
-  }).join('');
-}
-
-// ── Today's totals picks ───────────────────────────────────────────────────
-function renderTodayTotals(picks) {
-  const el = document.getElementById('today-totals');
-  if (!picks || picks.length === 0) {
-    el.innerHTML = '<p class="picks-empty">No O/U picks for today — either no totals odds fetched or no +EV opportunities found.</p>';
-    return;
-  }
-
-  el.innerHTML = picks.map(p => {
-    const game     = `${p.away_team} @ ${p.home_team}`;
-    const line     = p.listed_total != null ? p.listed_total : '—';
-    const pred     = p.predicted_total != null ? fmt(p.predicted_total) : '—';
-    const deltaRaw = p.total_delta;
-    const deltaStr = deltaRaw != null
-      ? `<span class="${deltaRaw > 0 ? 'delta-over' : 'delta-under'}">${deltaRaw > 0 ? '+' : ''}${fmt(deltaRaw)}</span>`
-      : '—';
-    const scorePred = (p.predicted_home_runs != null && p.predicted_away_runs != null)
-      ? `(${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)})`
-      : '';
-    const conf = confidenceBadge(p.confidence);
-    const ev   = evBadge(p.ev);
-    return `
-      <div class="pick-card">
-        <span class="game-label">${game}</span>
-        <span class="pick-team ou-pick">${p.pick} ${line}</span>
-        <span class="pick-meta">Predicted: ${pred} ${scorePred} · Delta: ${deltaStr}</span>
-        <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
-        <span class="pick-meta">Edge: +${fmt(p.edge * 100)}% · EV: ${ev}</span>
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
       </div>`;
   }).join('');
@@ -363,18 +318,6 @@ function renderPickOfDay(picks) {
     <div style="margin-top:8px">${conf}</div>`;
 }
 
-// ── Market tab toggle ──────────────────────────────────────────────────────
-function setMarket(newMarket) {
-  market = newMarket;
-  document.querySelectorAll('.market-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.market === market);
-  });
-  document.getElementById('today-ml-section').style.display =
-    market === 'moneyline' ? 'block' : 'none';
-  document.getElementById('today-ou-section').style.display =
-    market === 'totals' ? 'block' : 'none';
-}
-
 // ── Bitcoin tip jar ────────────────────────────────────────────────────────
 function copyBtc() {
   const addr = 'bc1q9kwf5fc35ruuuvcpe8j0zsm856c6dxr7k4887n';
@@ -432,10 +375,6 @@ function setMode(newMode) {
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
-  });
-
-  document.querySelectorAll('.market-tab').forEach(btn => {
-    btn.addEventListener('click', () => setMarket(btn.dataset.market));
   });
 
   const searchInput = document.getElementById('table-search');

@@ -37,7 +37,7 @@
   <header>
     <div class="container inner">
       <div class="logo">⚾ <span>Baseball</span> Betting Bot
-        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · ML + O/U</span>
+        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · Moneyline</span>
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
@@ -115,26 +115,10 @@
         </div>
       </div>
 
-      <!-- ── Market type tabs ───────────────────────────────── -->
-      <div class="market-tab-bar">
-        <button class="market-tab active" data-market="moneyline">
-          Moneyline Picks
-          <span id="ml-count" class="tab-count"></span>
-        </button>
-        <button class="market-tab" data-market="totals">
-          Totals (O/U)
-          <span id="ou-count" class="tab-count"></span>
-        </button>
-      </div>
-
-      <!-- ── Moneyline picks section ────────────────────────── -->
-      <div id="today-ml-section" class="today-section">
+      <!-- ── Today's moneyline picks ───────────────────────── -->
+      <div class="section-title" style="margin-bottom:10px">Today's Picks</div>
+      <div class="today-section">
         <div id="today-picks"><p class="picks-empty">Loading…</p></div>
-      </div>
-
-      <!-- ── Totals picks section ───────────────────────────── -->
-      <div id="today-ou-section" class="today-section" style="display:none">
-        <div id="today-totals"><p class="picks-empty">Loading…</p></div>
       </div>
 
       <!-- ── Pick history table ──────────────────────────────── -->
@@ -142,7 +126,7 @@
         <div class="table-header">
           <div class="section-title" style="margin-bottom:0">Pick History</div>
           <div class="table-filter">
-            <input id="table-search" type="search" placeholder="Filter team, status, or ML/O/U…" />
+            <input id="table-search" type="search" placeholder="Filter by team or status…" />
           </div>
         </div>
         <div class="table-wrap">

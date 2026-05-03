@@ -2,9 +2,8 @@
 
 import logging
 
-from config import EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS, TOTALS_EV_THRESHOLD
+from config import EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS
 from odds import american_to_implied_prob, american_to_decimal
-from score import runs_delta_to_prob
 
 logger = logging.getLogger(__name__)
 
@@ -133,64 +132,6 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
     return picks
 
 
-def filter_totals_picks(games: list[dict]) -> list[dict]:
-    """Filter games to +EV over/under picks.
-
-    Expects each game dict to contain: predicted_home_runs, predicted_away_runs,
-    predicted_total, listed_total, over_odds, under_odds, game_date, home_team,
-    away_team, model_name, home_pitcher_name, away_pitcher_name.
-    """
-    picks = []
-
-    for game in games:
-        if game.get("listed_total") is None:
-            continue
-        if game.get("over_odds") is None or game.get("under_odds") is None:
-            continue
-
-        pred_total = game.get("predicted_total", 0.0)
-        listed     = game["listed_total"]
-        delta      = round(pred_total - listed, 2)
-
-        prob_over, prob_under = runs_delta_to_prob(pred_total, listed)
-
-        def _make_total_pick(direction: str, american_odds: int, model_prob: float) -> None:
-            implied_prob = american_to_implied_prob(american_odds)
-            ev           = calculate_ev(model_prob, implied_prob, american_odds)
-            edge         = calculate_edge(model_prob, implied_prob)
-            if ev > 0 and edge >= TOTALS_EV_THRESHOLD:
-                picks.append({
-                    "date": game["game_date"],
-                    "home_team": game["home_team"],
-                    "away_team": game["away_team"],
-                    "pick": direction,
-                    "pick_side": direction,
-                    "listed_total": listed,
-                    "predicted_total": round(pred_total, 2),
-                    "total_delta": delta,
-                    "model_prob": model_prob,
-                    "implied_prob": round(implied_prob, 4),
-                    "ev": ev,
-                    "edge": edge,
-                    "units": size_bet(model_prob, american_odds),
-                    "odds": american_odds,
-                    "model_name": game.get("model_name", "analytical"),
-                    "home_pitcher": game.get("home_pitcher_name", ""),
-                    "away_pitcher": game.get("away_pitcher_name", ""),
-                    "predicted_home_runs": game.get("predicted_home_runs"),
-                    "predicted_away_runs": game.get("predicted_away_runs"),
-                })
-
-        if delta > 0:
-            _make_total_pick("Over", game["over_odds"], prob_over)
-        elif delta < 0:
-            _make_total_pick("Under", game["under_odds"], prob_under)
-
-    picks.sort(key=lambda x: x["ev"], reverse=True)
-    logger.info("Found %d +EV totals picks.", len(picks))
-    return picks
-
-
 def compute_confidence(edge: float, ev: float) -> int:
     """Return a 1–5 star rating based on edge and EV thresholds.
 
@@ -238,35 +179,6 @@ def format_picks(picks: list[dict]) -> str:
     lines.append("=" * 85)
     lines.append("")
 
-    return "\n".join(lines)
-
-
-def format_picks_totals(picks: list[dict]) -> str:
-    """Format totals picks into a console-friendly table."""
-    if not picks:
-        return "\n  No +EV totals picks found today.\n"
-
-    lines = []
-    lines.append("")
-    lines.append("=" * 95)
-    lines.append(f"  {'GAME':<25} {'DIR':<6} {'LINE':>5} {'PRED':>5} {'DELTA':>6} "
-                 f"{'EDGE':>6} {'EV':>7} {'UNITS':>5} {'ODDS':>7} {'CONF':>5}")
-    lines.append("-" * 95)
-
-    for p in picks:
-        matchup  = f"{p['away_team']} @ {p['home_team']}"
-        delta    = f"{p['total_delta']:+.1f}"
-        conf     = "★" * p.get("confidence", 1)
-        lines.append(
-            f"  {matchup:<25} {p['pick']:<6} {p['listed_total']:>5.1f} "
-            f"{p['predicted_total']:>5.1f} {delta:>6} {p['edge']:>5.1%} "
-            f"{p['ev']:>+6.1%} {p['units']:>5.1f}u  {p['odds']:>+7d} {conf:>5}"
-        )
-
-    lines.append("-" * 95)
-    lines.append(f"  Total: {len(picks)} totals picks")
-    lines.append("=" * 95)
-    lines.append("")
     return "\n".join(lines)
 
 
