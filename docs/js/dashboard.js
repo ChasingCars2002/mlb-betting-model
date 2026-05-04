@@ -26,8 +26,10 @@ async function loadData() {
     allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
     const todayPicks = await todayRes.json();
 
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display     = 'block';
+    const loadingEl = document.getElementById('loading');
+    const appEl     = document.getElementById('app');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (appEl)     appEl.style.display     = 'block';
 
     renderLastUpdated(statsData.last_updated);
     renderStats();
@@ -37,13 +39,21 @@ async function loadData() {
     renderTable(allHistory);
 
   } catch (err) {
-    document.getElementById('loading').style.display = 'none';
-    showError('Could not load data. ' + err.message +
-      ' If viewing locally, serve with a local HTTP server (e.g. python -m http.server).');
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+    showError('Could not load data: ' + err.message);
+    console.error(err);
   }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function setHTML(id, html) {
+  const el = $(id);
+  if (el) el.innerHTML = html;
+}
+
 function fmt(n, decimals = 1) {
   if (n == null || isNaN(n)) return '—';
   return Number(n).toFixed(decimals);
@@ -133,32 +143,31 @@ function renderStats() {
   const profit  = s.total_profit ?? 0;
   const winRate = s.win_rate ?? 0;
 
-  document.getElementById('card-record').innerHTML =
+  setHTML('card-record',
     `<div class="value neutral">${wins}–${losses}</div>
-     <div class="sub">${pending} pending · ${otherLabel}: ${other.wins}–${other.losses}</div>`;
+     <div class="sub">${pending} pending · ${otherLabel}: ${other.wins}–${other.losses}</div>`);
 
-  document.getElementById('card-winrate').innerHTML =
+  setHTML('card-winrate',
     `<div class="value ${valueClass(winRate - 50)}">${fmt(winRate)}%</div>
-     <div class="sub">${otherLabel}: ${fmt(other.win_rate)}%</div>`;
+     <div class="sub">${otherLabel}: ${fmt(other.win_rate)}%</div>`);
 
-  document.getElementById('card-roi').innerHTML =
+  setHTML('card-roi',
     `<div class="value ${valueClass(roi)}">${roi >= 0 ? '+' : ''}${fmt(roi)}%</div>
-     <div class="sub">${otherLabel}: ${other.roi_pct >= 0 ? '+' : ''}${fmt(other.roi_pct)}%</div>`;
+     <div class="sub">${otherLabel}: ${other.roi_pct >= 0 ? '+' : ''}${fmt(other.roi_pct)}%</div>`);
 
-  document.getElementById('card-profit').innerHTML =
+  setHTML('card-profit',
     `<div class="value ${valueClass(profit)}">${profit >= 0 ? '+' : ''}${fmt(profit, 2)}u</div>
-     <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other.total_profit >= 0 ? '+' : ''}${fmt(other.total_profit, 2)}u</div>`;
+     <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other.total_profit >= 0 ? '+' : ''}${fmt(other.total_profit, 2)}u</div>`);
 }
 
 // ── Today's moneyline picks ────────────────────────────────────────────────
 function renderTodayPicks(picks) {
-  const el = document.getElementById('today-picks');
   if (!picks || picks.length === 0) {
-    el.innerHTML = '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>';
+    setHTML('today-picks', '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>');
     return;
   }
 
-  el.innerHTML = picks.map(p => {
+  setHTML('today-picks', picks.map(p => {
     const game  = `${p.away_team} @ ${p.home_team}`;
     const edge  = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
     const ev    = evBadge(p.ev);
@@ -176,7 +185,7 @@ function renderTodayPicks(picks) {
         ${pred}
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
       </div>`;
-  }).join('');
+  }).join(''));
 }
 
 // ── Cumulative P&L chart ───────────────────────────────────────────────────
@@ -287,13 +296,12 @@ function renderTable(history) {
     );
   }
 
-  const tbody = document.getElementById('history-tbody');
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`;
+    setHTML('history-tbody', `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`);
     return;
   }
 
-  tbody.innerHTML = rows.map(p => {
+  setHTML('history-tbody', rows.map(p => {
     const game = `${p.away_team} @ ${p.home_team}`;
     return `
       <tr class="${rowClass(p.status)}">
@@ -308,19 +316,18 @@ function renderTable(history) {
         <td>${statusBadge(p.status)}</td>
         <td>${p.profit != null ? fmtProfit(p.profit) : '—'}</td>
       </tr>`;
-  }).join('');
+  }).join(''));
 }
 
 // ── Pick of the Day ────────────────────────────────────────────────────────
 function renderPickOfDay(picks) {
-  const el = document.getElementById('potd-card');
   if (!picks || picks.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted)">No picks for today yet — check back after the morning run.</p>';
+    setHTML('potd-card', '<p style="color:var(--muted)">No picks for today yet — check back after the morning run.</p>');
     return;
   }
   const top = picks.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), picks[0]);
   const conf = confidenceBadge(top.confidence);
-  el.innerHTML = `
+  setHTML('potd-card', `
     <div class="potd-label">★ Best Edge Today</div>
     <div class="potd-game">${top.away_team} @ ${top.home_team}</div>
     <div class="potd-pick">${top.pick}</div>
@@ -330,7 +337,7 @@ function renderPickOfDay(picks) {
       <span>Model: ${fmt(top.model_prob * 100)}%</span>
       <span>Units: ${top.units}u</span>
     </div>
-    <div style="margin-top:8px">${conf}</div>`;
+    <div style="margin-top:8px">${conf}</div>`);
 }
 
 // ── Bitcoin tip jar ────────────────────────────────────────────────────────
@@ -371,8 +378,10 @@ function showBtcToast(msg) {
 
 // ── Error banner ───────────────────────────────────────────────────────────
 function showError(msg) {
-  document.getElementById('error-banner').style.display = 'block';
-  document.getElementById('error-text').textContent = msg;
+  const banner = $('error-banner');
+  const text   = $('error-text');
+  if (banner) banner.style.display = 'block';
+  if (text)   text.textContent = msg;
 }
 
 // ── Toggle (YTD / All-Time) ────────────────────────────────────────────────
