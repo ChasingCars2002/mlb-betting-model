@@ -22,7 +22,8 @@ async function loadData() {
     }
 
     statsData  = await statsRes.json();
-    allHistory = await historyRes.json();
+    const rawHistory = await historyRes.json();
+    allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
     const todayPicks = await todayRes.json();
 
     document.getElementById('loading').style.display = 'none';
@@ -85,11 +86,6 @@ function evBadge(ev) {
   const pct = (ev * 100).toFixed(1);
   const cls = ev >= 0 ? 'ev-positive' : 'ev-negative';
   return `<span class="${cls}">${ev >= 0 ? '+' : ''}${pct}%</span>`;
-}
-
-function betTypeLabel(bet_type) {
-  if (!bet_type || bet_type === 'moneyline') return '<span class="badge badge-pending">ML</span>';
-  return '<span class="badge badge-ou">O/U</span>';
 }
 
 // ── Last updated ───────────────────────────────────────────────────────────
@@ -273,7 +269,7 @@ function renderTable(history) {
 
   const tbody = document.getElementById('history-tbody');
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`;
     return;
   }
 
@@ -282,7 +278,6 @@ function renderTable(history) {
     return `
       <tr class="${rowClass(p.status)}">
         <td>${p.date ?? '—'}</td>
-        <td>${betTypeLabel(p.bet_type)}</td>
         <td>${game}</td>
         <td style="font-weight:600">${p.pick ?? '—'}</td>
         <td>${fmtOdds(p.odds)}</td>
