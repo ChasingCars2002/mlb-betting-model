@@ -30,7 +30,7 @@ async function loadData() {
     document.getElementById('app').style.display     = 'block';
 
     renderLastUpdated(statsData.last_updated);
-    renderStats(statsData[mode]);
+    renderStats();
     renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
     renderChart(allHistory, mode);
@@ -99,9 +99,32 @@ function renderLastUpdated(iso) {
     });
 }
 
+// ── Stats computed from filtered history (moneyline only) ─────────────────
+function computeStats(history, targetMode) {
+  const ytdYear = String(new Date().getFullYear());
+  const rows = targetMode === 'ytd'
+    ? history.filter(p => p.date && p.date.startsWith(ytdYear))
+    : history;
+  const graded  = rows.filter(p => p.status === 'Win' || p.status === 'Loss');
+  const pending = rows.filter(p => p.status === 'Pending').length;
+  const wins    = graded.filter(p => p.status === 'Win').length;
+  const losses  = graded.filter(p => p.status === 'Loss').length;
+  const wagered = graded.reduce((s, p) => s + (p.units ?? 0), 0);
+  const profit  = graded.reduce((s, p) => s + (p.profit ?? 0), 0);
+  return {
+    wins, losses, pending,
+    total_units_wagered: wagered,
+    total_profit: profit,
+    roi_pct:  wagered > 0 ? (profit / wagered) * 100 : 0,
+    win_rate: graded.length > 0 ? (wins / graded.length) * 100 : 0,
+  };
+}
+
 // ── Stats cards ────────────────────────────────────────────────────────────
-function renderStats(s) {
-  if (!s) return;
+function renderStats() {
+  const s     = computeStats(allHistory, mode);
+  const other = computeStats(allHistory, mode === 'ytd' ? 'all_time' : 'ytd');
+  const otherLabel = mode === 'ytd' ? 'All-time' : 'YTD';
 
   const wins    = s.wins    ?? 0;
   const losses  = s.losses  ?? 0;
@@ -110,24 +133,21 @@ function renderStats(s) {
   const profit  = s.total_profit ?? 0;
   const winRate = s.win_rate ?? 0;
 
-  const other      = mode === 'ytd' ? statsData.all_time : statsData.ytd;
-  const otherLabel = mode === 'ytd' ? 'All-time' : 'YTD';
-
   document.getElementById('card-record').innerHTML =
     `<div class="value neutral">${wins}–${losses}</div>
-     <div class="sub">${pending} pending · ${otherLabel}: ${other?.wins ?? 0}–${other?.losses ?? 0}</div>`;
+     <div class="sub">${pending} pending · ${otherLabel}: ${other.wins}–${other.losses}</div>`;
 
   document.getElementById('card-winrate').innerHTML =
     `<div class="value ${valueClass(winRate - 50)}">${fmt(winRate)}%</div>
-     <div class="sub">${otherLabel}: ${fmt(other?.win_rate)}%</div>`;
+     <div class="sub">${otherLabel}: ${fmt(other.win_rate)}%</div>`;
 
   document.getElementById('card-roi').innerHTML =
     `<div class="value ${valueClass(roi)}">${roi >= 0 ? '+' : ''}${fmt(roi)}%</div>
-     <div class="sub">${otherLabel}: ${other?.roi_pct >= 0 ? '+' : ''}${fmt(other?.roi_pct)}%</div>`;
+     <div class="sub">${otherLabel}: ${other.roi_pct >= 0 ? '+' : ''}${fmt(other.roi_pct)}%</div>`;
 
   document.getElementById('card-profit').innerHTML =
     `<div class="value ${valueClass(profit)}">${profit >= 0 ? '+' : ''}${fmt(profit, 2)}u</div>
-     <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other?.total_profit >= 0 ? '+' : ''}${fmt(other?.total_profit, 2)}u</div>`;
+     <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other.total_profit >= 0 ? '+' : ''}${fmt(other.total_profit, 2)}u</div>`;
 }
 
 // ── Today's moneyline picks ────────────────────────────────────────────────
@@ -361,7 +381,7 @@ function setMode(newMode) {
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === mode);
   });
-  renderStats(statsData[mode]);
+  renderStats();
   renderChart(allHistory, mode);
   renderTable(allHistory);
 }
