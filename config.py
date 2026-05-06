@@ -54,12 +54,5 @@ ODDS_SPORT = "baseball_mlb"
 ODDS_REGIONS = "us"
 ODDS_MARKETS = "h2h"
 
-# --- Score / Totals Prediction ---
-TOTALS_STARTER_WEIGHT = 0.60   # fraction of game credited to starting pitcher
-TOTALS_BULLPEN_WEIGHT = 0.40   # fraction credited to bullpen
-TOTALS_SCALE = 0.55            # ERA-rate → per-game runs calibration constant
-TOTALS_EV_THRESHOLD = 0.02     # minimum edge for totals picks
-SCORE_SIGMA = 1.5              # logistic scaling for run-delta → probability
-
 # --- MLB Stats API ---
 MLB_STATS_API_BASE = "https://statsapi.mlb.com/api/v1"

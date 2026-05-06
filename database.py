@@ -195,7 +195,7 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
     total_profit, roi_pct, brier_score, win_rate.
     """
     with get_connection() as conn:
-        where = "WHERE status != 'Pending'"
+        where = "WHERE status != 'Pending' AND (bet_type = 'moneyline' OR bet_type IS NULL)"
         params = []
         if since:
             where += " AND date >= ?"
@@ -208,7 +208,7 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
 
     if not rows:
         with get_connection() as conn:
-            pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
+            pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending' AND (bet_type = 'moneyline' OR bet_type IS NULL)"
             pending_params = []
             if since:
                 pending_sql += " AND date >= ?"

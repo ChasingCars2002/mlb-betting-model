@@ -6,17 +6,15 @@ let allHistory  = [];
 let statsData   = {};
 let chart       = null;
 let mode        = 'ytd';    // 'ytd' | 'all_time'
-let market      = 'moneyline'; // 'moneyline' | 'totals'
 let filterText  = '';
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const [statsRes, historyRes, todayRes, totalsRes] = await Promise.all([
+    const [statsRes, historyRes, todayRes] = await Promise.all([
       fetch('data/stats.json'),
       fetch('data/picks_history.json'),
       fetch('data/picks_today.json'),
-      fetch('data/totals_today.json').catch(() => null),
     ]);
 
     if (!statsRes.ok || !historyRes.ok || !todayRes.ok) {
@@ -24,30 +22,38 @@ async function loadData() {
     }
 
     statsData  = await statsRes.json();
-    allHistory = await historyRes.json();
-    const todayPicks  = await todayRes.json();
-    const todayTotals = (totalsRes && totalsRes.ok) ? await totalsRes.json() : [];
+    const rawHistory = await historyRes.json();
+    allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
+    const todayPicks = await todayRes.json();
 
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display     = 'block';
+    const loadingEl = document.getElementById('loading');
+    const appEl     = document.getElementById('app');
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (appEl)     appEl.style.display     = 'block';
 
     renderLastUpdated(statsData.last_updated);
-    renderStats(statsData[mode]);
+    renderStats();
     renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
-    renderTodayTotals(todayTotals);
-    updateTabCounts(todayPicks.length, todayTotals.length);
     renderChart(allHistory, mode);
     renderTable(allHistory);
 
   } catch (err) {
-    document.getElementById('loading').style.display = 'none';
-    showError('Could not load data. ' + err.message +
-      ' If viewing locally, serve with a local HTTP server (e.g. python -m http.server).');
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+    showError('Could not load data: ' + err.message);
+    console.error(err);
   }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+function $(id) { return document.getElementById(id); }
+
+function setHTML(id, html) {
+  const el = $(id);
+  if (el) el.innerHTML = html;
+}
+
 function fmt(n, decimals = 1) {
   if (n == null || isNaN(n)) return '—';
   return Number(n).toFixed(decimals);
@@ -92,18 +98,6 @@ function evBadge(ev) {
   return `<span class="${cls}">${ev >= 0 ? '+' : ''}${pct}%</span>`;
 }
 
-function betTypeLabel(bet_type) {
-  if (!bet_type || bet_type === 'moneyline') return '<span class="badge badge-pending">ML</span>';
-  return '<span class="badge badge-ou">O/U</span>';
-}
-
-function updateTabCounts(mlCount, ouCount) {
-  const mlEl = document.getElementById('ml-count');
-  const ouEl = document.getElementById('ou-count');
-  if (mlEl) mlEl.textContent = mlCount > 0 ? mlCount : '';
-  if (ouEl) ouEl.textContent = ouCount > 0 ? ouCount : '';
-}
-
 // ── Last updated ───────────────────────────────────────────────────────────
 function renderLastUpdated(iso) {
   if (!iso) return;
@@ -115,9 +109,32 @@ function renderLastUpdated(iso) {
     });
 }
 
+// ── Stats computed from filtered history (moneyline only) ─────────────────
+function computeStats(history, targetMode) {
+  const ytdYear = String(new Date().getFullYear());
+  const rows = targetMode === 'ytd'
+    ? history.filter(p => p.date && p.date.startsWith(ytdYear))
+    : history;
+  const graded  = rows.filter(p => p.status === 'Win' || p.status === 'Loss');
+  const pending = rows.filter(p => p.status === 'Pending').length;
+  const wins    = graded.filter(p => p.status === 'Win').length;
+  const losses  = graded.filter(p => p.status === 'Loss').length;
+  const wagered = graded.reduce((s, p) => s + (p.units ?? 0), 0);
+  const profit  = graded.reduce((s, p) => s + (p.profit ?? 0), 0);
+  return {
+    wins, losses, pending,
+    total_units_wagered: wagered,
+    total_profit: profit,
+    roi_pct:  wagered > 0 ? (profit / wagered) * 100 : 0,
+    win_rate: graded.length > 0 ? (wins / graded.length) * 100 : 0,
+  };
+}
+
 // ── Stats cards ────────────────────────────────────────────────────────────
-function renderStats(s) {
-  if (!s) return;
+function renderStats() {
+  const s     = computeStats(allHistory, mode);
+  const other = computeStats(allHistory, mode === 'ytd' ? 'all_time' : 'ytd');
+  const otherLabel = mode === 'ytd' ? 'All-time' : 'YTD';
 
   const wins    = s.wins    ?? 0;
   const losses  = s.losses  ?? 0;
@@ -126,41 +143,37 @@ function renderStats(s) {
   const profit  = s.total_profit ?? 0;
   const winRate = s.win_rate ?? 0;
 
-  const other      = mode === 'ytd' ? statsData.all_time : statsData.ytd;
-  const otherLabel = mode === 'ytd' ? 'All-time' : 'YTD';
-
-  document.getElementById('card-record').innerHTML =
+  setHTML('card-record',
     `<div class="value neutral">${wins}–${losses}</div>
-     <div class="sub">${pending} pending · ${otherLabel}: ${other?.wins ?? 0}–${other?.losses ?? 0}</div>`;
+     <div class="sub">${pending} pending · ${otherLabel}: ${other.wins}–${other.losses}</div>`);
 
-  document.getElementById('card-winrate').innerHTML =
+  setHTML('card-winrate',
     `<div class="value ${valueClass(winRate - 50)}">${fmt(winRate)}%</div>
-     <div class="sub">${otherLabel}: ${fmt(other?.win_rate)}%</div>`;
+     <div class="sub">${otherLabel}: ${fmt(other.win_rate)}%</div>`);
 
-  document.getElementById('card-roi').innerHTML =
+  setHTML('card-roi',
     `<div class="value ${valueClass(roi)}">${roi >= 0 ? '+' : ''}${fmt(roi)}%</div>
-     <div class="sub">${otherLabel}: ${other?.roi_pct >= 0 ? '+' : ''}${fmt(other?.roi_pct)}%</div>`;
+     <div class="sub">${otherLabel}: ${other.roi_pct >= 0 ? '+' : ''}${fmt(other.roi_pct)}%</div>`);
 
-  document.getElementById('card-profit').innerHTML =
+  setHTML('card-profit',
     `<div class="value ${valueClass(profit)}">${profit >= 0 ? '+' : ''}${fmt(profit, 2)}u</div>
-     <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other?.total_profit >= 0 ? '+' : ''}${fmt(other?.total_profit, 2)}u</div>`;
+     <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other.total_profit >= 0 ? '+' : ''}${fmt(other.total_profit, 2)}u</div>`);
 }
 
 // ── Today's moneyline picks ────────────────────────────────────────────────
 function renderTodayPicks(picks) {
-  const el = document.getElementById('today-picks');
   if (!picks || picks.length === 0) {
-    el.innerHTML = '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>';
+    setHTML('today-picks', '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>');
     return;
   }
 
-  el.innerHTML = picks.map(p => {
+  setHTML('today-picks', picks.map(p => {
     const game  = `${p.away_team} @ ${p.home_team}`;
     const edge  = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
     const ev    = evBadge(p.ev);
     const conf  = confidenceBadge(p.confidence);
     const pred  = (p.predicted_home_runs != null && p.predicted_away_runs != null)
-      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)} · Total: ${fmt(p.predicted_total)}</span>`
+      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)}</span>`
       : '';
     return `
       <div class="pick-card">
@@ -172,40 +185,7 @@ function renderTodayPicks(picks) {
         ${pred}
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
       </div>`;
-  }).join('');
-}
-
-// ── Today's totals picks ───────────────────────────────────────────────────
-function renderTodayTotals(picks) {
-  const el = document.getElementById('today-totals');
-  if (!picks || picks.length === 0) {
-    el.innerHTML = '<p class="picks-empty">No O/U picks for today — either no totals odds fetched or no +EV opportunities found.</p>';
-    return;
-  }
-
-  el.innerHTML = picks.map(p => {
-    const game     = `${p.away_team} @ ${p.home_team}`;
-    const line     = p.listed_total != null ? p.listed_total : '—';
-    const pred     = p.predicted_total != null ? fmt(p.predicted_total) : '—';
-    const deltaRaw = p.total_delta;
-    const deltaStr = deltaRaw != null
-      ? `<span class="${deltaRaw > 0 ? 'delta-over' : 'delta-under'}">${deltaRaw > 0 ? '+' : ''}${fmt(deltaRaw)}</span>`
-      : '—';
-    const scorePred = (p.predicted_home_runs != null && p.predicted_away_runs != null)
-      ? `(${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)})`
-      : '';
-    const conf = confidenceBadge(p.confidence);
-    const ev   = evBadge(p.ev);
-    return `
-      <div class="pick-card">
-        <span class="game-label">${game}</span>
-        <span class="pick-team ou-pick">${p.pick} ${line}</span>
-        <span class="pick-meta">Predicted: ${pred} ${scorePred} · Delta: ${deltaStr}</span>
-        <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
-        <span class="pick-meta">Edge: +${fmt(p.edge * 100)}% · EV: ${ev}</span>
-        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
-      </div>`;
-  }).join('');
+  }).join(''));
 }
 
 // ── Cumulative P&L chart ───────────────────────────────────────────────────
@@ -316,18 +296,16 @@ function renderTable(history) {
     );
   }
 
-  const tbody = document.getElementById('history-tbody');
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`;
+    setHTML('history-tbody', `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:30px">No picks found.</td></tr>`);
     return;
   }
 
-  tbody.innerHTML = rows.map(p => {
+  setHTML('history-tbody', rows.map(p => {
     const game = `${p.away_team} @ ${p.home_team}`;
     return `
       <tr class="${rowClass(p.status)}">
         <td>${p.date ?? '—'}</td>
-        <td>${betTypeLabel(p.bet_type)}</td>
         <td>${game}</td>
         <td style="font-weight:600">${p.pick ?? '—'}</td>
         <td>${fmtOdds(p.odds)}</td>
@@ -338,19 +316,18 @@ function renderTable(history) {
         <td>${statusBadge(p.status)}</td>
         <td>${p.profit != null ? fmtProfit(p.profit) : '—'}</td>
       </tr>`;
-  }).join('');
+  }).join(''));
 }
 
 // ── Pick of the Day ────────────────────────────────────────────────────────
 function renderPickOfDay(picks) {
-  const el = document.getElementById('potd-card');
   if (!picks || picks.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted)">No picks for today yet — check back after the morning run.</p>';
+    setHTML('potd-card', '<p style="color:var(--muted)">No picks for today yet — check back after the morning run.</p>');
     return;
   }
   const top = picks.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), picks[0]);
   const conf = confidenceBadge(top.confidence);
-  el.innerHTML = `
+  setHTML('potd-card', `
     <div class="potd-label">★ Best Edge Today</div>
     <div class="potd-game">${top.away_team} @ ${top.home_team}</div>
     <div class="potd-pick">${top.pick}</div>
@@ -360,19 +337,7 @@ function renderPickOfDay(picks) {
       <span>Model: ${fmt(top.model_prob * 100)}%</span>
       <span>Units: ${top.units}u</span>
     </div>
-    <div style="margin-top:8px">${conf}</div>`;
-}
-
-// ── Market tab toggle ──────────────────────────────────────────────────────
-function setMarket(newMarket) {
-  market = newMarket;
-  document.querySelectorAll('.market-tab').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.market === market);
-  });
-  document.getElementById('today-ml-section').style.display =
-    market === 'moneyline' ? 'block' : 'none';
-  document.getElementById('today-ou-section').style.display =
-    market === 'totals' ? 'block' : 'none';
+    <div style="margin-top:8px">${conf}</div>`);
 }
 
 // ── Bitcoin tip jar ────────────────────────────────────────────────────────
@@ -413,8 +378,10 @@ function showBtcToast(msg) {
 
 // ── Error banner ───────────────────────────────────────────────────────────
 function showError(msg) {
-  document.getElementById('error-banner').style.display = 'block';
-  document.getElementById('error-text').textContent = msg;
+  const banner = $('error-banner');
+  const text   = $('error-text');
+  if (banner) banner.style.display = 'block';
+  if (text)   text.textContent = msg;
 }
 
 // ── Toggle (YTD / All-Time) ────────────────────────────────────────────────
@@ -423,7 +390,7 @@ function setMode(newMode) {
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === mode);
   });
-  renderStats(statsData[mode]);
+  renderStats();
   renderChart(allHistory, mode);
   renderTable(allHistory);
 }
@@ -432,10 +399,6 @@ function setMode(newMode) {
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
-  });
-
-  document.querySelectorAll('.market-tab').forEach(btn => {
-    btn.addEventListener('click', () => setMarket(btn.dataset.market));
   });
 
   const searchInput = document.getElementById('table-search');

@@ -440,53 +440,6 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
   .tip-jar        { flex-wrap: wrap; }
 }
 
-/* ── Market type tabs ─────────────────────────────────────────── */
-.market-tab-bar {
-  display: flex;
-  gap: 4px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 3px;
-  margin-bottom: 14px;
-  width: fit-content;
-}
-
-.market-tab {
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 18px;
-  border-radius: calc(var(--radius) - 2px);
-  cursor: pointer;
-  transition: all .15s;
-  font-family: var(--font);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.market-tab.active {
-  background: var(--accent);
-  color: #fff;
-}
-
-.tab-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,.2);
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 0 6px;
-  min-width: 18px;
-  height: 16px;
-  line-height: 16px;
-}
-
 /* ── Confidence badge ─────────────────────────────────────────── */
 .badge.conf-high {
   background: rgba(0,229,160,.12);
@@ -522,29 +475,12 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
   font-weight: 600;
 }
 
-/* ── Bet type badge ───────────────────────────────────────────── */
-.badge-ou {
-  background: rgba(240,180,41,.12);
-  color: var(--yellow);
-}
-
-/* ── Totals pick team highlight ───────────────────────────────── */
-.pick-card .ou-pick {
-  color: var(--yellow);
-  font-weight: 700;
-  min-width: 80px;
-}
-
 /* ── Score prediction display ─────────────────────────────────── */
 .pick-meta.score-pred {
   color: var(--muted);
   font-size: 11px;
   font-style: italic;
 }
-
-/* ── Run delta pills ──────────────────────────────────────────── */
-.delta-over  { color: var(--green); font-weight: 600; }
-.delta-under { color: var(--red);   font-weight: 600; }
 
 /* ── Pick card badges row ─────────────────────────────────────── */
 .pick-card .pick-badges {

@@ -1,9 +1,5 @@
 """Analytical score prediction — estimates expected runs per team using existing features."""
 
-import math
-
-from config import SCORE_SIGMA
-
 _LEAGUE_AVG_ERA = 4.50
 _LEAGUE_AVG_OPS = 0.720
 _BASE_RUNS      = 4.5
@@ -43,26 +39,3 @@ def predict_game_scores(features: dict) -> dict:
         "predicted_away_score": away_runs,
         "predicted_total": round(home_runs + away_runs, 2),
     }
-
-
-def runs_delta_to_prob(predicted_total: float, total_line: float, sigma: float = None) -> tuple[float, float]:
-    """Convert the model's predicted run total vs. the bookmaker line into probabilities.
-
-    Uses a logistic (sigmoid) transform so that:
-      - delta = 0   → P(over) = 0.50  (no edge)
-      - delta = +σ  → P(over) ≈ 0.73  (moderate over lean)
-      - delta = -σ  → P(over) ≈ 0.27  (moderate under lean)
-
-    Args:
-        predicted_total: Model's predicted total runs.
-        total_line:      Bookmaker's posted total.
-        sigma:           Scaling constant (defaults to SCORE_SIGMA from config).
-
-    Returns:
-        (prob_over, prob_under) — both in (0, 1), sum to 1.
-    """
-    if sigma is None:
-        sigma = SCORE_SIGMA
-    delta    = predicted_total - total_line
-    prob_over = 1.0 / (1.0 + math.exp(-delta / sigma))
-    return round(prob_over, 4), round(1.0 - prob_over, 4)
