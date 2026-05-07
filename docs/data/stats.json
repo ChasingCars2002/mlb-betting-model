@@ -3,7 +3,7 @@
     "total_bets": 171,
     "wins": 80,
     "losses": 91,
-    "pending": 23,
+    "pending": 25,
     "total_units_wagered": 296.36,
     "total_profit": 33.13,
     "roi_pct": 11.18,
@@ -15,12 +15,12 @@
     "total_bets": 171,
     "wins": 80,
     "losses": 91,
-    "pending": 23,
+    "pending": 25,
     "total_units_wagered": 296.36,
     "total_profit": 33.13,
     "roi_pct": 11.18,
     "brier_score": 0.2504,
     "win_rate": 46.78
   },
-  "last_updated": "2026-05-07T15:41:39.980089Z"
+  "last_updated": "2026-05-07T15:43:38.912919Z"
 }
