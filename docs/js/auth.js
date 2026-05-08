@@ -46,16 +46,17 @@ function _clearErr() { _err(''); }
 
 // ── Header auth bar ────────────────────────────────────────────────────────
 function _updateHeader() {
-  const el = document.getElementById('header-auth');
-  if (!el) return;
+  const loggedOut = document.getElementById('auth-logged-out');
+  const loggedIn  = document.getElementById('auth-logged-in');
+  const emailEl   = document.getElementById('auth-user-email');
+  if (!loggedOut || !loggedIn) return;
   if (window.sbUser) {
-    el.innerHTML = `
-      <span class="auth-email">${window.sbUser.email}</span>
-      <button class="auth-btn" onclick="sbSignOut()">Sign out</button>`;
+    loggedOut.style.display = 'none';
+    loggedIn.style.display  = 'flex';
+    if (emailEl) emailEl.textContent = window.sbUser.email;
   } else {
-    el.innerHTML = `
-      <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
-      <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>`;
+    loggedOut.style.display = 'flex';
+    loggedIn.style.display  = 'none';
   }
 }
 
@@ -205,9 +206,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     t.addEventListener('click', () => _tab(t.dataset.tab)));
   document.getElementById('si-form')?.addEventListener('submit', _onSignIn);
   document.getElementById('su-form')?.addEventListener('submit', _onSignUp);
-
-  // Render header auth bar (shows Sign in / Get access buttons)
-  _updateHeader();
 
   // Initialize Supabase — bail gracefully if SDK failed to load
   if (!window.supabase?.createClient) {

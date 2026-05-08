@@ -42,7 +42,18 @@
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
-        <div id="header-auth" class="header-auth"></div>
+        <div id="header-auth" class="header-auth">
+          <!-- Logged-out state: visible by default, hidden after login -->
+          <div id="auth-logged-out" style="display:flex;gap:8px;align-items:center">
+            <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
+            <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>
+          </div>
+          <!-- Logged-in state: hidden by default, shown after login -->
+          <div id="auth-logged-in" style="display:none;gap:8px;align-items:center">
+            <span id="auth-user-email" class="auth-email"></span>
+            <button class="auth-btn" onclick="sbSignOut()">Sign out</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
