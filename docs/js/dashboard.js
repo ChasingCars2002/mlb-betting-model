@@ -77,24 +77,35 @@ async function loadGatedData() {
 
 function renderPicksPaywall(reason) {
   const isSignin = reason === 'signin';
-  const overlay  = `
+  const promoSection = !isSignin ? `
+    <div class="promo-section">
+      <a id="promo-toggle-link" class="promo-toggle-link" href="#" onclick="event.preventDefault();window.showPromoForm&&window.showPromoForm()">Have a promo code?</a>
+      <div id="promo-inline-form" class="promo-inline-form" style="display:none">
+        <input id="promo-code-input" class="promo-input" type="text" placeholder="Enter code" autocomplete="off" />
+        <button id="promo-submit-btn" class="promo-submit-btn" onclick="window.redeemPromo&&window.redeemPromo()">Apply Code</button>
+        <div id="promo-error" class="promo-error" style="display:none"></div>
+      </div>
+    </div>` : '';
+
+  const overlay = `
     <div class="paywall-overlay">
       <div class="paywall-icon">🔒</div>
       <div class="paywall-title">Today's Picks are for subscribers</div>
       <div class="paywall-desc">
         Get today's moneyline picks with edge, EV, and confidence ratings.<br>
-        Historical track record is always free.
+        5-day free trial, then $7.99/month. Historical track record is always free.
       </div>
       <div class="paywall-actions">
         ${isSignin
           ? `<button class="auth-btn auth-btn-primary subscribe-cta" onclick="openModal('signin')">Sign in</button>
-             <button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Subscribe — $7.99/mo</button>`
-          : `<button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Subscribe — $7.99/mo</button>`
+             <button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Start Free Trial</button>`
+          : `<button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Start Free Trial</button>`
         }
       </div>
+      ${promoSection}
     </div>`;
 
-  setHTML('potd-card', `<p style="color:var(--muted);font-style:italic">Subscribe to unlock today's best pick.</p>`);
+  setHTML('potd-card', `<p style="color:var(--muted);font-style:italic">Start your free trial to unlock today's best pick.</p>`);
   setHTML('today-picks', overlay);
 }
 

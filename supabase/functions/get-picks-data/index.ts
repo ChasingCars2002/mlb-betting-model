@@ -33,7 +33,8 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single()
 
-    if (profile?.subscription_status !== 'active') {
+    const ACTIVE_STATUSES = new Set(['active', 'trialing', 'lifetime'])
+    if (!ACTIVE_STATUSES.has(profile?.subscription_status ?? '')) {
       return json({ error: 'Subscription required' }, 402)
     }
 

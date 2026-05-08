@@ -5,6 +5,8 @@ const SUPABASE_URL = 'https://hmukgvrpuncxkzeuujam.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtdWtndnJwdW5jeGt6ZXV1amFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxOTMwNDgsImV4cCI6MjA5Mzc2OTA0OH0.0SC2M6Fro3dOwWwf-7Qld-aN3RjCusNkKUWVEalLtEM';
 const PICKS_FN    = `${SUPABASE_URL}/functions/v1/get-picks-data`;
 const CHECKOUT_FN = `${SUPABASE_URL}/functions/v1/create-checkout-session`;
+const CANCEL_FN   = `${SUPABASE_URL}/functions/v1/cancel-subscription`;
+const REDEEM_FN   = `${SUPABASE_URL}/functions/v1/redeem-promo`;
 
 if (!window.supabase?.createClient) {
   console.warn('Supabase SDK not available — auth features disabled.');
@@ -15,16 +17,26 @@ const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null;
 window.sbUser       = null;
 window.sbSession    = null;
 window.sbSubscribed = false;
+window.sbSubStatus  = 'inactive';  // 'inactive' | 'trialing' | 'active' | 'past_due' | 'lifetime'
+window.sbSubEnd     = null;        // ISO date string of period/trial end
 
 // ── Subscription check ─────────────────────────────────────────────────────
 async function _checkSub() {
-  if (!window.sbUser || !sb) { window.sbSubscribed = false; return; }
+  if (!window.sbUser || !sb) {
+    window.sbSubscribed = false;
+    window.sbSubStatus  = 'inactive';
+    window.sbSubEnd     = null;
+    return;
+  }
   const { data } = await sb
     .from('profiles')
-    .select('subscription_status')
+    .select('subscription_status, subscription_end')
     .eq('user_id', window.sbUser.id)
     .single();
-  window.sbSubscribed = data?.subscription_status === 'active';
+  const status = data?.subscription_status ?? 'inactive';
+  window.sbSubStatus  = status;
+  window.sbSubEnd     = data?.subscription_end ?? null;
+  window.sbSubscribed = ['active', 'trialing', 'lifetime'].includes(status);
 }
 
 // ── Authenticated fetch for gated picks data ───────────────────────────────
@@ -42,7 +54,7 @@ window.fetchGatedData = async function (file) {
   }
 };
 
-// ── Stripe checkout ────────────────────────────────────────────────────────
+// ── Stripe checkout (5-day free trial) ────────────────────────────────────
 window.startSubscription = async function () {
   if (!window.sbUser) { openModal('signup'); return; }
   const btns = document.querySelectorAll('.subscribe-cta');
@@ -61,24 +73,180 @@ window.startSubscription = async function () {
       window.location.href = url;
     } else {
       alert('Could not start checkout. Please try again.');
-      btns.forEach(b => { b.disabled = false; b.textContent = 'Subscribe — $7.99/mo'; });
+      btns.forEach(b => { b.disabled = false; b.textContent = 'Start Free Trial'; });
     }
   } catch {
     alert('Network error. Please try again.');
-    btns.forEach(b => { b.disabled = false; b.textContent = 'Subscribe — $7.99/mo'; });
+    btns.forEach(b => { b.disabled = false; b.textContent = 'Start Free Trial'; });
   }
 };
+
+// ── Cancel subscription ────────────────────────────────────────────────────
+window.cancelSubscription = async function () {
+  const btn = document.getElementById('cancel-sub-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Cancelling…'; }
+  try {
+    const res = await fetch(CANCEL_FN, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${window.sbSession.access_token}` },
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const until = data.access_until
+        ? new Date(data.access_until).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric',
+          })
+        : 'the end of your billing period';
+      const contentEl = document.getElementById('manage-modal-body');
+      if (contentEl) {
+        contentEl.innerHTML = `
+          <div class="modal-success">
+            <div class="success-title">Subscription Cancelled</div>
+            <div class="success-body">
+              Your access continues until <strong>${until}</strong>.<br>
+              You won't be charged again.
+            </div>
+          </div>`;
+      }
+      setTimeout(async () => {
+        await _checkSub();
+        _updateHeader();
+      }, 1500);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Cancel Subscription'; }
+      alert(data.error || 'Could not cancel. Please try again.');
+    }
+  } catch {
+    if (btn) { btn.disabled = false; btn.textContent = 'Cancel Subscription'; }
+    alert('Network error. Please try again.');
+  }
+};
+
+// ── Redeem promo code ──────────────────────────────────────────────────────
+window.redeemPromo = async function () {
+  if (!window.sbUser) { openModal('signup'); return; }
+  const input = document.getElementById('promo-code-input');
+  const btn   = document.getElementById('promo-submit-btn');
+  const err   = document.getElementById('promo-error');
+  if (!input || !btn) return;
+
+  const code = input.value.trim();
+  if (!code) {
+    if (err) { err.textContent = 'Please enter a promo code.'; err.style.display = 'block'; }
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Applying…';
+  if (err) err.style.display = 'none';
+
+  try {
+    const res = await fetch(REDEEM_FN, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${window.sbSession.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      await _checkSub();
+      _updateHeader();
+      _hidePromoForm();
+      if (typeof window.onAuthChanged === 'function') {
+        window.onAuthChanged(window.sbUser, window.sbSubscribed);
+      }
+    } else {
+      if (err) { err.textContent = data.error || 'Invalid promo code.'; err.style.display = 'block'; }
+      btn.disabled = false; btn.textContent = 'Apply Code';
+    }
+  } catch {
+    if (err) { err.textContent = 'Network error. Please try again.'; err.style.display = 'block'; }
+    btn.disabled = false; btn.textContent = 'Apply Code';
+  }
+};
+
+// ── Manage subscription modal ──────────────────────────────────────────────
+window.openManageModal = function () {
+  const m = document.getElementById('manage-modal');
+  if (!m) return;
+  _renderManageModal();
+  m.style.display = 'flex';
+};
+
+window.closeManageModal = function () {
+  const m = document.getElementById('manage-modal');
+  if (m) m.style.display = 'none';
+};
+
+function _renderManageModal() {
+  const el = document.getElementById('manage-modal-body');
+  if (!el) return;
+
+  const status   = window.sbSubStatus;
+  const subEnd   = window.sbSubEnd;
+  const fmtDate  = (iso) => iso
+    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+
+  let pillClass = 'status-inactive';
+  let pillLabel = 'Inactive';
+  let meta      = '';
+  let showCancel = false;
+
+  if (status === 'lifetime') {
+    pillClass = 'status-lifetime'; pillLabel = 'Lifetime Access';
+    meta = 'You have permanent free access via promo code.';
+  } else if (status === 'trialing') {
+    pillClass = 'status-trial'; pillLabel = 'Free Trial';
+    meta = subEnd ? `Trial ends <strong>${fmtDate(subEnd)}</strong> — card will be charged then.` : 'Trial active.';
+    showCancel = true;
+  } else if (status === 'active') {
+    pillClass = 'status-active'; pillLabel = 'Active';
+    meta = subEnd ? `Renews <strong>${fmtDate(subEnd)}</strong>` : '';
+    showCancel = true;
+  } else if (status === 'past_due') {
+    pillClass = 'status-pastdue'; pillLabel = 'Past Due';
+    meta = 'Payment failed. Please update your payment method.';
+  }
+
+  el.innerHTML = `
+    <div class="manage-status-row">
+      <span class="status-pill ${pillClass}">${pillLabel}</span>
+      <span class="manage-meta">${meta}</span>
+    </div>
+    ${showCancel ? `
+      <div class="manage-cancel-section">
+        <p class="manage-cancel-info">Cancelling ends billing at the current period end — your access remains until then.</p>
+        <button class="cancel-btn" id="cancel-sub-btn" onclick="window.cancelSubscription()">Cancel Subscription</button>
+      </div>` : ''}`;
+}
+
+// ── Promo code form toggle (in paywall) ────────────────────────────────────
+window.showPromoForm = function () {
+  const form = document.getElementById('promo-inline-form');
+  const link = document.getElementById('promo-toggle-link');
+  if (form) form.style.display = 'flex';
+  if (link) link.style.display = 'none';
+};
+
+function _hidePromoForm() {
+  const form = document.getElementById('promo-inline-form');
+  if (form) form.style.display = 'none';
+}
 
 // ── Header auth bar ────────────────────────────────────────────────────────
 function _updateHeader() {
   const loggedOut = document.getElementById('auth-logged-out');
   const loggedIn  = document.getElementById('auth-logged-in');
   const emailEl   = document.getElementById('auth-user-email');
+  const manageBtn = document.getElementById('auth-manage-btn');
   if (!loggedOut || !loggedIn) return;
   if (window.sbUser) {
     loggedOut.style.display = 'none';
     loggedIn.style.display  = 'flex';
     if (emailEl) emailEl.textContent = window.sbUser.email;
+    if (manageBtn) manageBtn.style.display = window.sbSubscribed ? 'inline-block' : 'none';
   } else {
     loggedOut.style.display = 'flex';
     loggedIn.style.display  = 'none';
@@ -88,7 +256,7 @@ function _updateHeader() {
 // ── Auth actions ───────────────────────────────────────────────────────────
 window.sbSignOut = async function () { if (sb) await sb.auth.signOut(); };
 
-// ── Modal (upgrades inline stubs with full tab-switching behaviour) ────────
+// ── Modal ──────────────────────────────────────────────────────────────────
 window.openModal = function (tab) {
   const m = document.getElementById('auth-modal');
   if (!m) return;
@@ -175,6 +343,8 @@ async function _init() {
     window.sbSession    = session;
     window.sbUser       = session?.user ?? null;
     window.sbSubscribed = false;
+    window.sbSubStatus  = 'inactive';
+    window.sbSubEnd     = null;
     if (window.sbUser) await _checkSub();
     _updateHeader();
     if (typeof window.onAuthChanged === 'function') {
@@ -199,6 +369,9 @@ async function _init() {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('auth-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('auth-modal')) closeModal();
+  });
+  document.getElementById('manage-modal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('manage-modal')) closeManageModal();
   });
   document.querySelectorAll('.modal-tab').forEach(t =>
     t.addEventListener('click', () => _tab(t.dataset.tab)));

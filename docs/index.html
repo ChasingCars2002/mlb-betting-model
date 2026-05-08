@@ -26,6 +26,7 @@
           </div>
           <div id="auth-logged-in" style="display:none;gap:8px;align-items:center">
             <span id="auth-user-email" class="auth-email"></span>
+            <button id="auth-manage-btn" class="auth-btn" style="display:none" onclick="openManageModal()">Manage</button>
             <button class="auth-btn" onclick="sbSignOut()">Sign out</button>
           </div>
         </div>
@@ -89,8 +90,8 @@
           </div>
           <div class="subscribe-banner">
             <div class="sub-title">Unlock today's picks</div>
-            <div class="sub-desc">Edge, EV, confidence ratings &amp; full analysis — $7.99/month. Cancel anytime.</div>
-            <button class="subscribe-btn subscribe-cta" onclick="startSubscription()">Subscribe — $7.99/mo</button>
+            <div class="sub-desc">5-day free trial, then $7.99/month. Cancel anytime.</div>
+            <button class="subscribe-btn subscribe-cta" onclick="startSubscription()">Start Free Trial</button>
           </div>
         </div>
       </div>
@@ -175,7 +176,20 @@
           <div class="modal-error" style="display:none"></div>
           <button id="su-btn" type="submit" class="modal-submit">Create account</button>
         </form>
-        <p class="modal-note">After creating your account you'll be taken to checkout to start your $7.99/month subscription.</p>
+        <p class="modal-note">After creating your account you'll start a 5-day free trial, then $7.99/month. Cancel anytime.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Manage subscription modal ───────────────────────────── -->
+  <div id="manage-modal" class="auth-modal" style="display:none">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeManageModal()" aria-label="Close">&times;</button>
+      <div class="modal-title-row">
+        <h2 class="modal-heading">Subscription</h2>
+      </div>
+      <div id="manage-modal-body" class="manage-body">
+        <!-- rendered by auth.js _renderManageModal() -->
       </div>
     </div>
   </div>
@@ -196,6 +210,11 @@
     }
     function closeModal() {
       var m = document.getElementById('auth-modal');
+      if (m) m.style.display = 'none';
+    }
+    function openManageModal() {}
+    function closeManageModal() {
+      var m = document.getElementById('manage-modal');
       if (m) m.style.display = 'none';
     }
     function startSubscription() { openModal('signup'); }
