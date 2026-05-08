@@ -11,6 +11,14 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
   try {
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const priceId   = Deno.env.get('STRIPE_PRICE_ID')
+    const missing   = [!stripeKey && 'STRIPE_SECRET_KEY', !priceId && 'STRIPE_PRICE_ID'].filter(Boolean)
+    if (missing.length) {
+      console.error('Missing env vars:', missing.join(', '))
+      return json({ error: `Server misconfiguration: missing ${missing.join(', ')}` }, 500)
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -24,16 +32,15 @@ serve(async (req) => {
     )
     if (error || !user) return json({ error: 'Unauthorized' }, 401)
 
-    const stripe   = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
+    const stripe  = new Stripe(stripeKey!, {
       apiVersion: '2023-08-16',
       httpClient: Stripe.createFetchHttpClient(),
     })
-    const siteUrl  = Deno.env.get('SITE_URL') ?? 'https://localhost'
-    const priceId  = Deno.env.get('STRIPE_PRICE_ID')!
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://localhost'
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId!, quantity: 1 }],
       mode: 'subscription',
       success_url: `${siteUrl}?subscribed=true`,
       cancel_url:  `${siteUrl}`,
@@ -43,6 +50,7 @@ serve(async (req) => {
 
     return json({ url: session.url })
   } catch (err) {
+    console.error('Checkout error:', err)
     return json({ error: err.message }, 500)
   }
 })
