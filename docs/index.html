@@ -8,29 +8,6 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand:   { 900: '#05080f', 800: '#0a1020', 700: '#111827' },
-            surface: '#161b22',
-            border:  '#30363d',
-            muted:   '#8b949e',
-            accent:  '#00c2ff',
-            gold:    '#f0b429',
-            emerald: '#00e5a0',
-            crimson: '#ff4b6e',
-            green:   '#3fb950',
-            red:     '#f85149',
-            blue:    '#58a6ff',
-          },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-        }
-      }
-    }
-  </script>
 </head>
 <body>
 
@@ -42,7 +19,16 @@
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
-        <div id="header-auth" class="header-auth"></div>
+        <div id="header-auth" class="header-auth">
+          <div id="auth-logged-out" style="display:flex;gap:8px;align-items:center">
+            <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
+            <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>
+          </div>
+          <div id="auth-logged-in" style="display:none;gap:8px;align-items:center">
+            <span id="auth-user-email" class="auth-email"></span>
+            <button class="auth-btn" onclick="sbSignOut()">Sign out</button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -193,6 +179,28 @@
       </div>
     </div>
   </div>
+
+  <!-- Inline stubs: guarantee these globals exist even if auth.js fails to load -->
+  <script>
+    function openModal(tab) {
+      var m = document.getElementById('auth-modal');
+      if (!m) return;
+      m.style.display = 'flex';
+      var active = tab || 'signin';
+      document.querySelectorAll('.modal-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.tab === active);
+      });
+      document.querySelectorAll('.modal-panel').forEach(function(p) {
+        p.style.display = (p.dataset.panel === active) ? 'flex' : 'none';
+      });
+    }
+    function closeModal() {
+      var m = document.getElementById('auth-modal');
+      if (m) m.style.display = 'none';
+    }
+    function startSubscription() { openModal('signup'); }
+    function sbSignOut() {}
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="js/auth.js"></script>

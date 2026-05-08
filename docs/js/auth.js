@@ -6,7 +6,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const PICKS_FN    = `${SUPABASE_URL}/functions/v1/get-picks-data`;
 const CHECKOUT_FN = `${SUPABASE_URL}/functions/v1/create-checkout-session`;
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+if (!window.supabase?.createClient) {
+  console.warn('Supabase SDK not available — auth features disabled.');
+}
+const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null;
 
 // ── Shared auth state (read by dashboard.js) ───────────────────────────────
 window.sbUser       = null;
@@ -15,7 +18,7 @@ window.sbSubscribed = false;
 
 // ── Subscription check ─────────────────────────────────────────────────────
 async function _checkSub() {
-  if (!window.sbUser) { window.sbSubscribed = false; return; }
+  if (!window.sbUser || !sb) { window.sbSubscribed = false; return; }
   const { data } = await sb
     .from('profiles')
     .select('subscription_status')
@@ -68,21 +71,22 @@ window.startSubscription = async function () {
 
 // ── Header auth bar ────────────────────────────────────────────────────────
 function _updateHeader() {
-  const el = document.getElementById('header-auth');
-  if (!el) return;
+  const loggedOut = document.getElementById('auth-logged-out');
+  const loggedIn  = document.getElementById('auth-logged-in');
+  const emailEl   = document.getElementById('auth-user-email');
+  if (!loggedOut || !loggedIn) return;
   if (window.sbUser) {
-    el.innerHTML = `
-      <span class="auth-email">${window.sbUser.email}</span>
-      <button class="auth-btn" onclick="sbSignOut()">Sign out</button>`;
+    loggedOut.style.display = 'none';
+    loggedIn.style.display  = 'flex';
+    if (emailEl) emailEl.textContent = window.sbUser.email;
   } else {
-    el.innerHTML = `
-      <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
-      <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>`;
+    loggedOut.style.display = 'flex';
+    loggedIn.style.display  = 'none';
   }
 }
 
 // ── Auth actions ───────────────────────────────────────────────────────────
-window.sbSignOut = async function () { await sb.auth.signOut(); };
+window.sbSignOut = async function () { if (sb) await sb.auth.signOut(); };
 
 // ── Modal ──────────────────────────────────────────────────────────────────
 window.openModal = function (tab) {
@@ -116,6 +120,7 @@ function _clearErr() { _err(''); }
 // ── Form submissions ───────────────────────────────────────────────────────
 async function _onSignIn(e) {
   e.preventDefault();
+  if (!sb) { _err('Auth not available.'); return; }
   _clearErr();
   const email = document.getElementById('si-email').value.trim();
   const pw    = document.getElementById('si-pw').value;
@@ -133,6 +138,7 @@ async function _onSignIn(e) {
 
 async function _onSignUp(e) {
   e.preventDefault();
+  if (!sb) { _err('Auth not available.'); return; }
   _clearErr();
   const email = document.getElementById('su-email').value.trim();
   const pw    = document.getElementById('su-pw').value;
@@ -158,6 +164,7 @@ async function _onSignUp(e) {
 
 // ── Init ───────────────────────────────────────────────────────────────────
 async function _init() {
+  if (!sb) { _updateHeader(); return; }
   const { data: { session } } = await sb.auth.getSession();
   window.sbSession = session;
   window.sbUser    = session?.user ?? null;
