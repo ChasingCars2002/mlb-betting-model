@@ -37,6 +37,7 @@ serve(async (req) => {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
+      allow_promotion_codes: true,
       subscription_data: {
         trial_period_days: TRIAL_DAYS,
       },
