@@ -6,17 +6,68 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const PICKS_FN    = `${SUPABASE_URL}/functions/v1/get-picks-data`;
 const CHECKOUT_FN = `${SUPABASE_URL}/functions/v1/create-checkout-session`;
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialized inside DOMContentLoaded once we confirm the SDK loaded
+let _sb = null;
 
 // ── Shared auth state (read by dashboard.js) ───────────────────────────────
 window.sbUser       = null;
 window.sbSession    = null;
 window.sbSubscribed = false;
 
+// ── Modal (defined immediately so onclick handlers work even before SDK) ───
+window.openModal = function (tab) {
+  const m = document.getElementById('auth-modal');
+  if (!m) return;
+  m.style.display = 'flex';
+  _tab(tab || 'signin');
+  _clearErr();
+};
+
+window.closeModal = function () {
+  const m = document.getElementById('auth-modal');
+  if (m) m.style.display = 'none';
+};
+
+function _tab(name) {
+  document.querySelectorAll('.modal-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.modal-panel').forEach(p => {
+    p.style.display = (p.dataset.panel === name) ? 'flex' : 'none';
+  });
+}
+
+function _err(msg) {
+  document.querySelectorAll('.modal-error').forEach(el => {
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  });
+}
+function _clearErr() { _err(''); }
+
+// ── Header auth bar ────────────────────────────────────────────────────────
+function _updateHeader() {
+  const el = document.getElementById('header-auth');
+  if (!el) return;
+  if (window.sbUser) {
+    el.innerHTML = `
+      <span class="auth-email">${window.sbUser.email}</span>
+      <button class="auth-btn" onclick="sbSignOut()">Sign out</button>`;
+  } else {
+    el.innerHTML = `
+      <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
+      <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>`;
+  }
+}
+
+// ── Auth actions ───────────────────────────────────────────────────────────
+window.sbSignOut = async function () {
+  if (_sb) await _sb.auth.signOut();
+};
+
 // ── Subscription check ─────────────────────────────────────────────────────
 async function _checkSub() {
-  if (!window.sbUser) { window.sbSubscribed = false; return; }
-  const { data } = await sb
+  if (!window.sbUser || !_sb) { window.sbSubscribed = false; return; }
+  const { data } = await _sb
     .from('profiles')
     .select('subscription_status')
     .eq('user_id', window.sbUser.id)
@@ -66,63 +117,17 @@ window.startSubscription = async function () {
   }
 };
 
-// ── Header auth bar ────────────────────────────────────────────────────────
-function _updateHeader() {
-  const el = document.getElementById('header-auth');
-  if (!el) return;
-  if (window.sbUser) {
-    el.innerHTML = `
-      <span class="auth-email">${window.sbUser.email}</span>
-      <button class="auth-btn" onclick="sbSignOut()">Sign out</button>`;
-  } else {
-    el.innerHTML = `
-      <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
-      <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>`;
-  }
-}
-
-// ── Auth actions ───────────────────────────────────────────────────────────
-window.sbSignOut = async function () { await sb.auth.signOut(); };
-
-// ── Modal ──────────────────────────────────────────────────────────────────
-window.openModal = function (tab) {
-  const m = document.getElementById('auth-modal');
-  if (!m) return;
-  m.style.display = 'flex';
-  _tab(tab || 'signin');
-  _clearErr();
-};
-
-window.closeModal = function () {
-  const m = document.getElementById('auth-modal');
-  if (m) m.style.display = 'none';
-};
-
-function _tab(name) {
-  document.querySelectorAll('.modal-tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.modal-panel').forEach(p =>
-    p.style.display = (p.dataset.panel === name) ? 'flex' : 'none');
-}
-
-function _err(msg) {
-  document.querySelectorAll('.modal-error').forEach(el => {
-    el.textContent = msg;
-    el.style.display = msg ? 'block' : 'none';
-  });
-}
-function _clearErr() { _err(''); }
-
 // ── Form submissions ───────────────────────────────────────────────────────
 async function _onSignIn(e) {
   e.preventDefault();
+  if (!_sb) return;
   _clearErr();
   const email = document.getElementById('si-email').value.trim();
   const pw    = document.getElementById('si-pw').value;
   const btn   = document.getElementById('si-btn');
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
-    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    const { error } = await _sb.auth.signInWithPassword({ email, password: pw });
     if (error) throw error;
     closeModal();
   } catch (err) {
@@ -133,13 +138,14 @@ async function _onSignIn(e) {
 
 async function _onSignUp(e) {
   e.preventDefault();
+  if (!_sb) return;
   _clearErr();
   const email = document.getElementById('su-email').value.trim();
   const pw    = document.getElementById('su-pw').value;
   const btn   = document.getElementById('su-btn');
   btn.disabled = true; btn.textContent = 'Creating account…';
   try {
-    const { error } = await sb.auth.signUp({ email, password: pw });
+    const { error } = await _sb.auth.signUp({ email, password: pw });
     if (error) throw error;
     document.getElementById('signup-panel').innerHTML = `
       <div class="modal-success">
@@ -156,15 +162,15 @@ async function _onSignUp(e) {
   }
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
-async function _init() {
-  const { data: { session } } = await sb.auth.getSession();
+// ── Auth init ──────────────────────────────────────────────────────────────
+async function _initAuth() {
+  const { data: { session } } = await _sb.auth.getSession();
   window.sbSession = session;
   window.sbUser    = session?.user ?? null;
   if (window.sbUser) await _checkSub();
   _updateHeader();
 
-  sb.auth.onAuthStateChange(async (_event, session) => {
+  _sb.auth.onAuthStateChange(async (_event, session) => {
     window.sbSession    = session;
     window.sbUser       = session?.user ?? null;
     window.sbSubscribed = false;
@@ -189,7 +195,9 @@ async function _init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// ── DOMContentLoaded ───────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  // Wire up modal UI regardless of SDK status
   document.getElementById('auth-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('auth-modal')) closeModal();
   });
@@ -197,5 +205,15 @@ document.addEventListener('DOMContentLoaded', () => {
     t.addEventListener('click', () => _tab(t.dataset.tab)));
   document.getElementById('si-form')?.addEventListener('submit', _onSignIn);
   document.getElementById('su-form')?.addEventListener('submit', _onSignUp);
-  _init();
+
+  // Render header auth bar (shows Sign in / Get access buttons)
+  _updateHeader();
+
+  // Initialize Supabase — bail gracefully if SDK failed to load
+  if (!window.supabase?.createClient) {
+    console.warn('Supabase SDK not available — auth features disabled.');
+    return;
+  }
+  _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  await _initAuth();
 });
