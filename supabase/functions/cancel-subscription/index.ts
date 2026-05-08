@@ -2,13 +2,28 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@13.2.0?target=deno'
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = new Set([
+  'https://baseballbettingbot.com',
+  'https://www.baseballbettingbot.com',
+  'http://localhost:8000',
+  'http://127.0.0.1:8000',
+])
+
+function corsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') ?? ''
+  const allow  = ALLOWED_ORIGINS.has(origin) ? origin : 'https://baseballbettingbot.com'
+  return {
+    'Access-Control-Allow-Origin': allow,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
 }
 
 serve(async (req) => {
+  const CORS = corsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  if (req.method !== 'POST')    return json(CORS, { error: 'Method not allowed' }, 405)
 
   try {
     const supabase = createClient(
@@ -17,12 +32,12 @@ serve(async (req) => {
     )
 
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return json({ error: 'Unauthorized' }, 401)
+    if (!authHeader) return json(CORS, { error: 'Unauthorized' }, 401)
 
     const { data: { user }, error } = await supabase.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
-    if (error || !user) return json({ error: 'Unauthorized' }, 401)
+    if (error || !user) return json(CORS, { error: 'Unauthorized' }, 401)
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -31,11 +46,11 @@ serve(async (req) => {
       .single()
 
     if (!profile?.stripe_customer_id) {
-      return json({ error: 'No active subscription found' }, 400)
+      return json(CORS, { error: 'No active subscription found' }, 400)
     }
 
     if (profile.subscription_status === 'lifetime') {
-      return json({ error: 'Lifetime access cannot be cancelled' }, 400)
+      return json(CORS, { error: 'Lifetime access cannot be cancelled' }, 400)
     }
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
@@ -54,24 +69,25 @@ serve(async (req) => {
       if (list.data.length > 0) { sub = list.data[0]; break }
     }
 
-    if (!sub) return json({ error: 'No active subscription found' }, 400)
+    if (!sub) return json(CORS, { error: 'No active subscription found' }, 400)
 
     const updated = await stripe.subscriptions.update(sub.id, {
       cancel_at_period_end: true,
     })
 
-    return json({
+    return json(CORS, {
       cancelled: true,
       access_until: new Date(updated.current_period_end * 1000).toISOString(),
     })
   } catch (err) {
-    return json({ error: err.message }, 500)
+    console.error('cancel-subscription error:', err)
+    return json(CORS, { error: 'Could not cancel subscription' }, 500)
   }
 })
 
-function json(body: unknown, status = 200) {
+function json(cors: Record<string, string>, body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+    headers: { ...cors, 'Content-Type': 'application/json' },
   })
 }
