@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -41,6 +42,7 @@
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
+        <div id="header-auth" class="header-auth"></div>
       </div>
     </div>
   </header>
@@ -100,9 +102,9 @@
             <p style="color:var(--muted)">Loading…</p>
           </div>
           <div class="subscribe-banner">
-            <div class="sub-title">Get full analysis &amp; exclusive picks</div>
-            <div class="sub-desc">Support the model and unlock deeper breakdowns — $4/month.</div>
-            <a href="https://ko-fi.com/mlbgenius" target="_blank" rel="noopener" class="subscribe-btn">Subscribe — $4/mo</a>
+            <div class="sub-title">Unlock today's picks</div>
+            <div class="sub-desc">Edge, EV, confidence ratings &amp; full analysis — $7.99/month. Cancel anytime.</div>
+            <button class="subscribe-btn subscribe-cta" onclick="startSubscription()">Subscribe — $7.99/mo</button>
           </div>
         </div>
       </div>
@@ -147,7 +149,53 @@
     </div><!-- /#app -->
   </div><!-- /.container -->
 
+  <!-- ── Auth modal ──────────────────────────────────────────── -->
+  <div id="auth-modal" class="auth-modal" style="display:none">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+
+      <div class="modal-tabs">
+        <button class="modal-tab active" data-tab="signin">Sign in</button>
+        <button class="modal-tab"        data-tab="signup">Create account</button>
+      </div>
+
+      <!-- Sign in panel -->
+      <div id="signin-panel" class="modal-panel" data-panel="signin" style="display:flex">
+        <form id="si-form">
+          <div class="modal-field">
+            <label for="si-email">Email</label>
+            <input id="si-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="modal-field">
+            <label for="si-pw">Password</label>
+            <input id="si-pw" type="password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <div class="modal-error" style="display:none"></div>
+          <button id="si-btn" type="submit" class="modal-submit">Sign in</button>
+        </form>
+      </div>
+
+      <!-- Sign up panel -->
+      <div id="signup-panel" class="modal-panel" data-panel="signup" style="display:none">
+        <form id="su-form">
+          <div class="modal-field">
+            <label for="su-email">Email</label>
+            <input id="su-email" type="email" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+          <div class="modal-field">
+            <label for="su-pw">Password</label>
+            <input id="su-pw" type="password" placeholder="Min 6 characters" required minlength="6" autocomplete="new-password" />
+          </div>
+          <div class="modal-error" style="display:none"></div>
+          <button id="su-btn" type="submit" class="modal-submit">Create account</button>
+        </form>
+        <p class="modal-note">After creating your account you'll be taken to checkout to start your $7.99/month subscription.</p>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>

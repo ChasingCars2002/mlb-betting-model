@@ -11,20 +11,18 @@ let filterText  = '';
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const [statsRes, historyRes, todayRes] = await Promise.all([
+    const [statsRes, historyRes] = await Promise.all([
       fetch('data/stats.json'),
       fetch('data/picks_history.json'),
-      fetch('data/picks_today.json'),
     ]);
 
-    if (!statsRes.ok || !historyRes.ok || !todayRes.ok) {
-      throw new Error('One or more data files could not be loaded.');
+    if (!statsRes.ok || !historyRes.ok) {
+      throw new Error('Could not load dashboard data.');
     }
 
     statsData  = await statsRes.json();
     const rawHistory = await historyRes.json();
     allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
-    const todayPicks = await todayRes.json();
 
     const loadingEl = document.getElementById('loading');
     const appEl     = document.getElementById('app');
@@ -33,10 +31,11 @@ async function loadData() {
 
     renderLastUpdated(statsData.last_updated);
     renderStats();
-    renderPickOfDay(todayPicks);
-    renderTodayPicks(todayPicks);
     renderChart(allHistory, mode);
     renderTable(allHistory);
+
+    // Today's picks and POTD are subscriber-only
+    await loadGatedData();
 
   } catch (err) {
     const loadingEl = document.getElementById('loading');
@@ -44,6 +43,64 @@ async function loadData() {
     showError('Could not load data: ' + err.message);
     console.error(err);
   }
+}
+
+// ── Gated picks (subscribers only) ────────────────────────────────────────
+async function loadGatedData() {
+  // Auth library not loaded (local dev without Supabase) — skip paywall
+  if (typeof window.fetchGatedData !== 'function') {
+    renderPickOfDay([]);
+    renderTodayPicks([]);
+    return;
+  }
+
+  if (!window.sbUser) {
+    renderPicksPaywall('signin');
+    return;
+  }
+
+  if (!window.sbSubscribed) {
+    renderPicksPaywall('subscribe');
+    return;
+  }
+
+  const data = await window.fetchGatedData('picks_today');
+  if (!data || data.__gated) {
+    renderPicksPaywall('subscribe');
+    return;
+  }
+
+  renderPickOfDay(data);
+  renderTodayPicks(data);
+  hidePicksPaywall();
+}
+
+function renderPicksPaywall(reason) {
+  const isSignin = reason === 'signin';
+  const overlay  = `
+    <div class="paywall-overlay">
+      <div class="paywall-icon">🔒</div>
+      <div class="paywall-title">Today's Picks are for subscribers</div>
+      <div class="paywall-desc">
+        Get today's moneyline picks with edge, EV, and confidence ratings.<br>
+        Historical track record is always free.
+      </div>
+      <div class="paywall-actions">
+        ${isSignin
+          ? `<button class="auth-btn auth-btn-primary subscribe-cta" onclick="openModal('signin')">Sign in</button>
+             <button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Subscribe — $7.99/mo</button>`
+          : `<button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Subscribe — $7.99/mo</button>`
+        }
+      </div>
+    </div>`;
+
+  setHTML('potd-card', `<p style="color:var(--muted);font-style:italic">Subscribe to unlock today's best pick.</p>`);
+  setHTML('today-picks', overlay);
+}
+
+function hidePicksPaywall() {
+  const el = document.getElementById('today-picks');
+  if (el) el.querySelectorAll('.paywall-overlay').forEach(o => o.remove());
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -375,4 +432,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadData();
+
+  // Re-load gated picks whenever login/subscription state changes
+  window.onAuthChanged = async () => {
+    await loadGatedData();
+  };
 });

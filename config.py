@@ -22,6 +22,10 @@ RETRAIN_SCHEDULE_MINUTE = 0
 # --- API Keys ---
 ODDS_API_KEY = os.getenv("ODDS_API_KEY", "")
 
+# --- Supabase ---
+SUPABASE_URL         = os.getenv("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+
 # --- Discord ---
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 

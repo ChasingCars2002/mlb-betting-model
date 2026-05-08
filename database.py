@@ -7,7 +7,7 @@ from typing import Optional
 
 import pandas as pd
 
-from config import DB_PATH
+from config import DB_PATH, SUPABASE_URL, SUPABASE_SERVICE_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -262,6 +262,43 @@ def get_recent_predictions(days: int = 7) -> pd.DataFrame:
             params=[days * 20],  # rough upper bound
         )
     return df
+
+
+def upload_picks_to_supabase(today_picks: list[dict], history: list[dict]) -> bool:
+    """Upload picks JSON to Supabase private Storage bucket.
+
+    Returns True on success, False if Supabase is not configured or upload fails.
+    Both files are upserted so repeated runs overwrite stale data.
+    """
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        return False
+    try:
+        import json
+        import math
+        from supabase import create_client
+
+        def _clean(obj):
+            if isinstance(obj, float) and not math.isfinite(obj):
+                return None
+            if isinstance(obj, dict):
+                return {k: _clean(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_clean(v) for v in obj]
+            return obj
+
+        client  = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        bucket  = client.storage.from_("picks-data")
+        options = {"content-type": "application/json", "upsert": "true"}
+
+        for name, data in [("picks_today", today_picks), ("picks_history", history)]:
+            payload = json.dumps(_clean(data), indent=2).encode()
+            bucket.upload(f"{name}.json", payload, file_options=options)
+
+        logger.info("Uploaded picks to Supabase Storage.")
+        return True
+    except Exception as exc:
+        logger.warning("Supabase Storage upload failed: %s", exc)
+        return False
 
 
 def get_all_predictions() -> list[dict]:
