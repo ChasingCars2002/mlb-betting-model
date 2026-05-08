@@ -317,22 +317,52 @@ async function _onSignUp(e) {
   const pw    = document.getElementById('su-pw').value;
   const btn   = document.getElementById('su-btn');
   btn.disabled = true; btn.textContent = 'Creating account…';
+  // After email confirmation, return here with a flag so we can auto-launch
+  // Stripe checkout once the user lands back on the site.
+  const redirectUrl = `${window.location.origin}${window.location.pathname}?checkout=pending`;
   try {
-    const { error } = await sb.auth.signUp({ email, password: pw });
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: pw,
+      options: { emailRedirectTo: redirectUrl },
+    });
     if (error) throw error;
+
+    // If a session is returned (email confirmation disabled), the user is
+    // logged in immediately — send them straight to Stripe checkout so we
+    // collect a payment method before the free trial begins.
+    if (data?.session) {
+      window.sbSession = data.session;
+      window.sbUser    = data.user ?? data.session.user ?? null;
+      btn.textContent  = 'Redirecting to checkout…';
+      closeModal();
+      await window.startSubscription();
+      return;
+    }
+
+    // Otherwise email confirmation is required; the redirect URL above
+    // brings them back with ?checkout=pending which triggers checkout.
+    const safeEmail = _escapeHtml(email);
     document.getElementById('signup-panel').innerHTML = `
       <div class="modal-success">
         <div style="font-size:2rem;margin-bottom:10px">📧</div>
         <div class="success-title">Check your email</div>
         <div class="success-body">
-          A confirmation link was sent to <strong>${email}</strong>.<br>
-          Click it to activate your account, then sign in here.
+          A confirmation link was sent to <strong>${safeEmail}</strong>.<br>
+          Click it to confirm your account — you'll then be taken to checkout
+          to start your 5-day free trial.
         </div>
       </div>`;
   } catch (err) {
     _err(err.message);
     btn.disabled = false; btn.textContent = 'Create account';
   }
+}
+
+function _escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
@@ -344,7 +374,7 @@ async function _init() {
   if (window.sbUser) await _checkSub();
   _updateHeader();
 
-  sb.auth.onAuthStateChange(async (_event, session) => {
+  sb.auth.onAuthStateChange(async (event, session) => {
     window.sbSession    = session;
     window.sbUser       = session?.user ?? null;
     window.sbSubscribed = false;
@@ -356,6 +386,17 @@ async function _init() {
     _resolveAuthReady();
     if (typeof window.onAuthChanged === 'function') {
       window.onAuthChanged(window.sbUser, window.sbSubscribed);
+    }
+
+    // If the user just signed up (email confirmation flow) and they don't
+    // have an active subscription yet, send them to Stripe checkout so we
+    // collect a payment method before the trial begins.
+    if (event === 'SIGNED_IN' && window.sbUser && !window.sbSubscribed) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('checkout') === 'pending') {
+        window.history.replaceState({}, '', window.location.pathname);
+        window.startSubscription();
+      }
     }
   });
 
@@ -370,6 +411,13 @@ async function _init() {
         window.onAuthChanged(window.sbUser, window.sbSubscribed);
       }
     }
+  }
+
+  // Handle a return-from-email-confirmation when the session was already
+  // restored by getSession() above (so onAuthStateChange may not fire SIGNED_IN).
+  if (params.get('checkout') === 'pending' && window.sbUser && !window.sbSubscribed) {
+    window.history.replaceState({}, '', window.location.pathname);
+    window.startSubscription();
   }
 }
 

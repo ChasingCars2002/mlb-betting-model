@@ -3,7 +3,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@13.2.0?target=deno'
 
 serve(async (req) => {
-  const sig  = req.headers.get('stripe-signature')
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 })
+  }
+  const sig = req.headers.get('stripe-signature')
+  if (!sig) return new Response('Missing signature', { status: 400 })
   const body = await req.text()
 
   const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
@@ -14,10 +18,11 @@ serve(async (req) => {
   let event: Stripe.Event
   try {
     event = await stripe.webhooks.constructEventAsync(
-      body, sig!, Deno.env.get('STRIPE_WEBHOOK_SECRET')!
+      body, sig, Deno.env.get('STRIPE_WEBHOOK_SECRET')!
     )
   } catch (err) {
-    return new Response(`Webhook error: ${err.message}`, { status: 400 })
+    console.error('stripe-webhook signature verification failed:', err)
+    return new Response('Invalid signature', { status: 400 })
   }
 
   const supabase = createClient(
