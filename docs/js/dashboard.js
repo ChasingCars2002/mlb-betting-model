@@ -69,8 +69,16 @@ async function loadGatedData() {
   }
 
   const data = await window.fetchGatedData('picks_today');
-  if (!data || data.__gated) {
+  if (data?.__gated) {
+    // Server confirmed not subscribed (shouldn't reach here normally).
     renderPicksPaywall('subscribe');
+    return;
+  }
+  if (!data) {
+    // Server error or no picks file yet — user IS subscribed, just no data today.
+    hidePicksPaywall();
+    renderPickOfDay([]);
+    renderTodayPicks([]);
     return;
   }
 
