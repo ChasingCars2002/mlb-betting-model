@@ -318,7 +318,11 @@ async function _onSignUp(e) {
   const btn   = document.getElementById('su-btn');
   btn.disabled = true; btn.textContent = 'Creating account…';
   try {
-    const { error } = await sb.auth.signUp({ email, password: pw });
+    const { error } = await sb.auth.signUp({
+      email,
+      password: pw,
+      options: { emailRedirectTo: window.location.origin },
+    });
     if (error) throw error;
     document.getElementById('signup-panel').innerHTML = `
       <div class="modal-success">
