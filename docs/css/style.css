@@ -312,51 +312,6 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
   gap: 6px;
 }
 
-/* ── Tip jar ──────────────────────────────────────────────── */
-.tip-jar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tip-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  font-weight: 500;
-  text-decoration: none;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  font-family: var(--font);
-  transition: border-color .15s, background .15s;
-  white-space: nowrap;
-}
-
-.tip-btn-paypal:hover { border-color: #009cde; }
-.tip-btn-btc:hover    { border-color: #f7931a; background: rgba(247,147,26,.08); }
-
-.btc-toast {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 8px 16px;
-  border-radius: var(--radius);
-  font-size: 13px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s;
-  z-index: 999;
-}
-.btc-toast.show { opacity: 1; }
 
 /* ── Pick of the Day ──────────────────────────────────────── */
 .potd-section { margin-bottom: 28px; }
@@ -437,7 +392,6 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
 @media (max-width: 600px) {
   .potd-inner     { flex-direction: column; }
   .subscribe-banner { min-width: 0; }
-  .tip-jar        { flex-wrap: wrap; }
 }
 
 /* ── Confidence badge ─────────────────────────────────────────── */

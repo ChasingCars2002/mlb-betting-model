@@ -340,41 +340,6 @@ function renderPickOfDay(picks) {
     <div style="margin-top:8px">${conf}</div>`);
 }
 
-// ── Bitcoin tip jar ────────────────────────────────────────────────────────
-function copyBtc() {
-  const addr = 'bc1q9kwf5fc35ruuuvcpe8j0zsm856c6dxr7k4887n';
-  const done = () => showBtcToast('Bitcoin address copied!');
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(addr).then(done).catch(() => fallbackCopy(addr, done));
-  } else {
-    fallbackCopy(addr, done);
-  }
-}
-
-function fallbackCopy(text, cb) {
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-  cb();
-}
-
-function showBtcToast(msg) {
-  let toast = document.getElementById('btc-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'btc-toast';
-    toast.className = 'btc-toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2200);
-}
 
 // ── Error banner ───────────────────────────────────────────────────────────
 function showError(msg) {
