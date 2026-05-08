@@ -54,6 +54,10 @@ async function loadGatedData() {
     return;
   }
 
+  // Wait for the initial auth + subscription check to complete before
+  // rendering the paywall, so we never flash it for active subscribers.
+  if (window.sbAuthReady) await window.sbAuthReady;
+
   if (!window.sbUser) {
     renderPicksPaywall('signin');
     return;
@@ -112,6 +116,8 @@ function renderPicksPaywall(reason) {
 function hidePicksPaywall() {
   const el = document.getElementById('today-picks');
   if (el) el.querySelectorAll('.paywall-overlay').forEach(o => o.remove());
+  const banner = document.querySelector('.subscribe-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

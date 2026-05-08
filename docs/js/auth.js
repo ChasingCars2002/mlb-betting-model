@@ -20,6 +20,11 @@ window.sbSubscribed = false;
 window.sbSubStatus  = 'inactive';  // 'inactive' | 'trialing' | 'active' | 'past_due' | 'lifetime'
 window.sbSubEnd     = null;        // ISO date string of period/trial end
 
+// Resolves once the initial auth + subscription check completes (used to
+// prevent loadGatedData from running before sbSubscribed is known).
+let _resolveAuthReady;
+window.sbAuthReady = new Promise(resolve => { _resolveAuthReady = resolve; });
+
 // ── Subscription check ─────────────────────────────────────────────────────
 async function _checkSub() {
   if (!window.sbUser || !sb) {
@@ -332,7 +337,7 @@ async function _onSignUp(e) {
 
 // ── Init ───────────────────────────────────────────────────────────────────
 async function _init() {
-  if (!sb) { _updateHeader(); return; }
+  if (!sb) { _resolveAuthReady(); _updateHeader(); return; }
   const { data: { session } } = await sb.auth.getSession();
   window.sbSession = session;
   window.sbUser    = session?.user ?? null;
@@ -347,6 +352,8 @@ async function _init() {
     window.sbSubEnd     = null;
     if (window.sbUser) await _checkSub();
     _updateHeader();
+    // Unblock any loadGatedData() calls waiting on the initial auth state.
+    _resolveAuthReady();
     if (typeof window.onAuthChanged === 'function') {
       window.onAuthChanged(window.sbUser, window.sbSubscribed);
     }
