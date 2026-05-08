@@ -71,6 +71,8 @@ serve(async (req) => {
         status = 'trialing'
       } else if (sub.status === 'active') {
         status = 'active'
+      } else if (sub.status === 'past_due') {
+        status = 'past_due'
       } else {
         status = 'inactive'
       }
