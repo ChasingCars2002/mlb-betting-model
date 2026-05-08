@@ -7,29 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand:   { 900: '#05080f', 800: '#0a1020', 700: '#111827' },
-            surface: '#161b22',
-            border:  '#30363d',
-            muted:   '#8b949e',
-            accent:  '#00c2ff',
-            gold:    '#f0b429',
-            emerald: '#00e5a0',
-            crimson: '#ff4b6e',
-            green:   '#3fb950',
-            red:     '#f85149',
-            blue:    '#58a6ff',
-          },
-          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-        }
-      }
-    }
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -42,12 +20,10 @@
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
         <div id="header-auth" class="header-auth">
-          <!-- Logged-out state: visible by default, hidden after login -->
           <div id="auth-logged-out" style="display:flex;gap:8px;align-items:center">
             <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
             <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>
           </div>
-          <!-- Logged-in state: hidden by default, shown after login -->
           <div id="auth-logged-in" style="display:none;gap:8px;align-items:center">
             <span id="auth-user-email" class="auth-email"></span>
             <button class="auth-btn" onclick="sbSignOut()">Sign out</button>
@@ -204,9 +180,7 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-
-  <!-- Core UI functions — inline so they always work even if external scripts fail -->
+  <!-- Inline stubs: guarantee these globals exist even if auth.js fails to load -->
   <script>
     function openModal(tab) {
       var m = document.getElementById('auth-modal');
@@ -224,13 +198,11 @@
       var m = document.getElementById('auth-modal');
       if (m) m.style.display = 'none';
     }
-    // startSubscription and sbSignOut are upgraded by auth.js;
-    // these stubs ensure clicking never silently fails
     function startSubscription() { openModal('signup'); }
     function sbSignOut() {}
   </script>
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
 </body>

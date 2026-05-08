@@ -6,69 +6,20 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const PICKS_FN    = `${SUPABASE_URL}/functions/v1/get-picks-data`;
 const CHECKOUT_FN = `${SUPABASE_URL}/functions/v1/create-checkout-session`;
 
-// Initialized inside DOMContentLoaded once we confirm the SDK loaded
-let _sb = null;
+if (!window.supabase?.createClient) {
+  console.warn('Supabase SDK not available — auth features disabled.');
+}
+const sb = window.supabase?.createClient(SUPABASE_URL, SUPABASE_KEY) ?? null;
 
 // ── Shared auth state (read by dashboard.js) ───────────────────────────────
 window.sbUser       = null;
 window.sbSession    = null;
 window.sbSubscribed = false;
 
-// ── Modal (defined immediately so onclick handlers work even before SDK) ───
-window.openModal = function (tab) {
-  const m = document.getElementById('auth-modal');
-  if (!m) return;
-  m.style.display = 'flex';
-  _tab(tab || 'signin');
-  _clearErr();
-};
-
-window.closeModal = function () {
-  const m = document.getElementById('auth-modal');
-  if (m) m.style.display = 'none';
-};
-
-function _tab(name) {
-  document.querySelectorAll('.modal-tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.modal-panel').forEach(p => {
-    p.style.display = (p.dataset.panel === name) ? 'flex' : 'none';
-  });
-}
-
-function _err(msg) {
-  document.querySelectorAll('.modal-error').forEach(el => {
-    el.textContent = msg;
-    el.style.display = msg ? 'block' : 'none';
-  });
-}
-function _clearErr() { _err(''); }
-
-// ── Header auth bar ────────────────────────────────────────────────────────
-function _updateHeader() {
-  const loggedOut = document.getElementById('auth-logged-out');
-  const loggedIn  = document.getElementById('auth-logged-in');
-  const emailEl   = document.getElementById('auth-user-email');
-  if (!loggedOut || !loggedIn) return;
-  if (window.sbUser) {
-    loggedOut.style.display = 'none';
-    loggedIn.style.display  = 'flex';
-    if (emailEl) emailEl.textContent = window.sbUser.email;
-  } else {
-    loggedOut.style.display = 'flex';
-    loggedIn.style.display  = 'none';
-  }
-}
-
-// ── Auth actions (override the inline stubs in index.html) ────────────────
-window.sbSignOut = async function () {
-  if (_sb) await _sb.auth.signOut();
-};
-
 // ── Subscription check ─────────────────────────────────────────────────────
 async function _checkSub() {
-  if (!window.sbUser || !_sb) { window.sbSubscribed = false; return; }
-  const { data } = await _sb
+  if (!window.sbUser || !sb) { window.sbSubscribed = false; return; }
+  const { data } = await sb
     .from('profiles')
     .select('subscription_status')
     .eq('user_id', window.sbUser.id)
@@ -91,7 +42,7 @@ window.fetchGatedData = async function (file) {
   }
 };
 
-// ── Stripe checkout (overrides the inline stub in index.html) ─────────────
+// ── Stripe checkout ────────────────────────────────────────────────────────
 window.startSubscription = async function () {
   if (!window.sbUser) { openModal('signup'); return; }
   const btns = document.querySelectorAll('.subscribe-cta');
@@ -118,17 +69,65 @@ window.startSubscription = async function () {
   }
 };
 
+// ── Header auth bar ────────────────────────────────────────────────────────
+function _updateHeader() {
+  const loggedOut = document.getElementById('auth-logged-out');
+  const loggedIn  = document.getElementById('auth-logged-in');
+  const emailEl   = document.getElementById('auth-user-email');
+  if (!loggedOut || !loggedIn) return;
+  if (window.sbUser) {
+    loggedOut.style.display = 'none';
+    loggedIn.style.display  = 'flex';
+    if (emailEl) emailEl.textContent = window.sbUser.email;
+  } else {
+    loggedOut.style.display = 'flex';
+    loggedIn.style.display  = 'none';
+  }
+}
+
+// ── Auth actions ───────────────────────────────────────────────────────────
+window.sbSignOut = async function () { if (sb) await sb.auth.signOut(); };
+
+// ── Modal (upgrades inline stubs with full tab-switching behaviour) ────────
+window.openModal = function (tab) {
+  const m = document.getElementById('auth-modal');
+  if (!m) return;
+  m.style.display = 'flex';
+  _tab(tab || 'signin');
+  _clearErr();
+};
+
+window.closeModal = function () {
+  const m = document.getElementById('auth-modal');
+  if (m) m.style.display = 'none';
+};
+
+function _tab(name) {
+  document.querySelectorAll('.modal-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.modal-panel').forEach(p =>
+    p.style.display = (p.dataset.panel === name) ? 'flex' : 'none');
+}
+
+function _err(msg) {
+  document.querySelectorAll('.modal-error').forEach(el => {
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  });
+}
+function _clearErr() { _err(''); }
+
 // ── Form submissions ───────────────────────────────────────────────────────
 async function _onSignIn(e) {
   e.preventDefault();
-  if (!_sb) return;
+  if (!sb) { _err('Auth not available.'); return; }
   _clearErr();
   const email = document.getElementById('si-email').value.trim();
   const pw    = document.getElementById('si-pw').value;
   const btn   = document.getElementById('si-btn');
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
-    const { error } = await _sb.auth.signInWithPassword({ email, password: pw });
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) throw error;
     closeModal();
   } catch (err) {
@@ -139,14 +138,14 @@ async function _onSignIn(e) {
 
 async function _onSignUp(e) {
   e.preventDefault();
-  if (!_sb) return;
+  if (!sb) { _err('Auth not available.'); return; }
   _clearErr();
   const email = document.getElementById('su-email').value.trim();
   const pw    = document.getElementById('su-pw').value;
   const btn   = document.getElementById('su-btn');
   btn.disabled = true; btn.textContent = 'Creating account…';
   try {
-    const { error } = await _sb.auth.signUp({ email, password: pw });
+    const { error } = await sb.auth.signUp({ email, password: pw });
     if (error) throw error;
     document.getElementById('signup-panel').innerHTML = `
       <div class="modal-success">
@@ -163,15 +162,16 @@ async function _onSignUp(e) {
   }
 }
 
-// ── Auth init ──────────────────────────────────────────────────────────────
-async function _initAuth() {
-  const { data: { session } } = await _sb.auth.getSession();
+// ── Init ───────────────────────────────────────────────────────────────────
+async function _init() {
+  if (!sb) { _updateHeader(); return; }
+  const { data: { session } } = await sb.auth.getSession();
   window.sbSession = session;
   window.sbUser    = session?.user ?? null;
   if (window.sbUser) await _checkSub();
   _updateHeader();
 
-  _sb.auth.onAuthStateChange(async (_event, session) => {
+  sb.auth.onAuthStateChange(async (_event, session) => {
     window.sbSession    = session;
     window.sbUser       = session?.user ?? null;
     window.sbSubscribed = false;
@@ -196,9 +196,7 @@ async function _initAuth() {
   }
 }
 
-// ── DOMContentLoaded ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  // Wire up modal UI regardless of SDK status
+document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('auth-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('auth-modal')) closeModal();
   });
@@ -206,12 +204,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     t.addEventListener('click', () => _tab(t.dataset.tab)));
   document.getElementById('si-form')?.addEventListener('submit', _onSignIn);
   document.getElementById('su-form')?.addEventListener('submit', _onSignUp);
-
-  // Initialize Supabase — bail gracefully if SDK failed to load
-  if (!window.supabase?.createClient) {
-    console.warn('Supabase SDK not available — auth features disabled.');
-    return;
-  }
-  _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  await _initAuth();
+  _init();
 });

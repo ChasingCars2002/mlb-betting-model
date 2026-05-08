@@ -378,13 +378,16 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
 .subscribe-btn {
   display: inline-block;
   background: var(--accent);
+  border: none;
   color: #fff;
   padding: 8px 14px;
   border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
+  font-family: var(--font);
   text-align: center;
   text-decoration: none;
+  cursor: pointer;
   transition: background .15s;
 }
 .subscribe-btn:hover { background: #1a60d0; color: #fff; }
