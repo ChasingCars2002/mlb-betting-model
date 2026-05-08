@@ -301,16 +301,22 @@ def export_dashboard_data():
     (out / "stats.json").write_text(json.dumps(_sanitize_json(stats), indent=2))
 
     history = get_all_predictions()
-    (out / "picks_history.json").write_text(json.dumps(_sanitize_json(history), indent=2))
-
     today_str = date.today().isoformat()
+    # Exclude today's still-ungraded picks from history; they belong in the
+    # "today's picks" section until grading completes.
+    history_for_export = [
+        p for p in history
+        if not (p["date"] == today_str and (p.get("status") or "Pending") == "Pending")
+    ]
+    (out / "picks_history.json").write_text(json.dumps(_sanitize_json(history_for_export), indent=2))
+
     today_picks = [p for p in history if p["date"] == today_str]
     today_ml = [p for p in today_picks if p.get("bet_type", "moneyline") == "moneyline"]
 
     # Upload today's picks to Supabase private storage (subscriber-only).
     # If Supabase is configured, write an empty placeholder to GitHub Pages so
     # the file URL reveals nothing. Otherwise fall back to writing the real data.
-    supabase_ok = upload_picks_to_supabase(today_ml, history)
+    supabase_ok = upload_picks_to_supabase(today_ml, history_for_export)
     if supabase_ok:
         (out / "picks_today.json").write_text("[]")
     else:
