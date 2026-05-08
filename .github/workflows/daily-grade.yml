@@ -24,6 +24,8 @@ jobs:
       - name: Grade yesterday's predictions
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python main.py --grade
 
       - name: Commit updated database and dashboard data
