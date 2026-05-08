@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
-  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -206,6 +205,32 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Core UI functions — inline so they always work even if external scripts fail -->
+  <script>
+    function openModal(tab) {
+      var m = document.getElementById('auth-modal');
+      if (!m) return;
+      m.style.display = 'flex';
+      var active = tab || 'signin';
+      document.querySelectorAll('.modal-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.tab === active);
+      });
+      document.querySelectorAll('.modal-panel').forEach(function(p) {
+        p.style.display = (p.dataset.panel === active) ? 'flex' : 'none';
+      });
+    }
+    function closeModal() {
+      var m = document.getElementById('auth-modal');
+      if (m) m.style.display = 'none';
+    }
+    // startSubscription and sbSignOut are upgraded by auth.js;
+    // these stubs ensure clicking never silently fails
+    function startSubscription() { openModal('signup'); }
+    function sbSignOut() {}
+  </script>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
 </body>

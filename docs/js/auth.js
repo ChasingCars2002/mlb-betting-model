@@ -60,7 +60,7 @@ function _updateHeader() {
   }
 }
 
-// ── Auth actions ───────────────────────────────────────────────────────────
+// ── Auth actions (override the inline stubs in index.html) ────────────────
 window.sbSignOut = async function () {
   if (_sb) await _sb.auth.signOut();
 };
@@ -91,7 +91,7 @@ window.fetchGatedData = async function (file) {
   }
 };
 
-// ── Stripe checkout ────────────────────────────────────────────────────────
+// ── Stripe checkout (overrides the inline stub in index.html) ─────────────
 window.startSubscription = async function () {
   if (!window.sbUser) { openModal('signup'); return; }
   const btns = document.querySelectorAll('.subscribe-cta');
