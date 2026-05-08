@@ -37,6 +37,19 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============================================================
+-- Migration: promo code support (run after initial setup)
+-- ============================================================
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS promo_code TEXT;
+
+-- Valid subscription_status values:
+--   inactive  — no subscription
+--   trialing  — in 5-day free trial (payment method collected, not yet charged)
+--   active    — paid and active
+--   past_due  — payment failed
+--   lifetime  — permanent free access via promo code Free4life
+
+-- ============================================================
 -- After running this SQL:
 --
 -- 1. Go to Storage → New bucket

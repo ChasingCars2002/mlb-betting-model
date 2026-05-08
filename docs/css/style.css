@@ -666,6 +666,143 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
 .paywall-sub-btn:hover:not(:disabled) { background: #1a60d0; }
 .paywall-sub-btn:disabled { opacity: .6; cursor: not-allowed; }
 
+/* ── Manage subscription modal ───────────────────────────────── */
+.modal-title-row { margin-bottom: 20px; }
+.modal-heading   { font-size: 16px; font-weight: 600; }
+
+.manage-body { display: flex; flex-direction: column; gap: 16px; }
+
+.manage-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.status-active   { background: rgba(0,229,160,.15);  color: var(--green); }
+.status-trial    { background: rgba(0,194,255,.15);  color: var(--blue);  }
+.status-lifetime { background: rgba(240,180,41,.15); color: var(--yellow);}
+.status-inactive { background: rgba(107,126,148,.12);color: var(--muted); }
+.status-pastdue  { background: rgba(248,81,73,.12);  color: var(--red);   }
+
+.manage-meta {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.manage-cancel-section {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.manage-cancel-info {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.cancel-btn {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid rgba(248,81,73,.5);
+  border-radius: var(--radius);
+  color: var(--red);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  transition: background .15s, border-color .15s;
+}
+.cancel-btn:hover:not(:disabled) {
+  background: rgba(248,81,73,.08);
+  border-color: var(--red);
+}
+.cancel-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ── Promo code form (in paywall) ─────────────────────────────── */
+.promo-section {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.promo-toggle-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.promo-toggle-link:hover { color: var(--text); }
+
+.promo-inline-form {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.promo-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  padding: 8px 12px;
+  outline: none;
+  width: 100%;
+  text-align: center;
+  letter-spacing: 1px;
+  transition: border-color .15s;
+}
+.promo-input:focus { border-color: var(--accent); }
+
+.promo-submit-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 16px;
+  transition: border-color .15s;
+  width: 100%;
+}
+.promo-submit-btn:hover:not(:disabled) { border-color: var(--muted); }
+.promo-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.promo-error {
+  background: rgba(248,81,73,.1);
+  border: 1px solid rgba(248,81,73,.3);
+  border-radius: 6px;
+  color: var(--red);
+  font-size: 12px;
+  padding: 6px 10px;
+  width: 100%;
+  text-align: center;
+}
+
 /* ── Stat card gradient border upgrade ───────────────────────── */
 .stat-card {
   background: var(--surface);

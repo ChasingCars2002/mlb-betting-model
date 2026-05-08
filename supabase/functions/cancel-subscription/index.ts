@@ -7,8 +7,6 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const TRIAL_DAYS = 5
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
 
@@ -26,28 +24,46 @@ serve(async (req) => {
     )
     if (error || !user) return json({ error: 'Unauthorized' }, 401)
 
-    const stripe  = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id, subscription_status')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!profile?.stripe_customer_id) {
+      return json({ error: 'No active subscription found' }, 400)
+    }
+
+    if (profile.subscription_status === 'lifetime') {
+      return json({ error: 'Lifetime access cannot be cancelled' }, 400)
+    }
+
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
       apiVersion: '2023-08-16',
       httpClient: Stripe.createFetchHttpClient(),
     })
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://localhost'
-    const priceId = Deno.env.get('STRIPE_PRICE_ID')!
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: 'subscription',
-      allow_promotion_codes: true,
-      subscription_data: {
-        trial_period_days: TRIAL_DAYS,
-      },
-      success_url: `${siteUrl}?subscribed=true`,
-      cancel_url:  `${siteUrl}`,
-      customer_email: user.email,
-      metadata: { user_id: user.id },
+    // Find active or trialing subscription
+    let sub: Stripe.Subscription | null = null
+    for (const status of ['active', 'trialing'] as const) {
+      const list = await stripe.subscriptions.list({
+        customer: profile.stripe_customer_id,
+        status,
+        limit: 1,
+      })
+      if (list.data.length > 0) { sub = list.data[0]; break }
+    }
+
+    if (!sub) return json({ error: 'No active subscription found' }, 400)
+
+    const updated = await stripe.subscriptions.update(sub.id, {
+      cancel_at_period_end: true,
     })
 
-    return json({ url: session.url })
+    return json({
+      cancelled: true,
+      access_until: new Date(updated.current_period_end * 1000).toISOString(),
+    })
   } catch (err) {
     return json({ error: err.message }, 500)
   }
