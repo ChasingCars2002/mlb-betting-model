@@ -1,26 +1,26 @@
 {
   "ytd": {
-    "total_bets": 196,
-    "wins": 92,
-    "losses": 104,
-    "pending": 27,
-    "total_units_wagered": 313.25,
-    "total_profit": 32.43,
-    "roi_pct": 10.35,
-    "brier_score": 0.2502,
-    "win_rate": 46.94,
+    "total_bets": 200,
+    "wins": 94,
+    "losses": 106,
+    "pending": 23,
+    "total_units_wagered": 316.17,
+    "total_profit": 33.59,
+    "roi_pct": 10.63,
+    "brier_score": 0.2511,
+    "win_rate": 47.0,
     "since": "2026-01-01"
   },
   "all_time": {
-    "total_bets": 196,
-    "wins": 92,
-    "losses": 104,
-    "pending": 27,
-    "total_units_wagered": 313.25,
-    "total_profit": 32.43,
-    "roi_pct": 10.35,
-    "brier_score": 0.2502,
-    "win_rate": 46.94
+    "total_bets": 200,
+    "wins": 94,
+    "losses": 106,
+    "pending": 23,
+    "total_units_wagered": 316.17,
+    "total_profit": 33.59,
+    "roi_pct": 10.63,
+    "brier_score": 0.2511,
+    "win_rate": 47.0
   },
-  "last_updated": "2026-05-11T16:16:23.168027Z"
+  "last_updated": "2026-05-12T13:55:02.602936Z"
 }
