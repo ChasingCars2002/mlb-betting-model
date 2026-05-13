@@ -425,10 +425,14 @@ def get_bullpen_stats(
 
     try:
         pitching = pybaseball.pitching_stats(season, season, qual=1)
-        # Filter to relievers (rough heuristic: GS < 5 or G - GS > 10)
+        # Filter to relievers. Both conditions must hold:
+        #   - GS < 5: pitcher does not have a primary starting role
+        #   - G - GS > 10: pitcher has substantial relief workload
+        # Using OR here would admit swingmen (e.g. 22 GS, 30 G) into the
+        # bullpen aggregate, diluting it with rotation-quality innings.
         if "GS" in pitching.columns and "G" in pitching.columns:
             relievers = pitching[
-                (pitching["GS"] < 5) | (pitching["G"] - pitching["GS"] > 10)
+                (pitching["GS"] < 5) & (pitching["G"] - pitching["GS"] > 10)
             ]
             # Exact team match with FanGraphs abbreviation; fall back to contains
             team_relievers = relievers[relievers["Team"] == fg_team]
@@ -481,7 +485,13 @@ def get_team_hitting_splits(
             wrc_plus = team_hitters["wRC+"].mean() if "wRC+" in team_hitters.columns else 100.0
             ops = team_hitters["OPS"].mean() if "OPS" in team_hitters.columns else 0.740
 
-            # Apply a platoon adjustment factor
+            # TODO: This is a placeholder. The function signature accepts a
+            # pitcher hand, but FanGraphs season-aggregate batting stats are
+            # not split by opposing pitcher handedness. Applying a uniform
+            # ±3% adjustment to every team erases all team-level platoon
+            # signal (lefty-heavy lineups that mash RHP look the same as
+            # righty-heavy ones). Replace with vs-L / vs-R splits from
+            # pybaseball.team_batting_bref_split or the FanGraphs splits API.
             if vs_hand == "L":
                 wrc_plus *= 0.97
                 ops *= 0.97

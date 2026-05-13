@@ -33,8 +33,14 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 TRAINING_SEASONS = [2023, 2024, 2025]
 
 # --- EV & Bet Sizing ---
-EV_THRESHOLD  = 0.02  # Minimum edge to place a bet (2%)
-KELLY_SCALE   = 13    # Multiplier: translates half-Kelly fraction → intuitive units
+EV_THRESHOLD  = 0.02  # Minimum edge (vs vig-free fair price) to place a bet
+# KELLY_SCALE multiplies the half-Kelly stake. 1.0 = true half-Kelly. The
+# previous value (13) produced ~6.5× full-Kelly stakes, which guarantees ruin
+# at any realistic edge. MAX_BET_UNITS still caps the absolute bet size, but
+# the cap was hiding the underlying sizing bug. Adjust this upward only if
+# the model's calibration has been independently verified on out-of-sample
+# data after fixing the look-ahead biases documented in MODEL_REVIEW.md.
+KELLY_SCALE   = 1.0
 MIN_BET_UNITS = 0.5   # Floor: any qualifying pick bets at least this many units
 MAX_BET_UNITS = 3.0   # Cap: never risk more than this per pick
 

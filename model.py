@@ -132,6 +132,12 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
     MODEL_DIR.mkdir(exist_ok=True)
     logger.info("Training on full dataset; evaluating on last-20%% temporal holdout.")
 
+    # Temporal CV for CalibratedClassifierCV: random k-fold would let games
+    # from the future calibrate predictions on past games (data leakage).
+    # TimeSeriesSplit only ever calibrates a fold using games that occurred
+    # before that fold's window.
+    cal_cv = TimeSeriesSplit(n_splits=5)
+
     results = {}
 
     # Save feature medians so predict_win_prob can safely impute NaNs
@@ -161,11 +167,11 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
         xgb_params.update(tuned_params["xgboost"])
         logger.info("Using tuned XGBoost params: %s", tuned_params["xgboost"])
 
-    xgb_eval = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="isotonic")
+    xgb_eval = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=cal_cv, method="isotonic")
     xgb_eval.fit(X_tr, y_tr)
     results["xgboost"] = _evaluate_model("XGBoost", y_te, xgb_eval.predict_proba(X_te)[:, 1])
 
-    xgb_calibrated = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="isotonic")
+    xgb_calibrated = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=cal_cv, method="isotonic")
     xgb_calibrated.fit(X, y)
     joblib.dump(xgb_calibrated, MODEL_DIR / "xgboost.joblib")
     logger.info("XGBoost saved to %s", MODEL_DIR / "xgboost.joblib")
@@ -177,7 +183,7 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
         ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
     ])
 
-    lr_eval = CalibratedClassifierCV(lr_pipeline, cv=5, method="sigmoid")
+    lr_eval = CalibratedClassifierCV(lr_pipeline, cv=cal_cv, method="sigmoid")
     lr_eval.fit(X_tr, y_tr)
     results["logistic_regression"] = _evaluate_model(
         "Logistic Regression", y_te, lr_eval.predict_proba(X_te)[:, 1]
@@ -188,7 +194,7 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
             ("scaler", StandardScaler()),
             ("lr", LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver="lbfgs")),
         ]),
-        cv=5, method="sigmoid",
+        cv=cal_cv, method="sigmoid",
     )
     lr_calibrated.fit(X, y)
     joblib.dump(lr_calibrated, MODEL_DIR / "logistic_regression.joblib")
@@ -207,11 +213,11 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
         lgbm_params.update(tuned_params["lightgbm"])
         logger.info("Using tuned LightGBM params: %s", tuned_params["lightgbm"])
 
-    lgbm_eval = CalibratedClassifierCV(LGBMClassifier(**lgbm_params), cv=5, method="isotonic")
+    lgbm_eval = CalibratedClassifierCV(LGBMClassifier(**lgbm_params), cv=cal_cv, method="isotonic")
     lgbm_eval.fit(X_tr, y_tr)
     results["lightgbm"] = _evaluate_model("LightGBM", y_te, lgbm_eval.predict_proba(X_te)[:, 1])
 
-    lgbm_calibrated = CalibratedClassifierCV(LGBMClassifier(**lgbm_params), cv=5, method="isotonic")
+    lgbm_calibrated = CalibratedClassifierCV(LGBMClassifier(**lgbm_params), cv=cal_cv, method="isotonic")
     lgbm_calibrated.fit(X, y)
     joblib.dump(lgbm_calibrated, MODEL_DIR / "lightgbm.joblib")
     logger.info("LightGBM saved to %s", MODEL_DIR / "lightgbm.joblib")
@@ -263,11 +269,16 @@ def _evaluate_model(name: str, y_true: pd.Series, y_prob: np.ndarray) -> dict:
     """Compute evaluation metrics for a model."""
     y_pred = (y_prob >= 0.5).astype(int)
     ece = _compute_ece(y_true, y_prob)
+    # log_loss is undefined when a probability is exactly 0 or 1 and the
+    # observed outcome is the opposite class. sklearn clips internally
+    # but we clip explicitly so the metric is deterministic across
+    # versions and never produces inf in our reports.
+    y_prob_clipped = np.clip(y_prob, 1e-15, 1 - 1e-15)
     metrics = {
         "name": name,
         "accuracy": round(accuracy_score(y_true, y_pred), 4),
         "brier_score": round(brier_score_loss(y_true, y_prob), 4),
-        "log_loss": round(log_loss(y_true, y_prob), 4),
+        "log_loss": round(log_loss(y_true, y_prob_clipped), 4),
         "ece": ece,
     }
     logger.info("%s — Accuracy: %.4f, Brier: %.4f, LogLoss: %.4f, ECE: %.4f",

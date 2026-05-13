@@ -19,6 +19,7 @@ def predict_game_scores(features: dict) -> dict:
     away_ops  = features.get("away_hit_ops", _LEAGUE_AVG_OPS) or _LEAGUE_AVG_OPS
     park      = features.get("park_factor", 1.0) or 1.0
 
+    # Park factor describes the venue, so both teams score in it.
     home_runs = round(
         _BASE_RUNS
         * (home_xfip / _LEAGUE_AVG_ERA)
@@ -30,7 +31,8 @@ def predict_game_scores(features: dict) -> dict:
     away_runs = round(
         _BASE_RUNS
         * (away_xfip / _LEAGUE_AVG_ERA)
-        * (away_ops  / _LEAGUE_AVG_OPS),
+        * (away_ops  / _LEAGUE_AVG_OPS)
+        * park,
         2,
     )
 

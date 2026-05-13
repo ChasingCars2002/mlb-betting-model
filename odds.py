@@ -153,6 +153,27 @@ def american_to_decimal(odds: int) -> float:
         return (100.0 / abs(odds)) + 1.0
 
 
+def devig_pair(home_odds: int, away_odds: int) -> tuple[float, float]:
+    """Strip the bookmaker's vig from a two-way moneyline market.
+
+    Each side's American odds imply a probability; the two implied probs
+    typically sum to slightly more than 1 (the overround / vig). We
+    normalize them so they sum to 1 — this is the "proportional" or
+    "multiplicative" de-vig and is the standard quick method. It assumes
+    the vig is distributed proportionally across both sides; the Shin
+    method models adverse selection differently but the proportional
+    method is close enough for moneyline two-ways.
+
+    Returns (home_fair_prob, away_fair_prob).
+    """
+    home_imp = american_to_implied_prob(home_odds)
+    away_imp = american_to_implied_prob(away_odds)
+    total = home_imp + away_imp
+    if total <= 0:
+        return 0.5, 0.5
+    return home_imp / total, away_imp / total
+
+
 def match_odds_to_games(odds: list[dict], games: list[dict]) -> list[dict]:
     """Match fetched odds to today's game slate.
 

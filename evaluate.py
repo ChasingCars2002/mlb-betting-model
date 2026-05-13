@@ -3,7 +3,7 @@
 import logging
 
 from config import EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS
-from odds import american_to_implied_prob, american_to_decimal
+from odds import american_to_implied_prob, american_to_decimal, devig_pair
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +79,12 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         model_prob_home = game["model_prob"]
         model_prob_away = 1.0 - model_prob_home
 
-        home_implied = american_to_implied_prob(game["home_odds"])
-        away_implied = american_to_implied_prob(game["away_odds"])
+        # Compare model probability against the vig-free fair market price.
+        # Raw american_to_implied_prob includes ~4-5% vig on a -110/-110
+        # market — comparing model_prob to that consistently understates
+        # the edge against fair value. The EV calculation below is
+        # independent of this and still uses the actual decimal odds.
+        home_implied, away_implied = devig_pair(game["home_odds"], game["away_odds"])
 
         # Check home team bet
         home_edge = calculate_edge(model_prob_home, home_implied)
