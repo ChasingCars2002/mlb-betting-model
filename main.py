@@ -137,6 +137,11 @@ def run_predictions(model_name: str = "xgboost"):
         return
     if not games:
         print("  No games found today (off day or no probable pitchers posted). Exiting.")
+        # Refresh dashboard so yesterday's picks don't linger as "today's picks"
+        # on the site. Every other early-return branch already does this; this
+        # was the one path that silently left picks_today.json/Supabase stale.
+        export_dashboard_data()
+        post_picks_to_discord([])
         return  # Not an error — valid off day
     print(f"        Found {len(games)} games with probable pitchers.")
 
