@@ -161,11 +161,11 @@ def train_models(X: pd.DataFrame, y: pd.Series, tuned_params: dict | None = None
         xgb_params.update(tuned_params["xgboost"])
         logger.info("Using tuned XGBoost params: %s", tuned_params["xgboost"])
 
-    xgb_eval = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="isotonic")
+    xgb_eval = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="sigmoid")
     xgb_eval.fit(X_tr, y_tr)
     results["xgboost"] = _evaluate_model("XGBoost", y_te, xgb_eval.predict_proba(X_te)[:, 1])
 
-    xgb_calibrated = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="isotonic")
+    xgb_calibrated = CalibratedClassifierCV(XGBClassifier(**xgb_params), cv=5, method="sigmoid")
     xgb_calibrated.fit(X, y)
     joblib.dump(xgb_calibrated, MODEL_DIR / "xgboost.joblib")
     logger.info("XGBoost saved to %s", MODEL_DIR / "xgboost.joblib")

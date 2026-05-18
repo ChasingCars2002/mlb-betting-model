@@ -12,8 +12,6 @@ from data import (
     get_team_hitting_splits,
     _get_pitcher_hand,
     get_park_factor,
-    get_pitcher_days_rest,
-    get_team_rolling_ops,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,12 +35,6 @@ FEATURE_COLUMNS = [
     "away_hit_wrc_plus", "away_hit_ops",
     # Park factor
     "park_factor",
-    # Pitcher rest/fatigue
-    "home_p_days_rest",
-    "away_p_days_rest",
-    # Rolling 10-game team offense
-    "home_team_ops_10",
-    "away_team_ops_10",
 ]
 
 
@@ -104,20 +96,6 @@ def build_game_features(game: dict) -> Optional[dict]:
             "away_hit_ops": away_hitting["ops"],
             "park_factor": get_park_factor(game["home_team"]),
         }
-
-        features["home_p_days_rest"] = get_pitcher_days_rest(
-            game["home_pitcher_id"], game["game_date"]
-        )
-        features["away_p_days_rest"] = get_pitcher_days_rest(
-            game["away_pitcher_id"], game["game_date"]
-        )
-
-        features["home_team_ops_10"] = get_team_rolling_ops(
-            game["home_team_id"], game["game_date"]
-        )
-        features["away_team_ops_10"] = get_team_rolling_ops(
-            game["away_team_id"], game["game_date"]
-        )
 
         return features
 
@@ -242,10 +220,6 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
             "away_hit_wrc_plus": away_hitting["wrc_plus"],
             "away_hit_ops": away_hitting["ops"],
             "park_factor": get_park_factor(game["home_team"]),
-            "home_p_days_rest": 5.0,  # historical games: default rest (API too slow for batch)
-            "away_p_days_rest": 5.0,
-            "home_team_ops_10": 0.735,  # league-average default (~2023-2025 MLB avg OPS)
-            "away_team_ops_10": 0.735,
         }
 
         feature_rows.append(row)

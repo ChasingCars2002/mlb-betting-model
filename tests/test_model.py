@@ -27,8 +27,8 @@ class TestFeatureColumns:
         )
 
     def test_expected_count(self):
-        # 8 home pitcher + 8 away pitcher + 4 bullpen + 4 hitting + 2 rest + 2 rolling OPS + 1 park = 29
-        assert len(FEATURE_COLUMNS) == 29
+        # 8 home pitcher + 8 away pitcher + 4 bullpen + 4 hitting + 1 park = 25
+        assert len(FEATURE_COLUMNS) == 25
 
     def test_rolling_and_season_both_present(self):
         season_feats = [f for f in FEATURE_COLUMNS if "_season" in f]
