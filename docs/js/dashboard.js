@@ -131,6 +131,13 @@ function hidePicksPaywall() {
 // ── Helpers ────────────────────────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
 
+// Picks are dated by date.today() in a UTC GitHub Actions runner, so compare
+// against the current UTC date — not the viewer's local date — to avoid
+// rendering yesterday's picks (or hiding today's picks) across time zones.
+function todayUTC() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function setHTML(id, html) {
   const el = $(id);
   if (el) el.innerHTML = html;
@@ -244,12 +251,14 @@ function renderStats() {
 
 // ── Today's moneyline picks ────────────────────────────────────────────────
 function renderTodayPicks(picks) {
-  if (!picks || picks.length === 0) {
+  const today = todayUTC();
+  const fresh = (picks ?? []).filter(p => p.date === today);
+  if (fresh.length === 0) {
     setHTML('today-picks', '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>');
     return;
   }
 
-  setHTML('today-picks', picks.map(p => {
+  setHTML('today-picks', fresh.map(p => {
     const game  = `${p.away_team} @ ${p.home_team}`;
     const edge  = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
     const ev    = evBadge(p.ev);
@@ -403,11 +412,13 @@ function renderTable(history) {
 
 // ── Pick of the Day ────────────────────────────────────────────────────────
 function renderPickOfDay(picks) {
-  if (!picks || picks.length === 0) {
+  const today = todayUTC();
+  const fresh = (picks ?? []).filter(p => p.date === today);
+  if (fresh.length === 0) {
     setHTML('potd-card', '<p style="color:var(--muted)">No picks for today yet — check back after the morning run.</p>');
     return;
   }
-  const top = picks.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), picks[0]);
+  const top = fresh.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), fresh[0]);
   const conf = confidenceBadge(top.confidence);
   setHTML('potd-card', `
     <div class="potd-label">★ Best Edge Today</div>
