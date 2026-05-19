@@ -65,6 +65,27 @@ def _migrate_db(conn: sqlite3.Connection):
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
             logger.info("Migration: added column '%s' to predictions.", col)
 
+    # One-time: dedupe any existing duplicates and add a UNIQUE index so a
+    # re-run of the daily-predict workflow upserts instead of appending.
+    idx_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='index' AND name='idx_predictions_unique'"
+    ).fetchone()
+    if not idx_exists:
+        removed = conn.execute(
+            """DELETE FROM predictions
+               WHERE id NOT IN (
+                   SELECT MAX(id) FROM predictions
+                   GROUP BY date, home_team, away_team, bet_type
+               )"""
+        ).rowcount
+        if removed:
+            logger.info("Migration: removed %d duplicate prediction rows.", removed)
+        conn.execute(
+            """CREATE UNIQUE INDEX idx_predictions_unique
+               ON predictions(date, home_team, away_team, bet_type)"""
+        )
+        logger.info("Migration: added unique index on (date, home_team, away_team, bet_type).")
+
 
 def init_db():
     """Create the predictions table if it doesn't exist, then migrate."""
@@ -86,6 +107,9 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
         logger.info("No picks to save.")
         return
 
+    # Upsert: a same-day re-run refreshes odds/units for pending picks
+    # rather than inserting a duplicate row. Already-graded rows are
+    # preserved untouched (WHERE status = 'Pending').
     sql = """
     INSERT INTO predictions
         (date, home_team, away_team, pick, pick_side, model_prob, implied_prob,
@@ -97,6 +121,25 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
          :ev, :edge, :units, :odds, 'Pending', :model_name, :home_pitcher, :away_pitcher,
          :bet_type, :listed_total, :predicted_total, :predicted_home_runs,
          :predicted_away_runs, :total_delta, :confidence)
+    ON CONFLICT(date, home_team, away_team, bet_type) DO UPDATE SET
+        pick                = excluded.pick,
+        pick_side           = excluded.pick_side,
+        model_prob          = excluded.model_prob,
+        implied_prob        = excluded.implied_prob,
+        ev                  = excluded.ev,
+        edge                = excluded.edge,
+        units               = excluded.units,
+        odds                = excluded.odds,
+        model_name          = excluded.model_name,
+        home_pitcher        = excluded.home_pitcher,
+        away_pitcher        = excluded.away_pitcher,
+        listed_total        = excluded.listed_total,
+        predicted_total     = excluded.predicted_total,
+        predicted_home_runs = excluded.predicted_home_runs,
+        predicted_away_runs = excluded.predicted_away_runs,
+        total_delta         = excluded.total_delta,
+        confidence          = excluded.confidence
+    WHERE predictions.status = 'Pending'
     """
     normalized = []
     for p in picks:
