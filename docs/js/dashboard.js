@@ -34,8 +34,7 @@ async function loadData() {
     renderChart(allHistory, mode);
     renderTable(allHistory);
 
-    // Today's picks and POTD are subscriber-only
-    await loadGatedData();
+    await loadTodayPicks();
 
   } catch (err) {
     const loadingEl = document.getElementById('loading');
@@ -45,87 +44,17 @@ async function loadData() {
   }
 }
 
-// ── Gated picks (subscribers only) ────────────────────────────────────────
-async function loadGatedData() {
-  // Auth library not loaded (local dev without Supabase) — skip paywall
-  if (typeof window.fetchGatedData !== 'function') {
+// ── Today's picks (public) ────────────────────────────────────────────────
+async function loadTodayPicks() {
+  try {
+    const res = await fetch('data/picks_today.json', { cache: 'no-store' });
+    const data = res.ok ? await res.json() : [];
+    renderPickOfDay(data);
+    renderTodayPicks(data);
+  } catch {
     renderPickOfDay([]);
     renderTodayPicks([]);
-    return;
   }
-
-  // Wait for the initial auth + subscription check to complete before
-  // rendering the paywall, so we never flash it for active subscribers.
-  if (window.sbAuthReady) await window.sbAuthReady;
-
-  if (!window.sbUser) {
-    renderPicksPaywall('signin');
-    return;
-  }
-
-  if (!window.sbSubscribed) {
-    renderPicksPaywall('subscribe');
-    return;
-  }
-
-  const data = await window.fetchGatedData('picks_today');
-  if (data?.__gated) {
-    // Server confirmed not subscribed (shouldn't reach here normally).
-    renderPicksPaywall('subscribe');
-    return;
-  }
-  if (!data) {
-    // Server error or no picks file yet — user IS subscribed, just no data today.
-    hidePicksPaywall();
-    renderPickOfDay([]);
-    renderTodayPicks([]);
-    return;
-  }
-
-  renderPickOfDay(data);
-  renderTodayPicks(data);
-  hidePicksPaywall();
-}
-
-function renderPicksPaywall(reason) {
-  const isSignin = reason === 'signin';
-  const promoSection = !isSignin ? `
-    <div class="promo-section">
-      <a id="promo-toggle-link" class="promo-toggle-link" href="#" onclick="event.preventDefault();window.showPromoForm&&window.showPromoForm()">Have a promo code?</a>
-      <div id="promo-inline-form" class="promo-inline-form" style="display:none">
-        <input id="promo-code-input" class="promo-input" type="text" placeholder="Enter code" autocomplete="off" />
-        <button id="promo-submit-btn" class="promo-submit-btn" onclick="window.redeemPromo&&window.redeemPromo()">Apply Code</button>
-        <div id="promo-error" class="promo-error" style="display:none"></div>
-      </div>
-    </div>` : '';
-
-  const overlay = `
-    <div class="paywall-overlay">
-      <div class="paywall-icon">🔒</div>
-      <div class="paywall-title">Today's Picks are for subscribers</div>
-      <div class="paywall-desc">
-        Get today's moneyline picks with edge, EV, and confidence ratings.<br>
-        5-day free trial, then $7.99/month. Historical track record is always free.
-      </div>
-      <div class="paywall-actions">
-        ${isSignin
-          ? `<button class="auth-btn auth-btn-primary subscribe-cta" onclick="openModal('signin')">Sign in</button>
-             <button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Start Free Trial</button>`
-          : `<button class="subscribe-cta paywall-sub-btn" onclick="startSubscription()">Start Free Trial</button>`
-        }
-      </div>
-      ${promoSection}
-    </div>`;
-
-  setHTML('potd-card', `<p style="color:var(--muted);font-style:italic">Start your free trial to unlock today's best pick.</p>`);
-  setHTML('today-picks', overlay);
-}
-
-function hidePicksPaywall() {
-  const el = document.getElementById('today-picks');
-  if (el) el.querySelectorAll('.paywall-overlay').forEach(o => o.remove());
-  const banner = document.querySelector('.subscribe-banner');
-  if (banner) banner.style.display = 'none';
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -457,9 +386,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadData();
-
-  // Re-load gated picks whenever login/subscription state changes
-  window.onAuthChanged = async () => {
-    await loadGatedData();
-  };
 });

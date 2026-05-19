@@ -18,7 +18,7 @@ from config import (
     RETRAIN_SCHEDULE_HOUR,
     RETRAIN_SCHEDULE_MINUTE,
 )
-from database import init_db, save_predictions, grade_predictions, get_roi_stats, get_all_predictions, upload_picks_to_supabase
+from database import init_db, save_predictions, grade_predictions, get_roi_stats, get_all_predictions
 from data import get_todays_games, get_yesterdays_results
 from features import build_game_features
 from model import load_model, predict_win_prob
@@ -312,15 +312,7 @@ def export_dashboard_data():
 
     today_picks = [p for p in history if p["date"] == today_str]
     today_ml = [p for p in today_picks if p.get("bet_type", "moneyline") == "moneyline"]
-
-    # Upload today's picks to Supabase private storage (subscriber-only).
-    # If Supabase is configured, write an empty placeholder to GitHub Pages so
-    # the file URL reveals nothing. Otherwise fall back to writing the real data.
-    supabase_ok = upload_picks_to_supabase(today_ml, history_for_export)
-    if supabase_ok:
-        (out / "picks_today.json").write_text("[]")
-    else:
-        (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_ml), indent=2))
+    (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_ml), indent=2))
 
     if today_picks:
         top = max(today_picks, key=lambda p: p.get("edge") or 0)

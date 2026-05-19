@@ -22,7 +22,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-18",
@@ -47,7 +47,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-18",
@@ -72,82 +72,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
-  },
-  {
-    "date": "2026-05-18",
-    "home_team": "DET",
-    "away_team": "CLE",
-    "pick": "CLE",
-    "pick_side": "Away",
-    "model_prob": 0.4911,
-    "implied_prob": 0.4386,
-    "edge": 0.0525,
-    "ev": 0.1198,
-    "units": 0.61,
-    "odds": 128,
-    "status": "Win",
-    "result": "CLE",
-    "profit": 0.7808,
-    "home_pitcher": "Framber Valdez",
-    "away_pitcher": "Slade Cecconi",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": 4.31,
-    "predicted_away_runs": 4.32,
-    "total_delta": null,
-    "confidence": 3.0
-  },
-  {
-    "date": "2026-05-18",
-    "home_team": "NYY",
-    "away_team": "TOR",
-    "pick": "TOR",
-    "pick_side": "Away",
-    "model_prob": 0.4634,
-    "implied_prob": 0.4082,
-    "edge": 0.0553,
-    "ev": 0.1354,
-    "units": 0.61,
-    "odds": 145,
-    "status": "Loss",
-    "result": "NYY",
-    "profit": -0.61,
-    "home_pitcher": "Ryan Weathers",
-    "away_pitcher": "Patrick Corbin",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": 4.45,
-    "predicted_away_runs": 4.32,
-    "total_delta": null,
-    "confidence": 3.0
-  },
-  {
-    "date": "2026-05-18",
-    "home_team": "SD",
-    "away_team": "LAD",
-    "pick": "SD",
-    "pick_side": "Home",
-    "model_prob": 0.5679,
-    "implied_prob": 0.4386,
-    "edge": 0.1293,
-    "ev": 0.2947,
-    "units": 1.5,
-    "odds": 128,
-    "status": "Win",
-    "result": "SD",
-    "profit": 1.92,
-    "home_pitcher": "Michael King",
-    "away_pitcher": "Yoshinobu Yamamoto",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": 4.27,
-    "predicted_away_runs": 4.32,
-    "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-17",
@@ -172,7 +97,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-17",
@@ -197,7 +122,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-17",
@@ -222,7 +147,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-17",
@@ -247,7 +172,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-17",
@@ -272,7 +197,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-17",
@@ -297,7 +222,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-16",
@@ -322,7 +247,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-16",
@@ -347,7 +272,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-16",
@@ -372,7 +297,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-16",
@@ -397,7 +322,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-16",
@@ -422,7 +347,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-16",
@@ -447,7 +372,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-15",
@@ -472,7 +397,7 @@
     "predicted_home_runs": 5.37,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-15",
@@ -497,7 +422,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-15",
@@ -522,7 +447,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-15",
@@ -547,7 +472,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-15",
@@ -572,7 +497,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-15",
@@ -597,7 +522,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-14",
@@ -622,7 +547,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-14",
@@ -647,7 +572,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-14",
@@ -672,7 +597,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-14",
@@ -697,7 +622,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-14",
@@ -722,7 +647,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-14",
@@ -747,7 +672,7 @@
     "predicted_home_runs": 4.58,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-14",
@@ -772,7 +697,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-14",
@@ -797,7 +722,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-13",
@@ -822,7 +747,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-13",
@@ -847,7 +772,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-13",
@@ -872,7 +797,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-13",
@@ -897,7 +822,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-13",
@@ -922,7 +847,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-13",
@@ -947,7 +872,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-13",
@@ -972,7 +897,7 @@
     "predicted_home_runs": 4.58,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-13",
@@ -997,7 +922,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-13",
@@ -1022,7 +947,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-13",
@@ -1047,7 +972,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-12",
@@ -1072,7 +997,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-12",
@@ -1097,7 +1022,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-12",
@@ -1122,7 +1047,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-12",
@@ -1147,7 +1072,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-12",
@@ -1172,7 +1097,7 @@
     "predicted_home_runs": 4.58,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-12",
@@ -1197,7 +1122,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-12",
@@ -1222,7 +1147,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-12",
@@ -1247,7 +1172,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-11",
@@ -1272,7 +1197,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-11",
@@ -1297,7 +1222,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-11",
@@ -1322,7 +1247,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-11",
@@ -1347,7 +1272,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-10",
@@ -1372,7 +1297,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-10",
@@ -1397,7 +1322,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-10",
@@ -1422,7 +1347,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-10",
@@ -1447,7 +1372,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-09",
@@ -1472,7 +1397,7 @@
     "predicted_home_runs": 4.54,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-09",
@@ -1497,7 +1422,7 @@
     "predicted_home_runs": 4.54,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-09",
@@ -1522,7 +1447,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-09",
@@ -1547,7 +1472,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-09",
@@ -1572,7 +1497,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-09",
@@ -1597,7 +1522,7 @@
     "predicted_home_runs": 4.58,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-09",
@@ -1622,7 +1547,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-09",
@@ -1647,7 +1572,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-09",
@@ -1672,7 +1597,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-08",
@@ -1697,7 +1622,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-08",
@@ -1722,7 +1647,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-08",
@@ -1747,7 +1672,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-08",
@@ -1772,7 +1697,7 @@
     "predicted_home_runs": 4.58,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-08",
@@ -1797,7 +1722,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-08",
@@ -1822,7 +1747,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-08",
@@ -1847,7 +1772,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-08",
@@ -1872,7 +1797,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-08",
@@ -1897,7 +1822,7 @@
     "predicted_home_runs": 4.54,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-08",
@@ -1922,7 +1847,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-07",
@@ -1947,7 +1872,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-07",
@@ -1972,7 +1897,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-06",
@@ -1997,7 +1922,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-06",
@@ -2022,7 +1947,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-06",
@@ -2047,7 +1972,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-06",
@@ -2072,7 +1997,7 @@
     "predicted_home_runs": 4.54,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-06",
@@ -2097,7 +2022,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-06",
@@ -2122,7 +2047,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-05",
@@ -2147,7 +2072,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-05",
@@ -2172,7 +2097,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-05",
@@ -2197,7 +2122,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-05",
@@ -2222,7 +2147,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-05",
@@ -2247,7 +2172,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-04",
@@ -2272,7 +2197,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-04",
@@ -2297,7 +2222,7 @@
     "predicted_home_runs": 4.18,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-04",
@@ -2322,7 +2247,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-04",
@@ -2347,7 +2272,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-04",
@@ -2372,7 +2297,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-04",
@@ -2397,7 +2322,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-03",
@@ -2422,7 +2347,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": -0.32,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-03",
@@ -2447,7 +2372,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": 0.53,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2472,7 +2397,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": 0.55,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-03",
@@ -2497,7 +2422,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": 0.53,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-03",
@@ -2522,7 +2447,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": 0.59,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2547,7 +2472,7 @@
     "predicted_home_runs": 5.37,
     "predicted_away_runs": 4.32,
     "total_delta": -0.71,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2572,7 +2497,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": 0.77,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2597,7 +2522,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": -0.81,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2622,7 +2547,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": -0.82,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2647,7 +2572,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": 1.08,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-03",
@@ -2672,7 +2597,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": -2.69,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-03",
@@ -2697,7 +2622,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-03",
@@ -2722,7 +2647,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2747,7 +2672,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2772,7 +2697,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2797,7 +2722,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2822,7 +2747,7 @@
     "predicted_home_runs": 4.23,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2847,7 +2772,7 @@
     "predicted_home_runs": 4.54,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-03",
@@ -2872,7 +2797,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2897,7 +2822,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-03",
@@ -2922,7 +2847,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -2947,7 +2872,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": 0.33,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-02",
@@ -2972,7 +2897,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": 0.58,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-02",
@@ -2997,7 +2922,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": 0.89,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3022,7 +2947,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": 0.78,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3047,7 +2972,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": 1.09,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3072,7 +2997,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": 1.22,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3097,7 +3022,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": 1.27,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3122,7 +3047,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": 1.13,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3147,7 +3072,7 @@
     "predicted_home_runs": 4.49,
     "predicted_away_runs": 4.32,
     "total_delta": 1.31,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3172,7 +3097,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": -1.81,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-05-02",
@@ -3197,7 +3122,7 @@
     "predicted_home_runs": 4.4,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-02",
@@ -3222,7 +3147,7 @@
     "predicted_home_runs": 4.27,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-02",
@@ -3247,7 +3172,7 @@
     "predicted_home_runs": 4.31,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-02",
@@ -3272,7 +3197,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-02",
@@ -3297,7 +3222,7 @@
     "predicted_home_runs": 4.36,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 2.0
+    "confidence": 2
   },
   {
     "date": "2026-05-02",
@@ -3322,7 +3247,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-02",
@@ -3347,7 +3272,7 @@
     "predicted_home_runs": 4.45,
     "predicted_away_runs": 4.32,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-01",
@@ -3372,7 +3297,7 @@
     "predicted_home_runs": 2.24,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-01",
@@ -3397,7 +3322,7 @@
     "predicted_home_runs": 2.76,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-01",
@@ -3422,7 +3347,7 @@
     "predicted_home_runs": 2.24,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 1.0
+    "confidence": 1
   },
   {
     "date": "2026-05-01",
@@ -3447,7 +3372,7 @@
     "predicted_home_runs": 2.22,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-01",
@@ -3472,7 +3397,7 @@
     "predicted_home_runs": 2.2,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 4.0
+    "confidence": 4
   },
   {
     "date": "2026-05-01",
@@ -3497,7 +3422,7 @@
     "predicted_home_runs": 2.27,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 3.0
+    "confidence": 3
   },
   {
     "date": "2026-05-01",
@@ -3522,7 +3447,7 @@
     "predicted_home_runs": 2.24,
     "predicted_away_runs": 2.27,
     "total_delta": null,
-    "confidence": 5.0
+    "confidence": 5
   },
   {
     "date": "2026-04-30",
@@ -5350,131 +5275,6 @@
     "confidence": null
   },
   {
-    "date": "2026-04-21",
-    "home_team": "WSH",
-    "away_team": "ATL",
-    "pick": "WSH",
-    "pick_side": "Home",
-    "model_prob": 0.4944,
-    "implied_prob": 0.4651,
-    "edge": 0.0292,
-    "ev": 0.0629,
-    "units": 1.09,
-    "odds": 115,
-    "status": "Loss",
-    "result": "ATL",
-    "profit": -1.09,
-    "home_pitcher": "Foster Griffin",
-    "away_pitcher": "Reynaldo L\u00f3pez",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-21",
-    "home_team": "CHC",
-    "away_team": "PHI",
-    "pick": "CHC",
-    "pick_side": "Home",
-    "model_prob": 0.5925,
-    "implied_prob": 0.5475,
-    "edge": 0.045,
-    "ev": 0.0822,
-    "units": 1.99,
-    "odds": -121,
-    "status": "Win",
-    "result": "CHC",
-    "profit": 1.6446,
-    "home_pitcher": "Shota Imanaga",
-    "away_pitcher": "Jes\u00fas Luzardo",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-21",
-    "home_team": "AZ",
-    "away_team": "CWS",
-    "pick": "CWS",
-    "pick_side": "Away",
-    "model_prob": 0.4758,
-    "implied_prob": 0.4386,
-    "edge": 0.0372,
-    "ev": 0.0847,
-    "units": 1.33,
-    "odds": 128,
-    "status": "Win",
-    "result": "CWS",
-    "profit": 1.7024,
-    "home_pitcher": "Merrill Kelly",
-    "away_pitcher": "Sean Burke",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-21",
-    "home_team": "NYM",
-    "away_team": "MIN",
-    "pick": "MIN",
-    "pick_side": "Away",
-    "model_prob": 0.4758,
-    "implied_prob": 0.4016,
-    "edge": 0.0741,
-    "ev": 0.1846,
-    "units": 2.48,
-    "odds": 149,
-    "status": "Win",
-    "result": "MIN",
-    "profit": 3.6952,
-    "home_pitcher": "Nolan McLean",
-    "away_pitcher": "Simeon Woods Richardson",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-21",
-    "home_team": "SF",
-    "away_team": "LAD",
-    "pick": "SF",
-    "pick_side": "Home",
-    "model_prob": 0.5197,
-    "implied_prob": 0.4,
-    "edge": 0.1197,
-    "ev": 0.2992,
-    "units": 3.0,
-    "odds": 150,
-    "status": "Win",
-    "result": "SF",
-    "profit": 4.5,
-    "home_pitcher": "Landen Roupp",
-    "away_pitcher": "Yoshinobu Yamamoto",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
     "date": "2026-04-19",
     "home_team": "AZ",
     "away_team": "TOR",
@@ -6200,156 +6000,6 @@
     "confidence": null
   },
   {
-    "date": "2026-04-16",
-    "home_team": "PIT",
-    "away_team": "WSH",
-    "pick": "WSH",
-    "pick_side": "Away",
-    "model_prob": 0.4582,
-    "implied_prob": 0.431,
-    "edge": 0.0272,
-    "ev": 0.0631,
-    "units": 1.0,
-    "odds": 132,
-    "status": "Win",
-    "result": "WSH",
-    "profit": 1.32,
-    "home_pitcher": "Braxton Ashcraft",
-    "away_pitcher": "Foster Griffin",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-16",
-    "home_team": "ATH",
-    "away_team": "TEX",
-    "pick": "ATH",
-    "pick_side": "Home",
-    "model_prob": 0.5418,
-    "implied_prob": 0.5,
-    "edge": 0.0418,
-    "ev": 0.0836,
-    "units": 2.0,
-    "odds": -100,
-    "status": "Loss",
-    "result": "TEX",
-    "profit": -2.0,
-    "home_pitcher": "Jacob Lopez",
-    "away_pitcher": "Jack Leiter",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-16",
-    "home_team": "SD",
-    "away_team": "SEA",
-    "pick": "SD",
-    "pick_side": "Home",
-    "model_prob": 0.5418,
-    "implied_prob": 0.495,
-    "edge": 0.0467,
-    "ev": 0.0944,
-    "units": 2.0,
-    "odds": 102,
-    "status": "Win",
-    "result": "SD",
-    "profit": 2.04,
-    "home_pitcher": "Walker Buehler",
-    "away_pitcher": "Luis Castillo",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-16",
-    "home_team": "DET",
-    "away_team": "KC",
-    "pick": "DET",
-    "pick_side": "Home",
-    "model_prob": 0.5418,
-    "implied_prob": 0.4926,
-    "edge": 0.0492,
-    "ev": 0.0998,
-    "units": 2.0,
-    "odds": 103,
-    "status": "Win",
-    "result": "DET",
-    "profit": 2.06,
-    "home_pitcher": "Keider Montero",
-    "away_pitcher": "Kris Bubic",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-16",
-    "home_team": "CWS",
-    "away_team": "TB",
-    "pick": "CWS",
-    "pick_side": "Home",
-    "model_prob": 0.5418,
-    "implied_prob": 0.4739,
-    "edge": 0.0678,
-    "ev": 0.1431,
-    "units": 3.0,
-    "odds": 111,
-    "status": "Loss",
-    "result": "TB",
-    "profit": -3.0,
-    "home_pitcher": "Jordan Leasure",
-    "away_pitcher": "Steven Matz",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-16",
-    "home_team": "HOU",
-    "away_team": "COL",
-    "pick": "COL",
-    "pick_side": "Away",
-    "model_prob": 0.4582,
-    "implied_prob": 0.3861,
-    "edge": 0.0721,
-    "ev": 0.1868,
-    "units": 3.0,
-    "odds": 159,
-    "status": "Win",
-    "result": "COL",
-    "profit": 4.77,
-    "home_pitcher": "Ryan Weiss",
-    "away_pitcher": "Juan Mejia",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
     "date": "2026-04-15",
     "home_team": "ATH",
     "away_team": "TEX",
@@ -6426,56 +6076,6 @@
   },
   {
     "date": "2026-04-15",
-    "home_team": "ATH",
-    "away_team": "TEX",
-    "pick": "ATH",
-    "pick_side": "Home",
-    "model_prob": 0.5418,
-    "implied_prob": 0.495,
-    "edge": 0.0467,
-    "ev": 0.0944,
-    "units": 2.0,
-    "odds": 102,
-    "status": "Win",
-    "result": "ATH",
-    "profit": 2.04,
-    "home_pitcher": "J.T. Ginn",
-    "away_pitcher": "Kumar Rocker",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-15",
-    "home_team": "SD",
-    "away_team": "SEA",
-    "pick": "SD",
-    "pick_side": "Home",
-    "model_prob": 0.5418,
-    "implied_prob": 0.495,
-    "edge": 0.0467,
-    "ev": 0.0944,
-    "units": 2.0,
-    "odds": 102,
-    "status": "Win",
-    "result": "SD",
-    "profit": 2.04,
-    "home_pitcher": "Randy V\u00e1squez",
-    "away_pitcher": "Emerson Hancock",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-15",
     "home_team": "HOU",
     "away_team": "COL",
     "pick": "COL",
@@ -6491,31 +6091,6 @@
     "profit": -3.0,
     "home_pitcher": "Spencer Arrighetti",
     "away_pitcher": "Jose Quintana",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-15",
-    "home_team": "LAD",
-    "away_team": "NYM",
-    "pick": "NYM",
-    "pick_side": "Away",
-    "model_prob": 0.4582,
-    "implied_prob": 0.2232,
-    "edge": 0.235,
-    "ev": 1.0528,
-    "units": 3.0,
-    "odds": 348,
-    "status": "Loss",
-    "result": "LAD",
-    "profit": -3.0,
-    "home_pitcher": "Shohei Ohtani",
-    "away_pitcher": "Clay Holmes",
     "bet_type": "moneyline",
     "listed_total": null,
     "predicted_total": null,
@@ -6800,281 +6375,6 @@
     "confidence": null
   },
   {
-    "date": "2026-04-04",
-    "home_team": "PIT",
-    "away_team": "BAL",
-    "pick": "PIT",
-    "pick_side": "Home",
-    "model_prob": 0.5516,
-    "implied_prob": 0.5192,
-    "edge": 0.0323,
-    "ev": 0.0623,
-    "units": 1.0,
-    "odds": -108,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Carmen Mlodzinski",
-    "away_pitcher": "Shane Baz",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "BOS",
-    "away_team": "SD",
-    "pick": "SD",
-    "pick_side": "Away",
-    "model_prob": 0.4887,
-    "implied_prob": 0.4405,
-    "edge": 0.0481,
-    "ev": 0.1093,
-    "units": 2.0,
-    "odds": 127,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Connelly Early",
-    "away_pitcher": "Randy V\u00e1squez",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "LAA",
-    "away_team": "SEA",
-    "pick": "SEA",
-    "pick_side": "Away",
-    "model_prob": 0.6848,
-    "implied_prob": 0.6154,
-    "edge": 0.0694,
-    "ev": 0.1128,
-    "units": 3.0,
-    "odds": -160,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Jack Kochanowicz",
-    "away_pitcher": "Emerson Hancock",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "NYY",
-    "away_team": "MIA",
-    "pick": "MIA",
-    "pick_side": "Away",
-    "model_prob": 0.4223,
-    "implied_prob": 0.3774,
-    "edge": 0.0449,
-    "ev": 0.1191,
-    "units": 2.0,
-    "odds": 165,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Ryan Weathers",
-    "away_pitcher": "Max Meyer",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "CLE",
-    "away_team": "CHC",
-    "pick": "CLE",
-    "pick_side": "Home",
-    "model_prob": 0.5182,
-    "implied_prob": 0.4587,
-    "edge": 0.0595,
-    "ev": 0.1297,
-    "units": 2.0,
-    "odds": 118,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Slade Cecconi",
-    "away_pitcher": "Shota Imanaga",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "SF",
-    "away_team": "NYM",
-    "pick": "SF",
-    "pick_side": "Home",
-    "model_prob": 0.5655,
-    "implied_prob": 0.4975,
-    "edge": 0.068,
-    "ev": 0.1367,
-    "units": 3.0,
-    "odds": 101,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Landen Roupp",
-    "away_pitcher": "Clay Holmes",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "MIN",
-    "away_team": "TB",
-    "pick": "TB",
-    "pick_side": "Away",
-    "model_prob": 0.6067,
-    "implied_prob": 0.5122,
-    "edge": 0.0945,
-    "ev": 0.1845,
-    "units": 3.0,
-    "odds": -105,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Mick Abel",
-    "away_pitcher": "Steven Matz",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "KC",
-    "away_team": "MIL",
-    "pick": "KC",
-    "pick_side": "Home",
-    "model_prob": 0.6762,
-    "implied_prob": 0.5261,
-    "edge": 0.1501,
-    "ev": 0.2854,
-    "units": 3.0,
-    "odds": -111,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Seth Lugo",
-    "away_pitcher": "Brandon Sproat",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "ATH",
-    "away_team": "HOU",
-    "pick": "ATH",
-    "pick_side": "Home",
-    "model_prob": 0.6543,
-    "implied_prob": 0.5074,
-    "edge": 0.1469,
-    "ev": 0.2896,
-    "units": 3.0,
-    "odds": -103,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Luis Morales",
-    "away_pitcher": "Tatsuya Imai",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "CWS",
-    "away_team": "TOR",
-    "pick": "CWS",
-    "pick_side": "Home",
-    "model_prob": 0.549,
-    "implied_prob": 0.4065,
-    "edge": 0.1425,
-    "ev": 0.3506,
-    "units": 3.0,
-    "odds": 146,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Grant Taylor",
-    "away_pitcher": "Mason Fluharty",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-04",
-    "home_team": "WSH",
-    "away_team": "LAD",
-    "pick": "WSH",
-    "pick_side": "Home",
-    "model_prob": 0.5021,
-    "implied_prob": 0.2976,
-    "edge": 0.2045,
-    "ev": 0.6872,
-    "units": 3.0,
-    "odds": 236,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
-    "home_pitcher": "Jake Irvin",
-    "away_pitcher": "Tyler Glasnow",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
     "date": "2026-04-03",
     "home_team": "LAA",
     "away_team": "SEA",
@@ -7266,31 +6566,6 @@
     "profit": 3.39,
     "home_pitcher": "Robbie Ray",
     "away_pitcher": "David Peterson",
-    "bet_type": "moneyline",
-    "listed_total": null,
-    "predicted_total": null,
-    "predicted_home_runs": null,
-    "predicted_away_runs": null,
-    "total_delta": null,
-    "confidence": null
-  },
-  {
-    "date": "2026-04-02",
-    "home_team": "SF",
-    "away_team": "NYM",
-    "pick": "SF",
-    "pick_side": null,
-    "model_prob": 0.5701,
-    "implied_prob": 0.5464,
-    "edge": 0.0236,
-    "ev": 0.0433,
-    "units": 1.0,
-    "odds": 83,
-    "status": "Win",
-    "result": "SF",
-    "profit": 0.83,
-    "home_pitcher": null,
-    "away_pitcher": null,
     "bet_type": "moneyline",
     "listed_total": null,
     "predicted_total": null,
