@@ -4,7 +4,7 @@
     "wins": 120,
     "losses": 140,
     "pending": 29,
-    "total_units_wagered": 366.46,
+    "total_units_wagered": 366.46000000000004,
     "total_profit": 32.47,
     "roi_pct": 8.86,
     "brier_score": 0.2503,
@@ -16,11 +16,11 @@
     "wins": 120,
     "losses": 140,
     "pending": 29,
-    "total_units_wagered": 366.46,
+    "total_units_wagered": 366.46000000000004,
     "total_profit": 32.47,
     "roi_pct": 8.86,
     "brier_score": 0.2503,
     "win_rate": 46.15
   },
-  "last_updated": "2026-05-23T14:48:39.226374Z"
+  "last_updated": "2026-05-23T15:36:37.063867Z"
 }
