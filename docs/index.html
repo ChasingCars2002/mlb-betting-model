@@ -22,7 +22,6 @@
         <div id="header-auth" class="header-auth">
           <div id="auth-logged-out" style="display:flex;gap:8px;align-items:center">
             <button class="auth-btn" onclick="openModal('signin')">Sign in</button>
-            <button class="auth-btn auth-btn-primary" onclick="openModal('signup')">Get access</button>
           </div>
           <div id="auth-logged-in" style="display:none;gap:8px;align-items:center">
             <span id="auth-user-email" class="auth-email"></span>
@@ -88,11 +87,6 @@
           <div id="potd-card" class="potd-card">
             <p style="color:var(--muted)">Loading…</p>
           </div>
-          <div class="subscribe-banner">
-            <div class="sub-title">Unlock today's picks</div>
-            <div class="sub-desc">5-day free trial, then $7.99/month. Cancel anytime.</div>
-            <button class="subscribe-btn subscribe-cta" onclick="startSubscription()">Start Free Trial</button>
-          </div>
         </div>
       </div>
 
@@ -155,11 +149,6 @@
     <div class="modal-content">
       <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
 
-      <div class="modal-tabs">
-        <button class="modal-tab active" data-tab="signin">Sign in</button>
-        <button class="modal-tab"        data-tab="signup">Create account</button>
-      </div>
-
       <!-- Sign in panel -->
       <div id="signin-panel" class="modal-panel" data-panel="signin" style="display:flex">
         <form id="si-form">
@@ -174,23 +163,6 @@
           <div class="modal-error" style="display:none"></div>
           <button id="si-btn" type="submit" class="modal-submit">Sign in</button>
         </form>
-      </div>
-
-      <!-- Sign up panel -->
-      <div id="signup-panel" class="modal-panel" data-panel="signup" style="display:none">
-        <form id="su-form">
-          <div class="modal-field">
-            <label for="su-email">Email</label>
-            <input id="su-email" type="email" placeholder="you@example.com" required autocomplete="email" />
-          </div>
-          <div class="modal-field">
-            <label for="su-pw">Password</label>
-            <input id="su-pw" type="password" placeholder="Min 8 characters" required minlength="8" autocomplete="new-password" />
-          </div>
-          <div class="modal-error" style="display:none"></div>
-          <button id="su-btn" type="submit" class="modal-submit">Create account</button>
-        </form>
-        <p class="modal-note">After creating your account you'll be sent to checkout to enter a payment method, then start your 5-day free trial. After the trial it's $7.99/month — cancel anytime. By creating an account you agree to our <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a> and <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       </div>
     </div>
   </div>
@@ -210,17 +182,9 @@
 
   <!-- Inline stubs: guarantee these globals exist even if auth.js fails to load -->
   <script>
-    function openModal(tab) {
+    function openModal() {
       var m = document.getElementById('auth-modal');
-      if (!m) return;
-      m.style.display = 'flex';
-      var active = tab || 'signin';
-      document.querySelectorAll('.modal-tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.tab === active);
-      });
-      document.querySelectorAll('.modal-panel').forEach(function(p) {
-        p.style.display = (p.dataset.panel === active) ? 'flex' : 'none';
-      });
+      if (m) m.style.display = 'flex';
     }
     function closeModal() {
       var m = document.getElementById('auth-modal');
@@ -231,7 +195,6 @@
       var m = document.getElementById('manage-modal');
       if (m) m.style.display = 'none';
     }
-    function startSubscription() { openModal('signup'); }
     function sbSignOut() {}
   </script>
 
