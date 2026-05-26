@@ -137,7 +137,8 @@ def run_predictions(model_name: str = "xgboost"):
         return
     if not games:
         print("  No games found today (off day or no probable pitchers posted). Exiting.")
-        return  # Not an error — valid off day
+        export_dashboard_data()
+        return
     print(f"        Found {len(games)} games with probable pitchers.")
 
     # Step 2: Load model
@@ -313,14 +314,8 @@ def export_dashboard_data():
     today_picks = [p for p in history if p["date"] == today_str]
     today_ml = [p for p in today_picks if p.get("bet_type", "moneyline") == "moneyline"]
 
-    # Upload today's picks to Supabase private storage (subscriber-only).
-    # If Supabase is configured, write an empty placeholder to GitHub Pages so
-    # the file URL reveals nothing. Otherwise fall back to writing the real data.
-    supabase_ok = upload_picks_to_supabase(today_ml, history_for_export)
-    if supabase_ok:
-        (out / "picks_today.json").write_text("[]")
-    else:
-        (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_ml), indent=2))
+    upload_picks_to_supabase(today_ml, history_for_export)
+    (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_ml), indent=2))
 
     if today_picks:
         top = max(today_picks, key=lambda p: p.get("edge") or 0)

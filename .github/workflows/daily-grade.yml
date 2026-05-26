@@ -34,5 +34,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add mlb_bets.db docs/data/
           git diff --cached --quiet || git commit -m "chore: grade predictions $(date -u +%Y-%m-%d)"
-          git pull --rebase -X theirs origin master
-          git push origin master
+          for attempt in 1 2 3 4; do
+            git pull --rebase -X theirs origin master && git push origin master && break
+            echo "Push attempt $attempt failed, retrying in $((attempt * 2))s..."
+            sleep $((attempt * 2))
+          done
