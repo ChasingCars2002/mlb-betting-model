@@ -6,8 +6,37 @@ from odds import (
     american_to_decimal,
     decimal_to_implied_prob,
     implied_prob_to_american,
+    devig_two_way,
     match_odds_to_games,
 )
+
+
+# ---------------------------------------------------------------------------
+# devig_two_way
+# ---------------------------------------------------------------------------
+
+class TestDevigTwoWay:
+    def test_sums_to_one(self):
+        h, a = devig_two_way(+120, -140)
+        assert h + a == pytest.approx(1.0, abs=1e-9)
+
+    def test_symmetric_market(self):
+        # -110 / -110 is a perfectly symmetric market → 50/50 after de-vig
+        h, a = devig_two_way(-110, -110)
+        assert h == pytest.approx(0.5, abs=1e-6)
+        assert a == pytest.approx(0.5, abs=1e-6)
+
+    def test_strips_vig(self):
+        # Raw implied probs sum to >1; the no-vig home prob must be lower than raw.
+        raw_home = american_to_implied_prob(-140)
+        h, _ = devig_two_way(-140, +120)
+        assert h < raw_home
+        assert 0 < h < 1
+
+    def test_favorite_has_higher_prob(self):
+        # Home is the favorite (-200) → its no-vig prob should exceed the dog's.
+        h, a = devig_two_way(-200, +170)
+        assert h > a
 
 
 # ---------------------------------------------------------------------------

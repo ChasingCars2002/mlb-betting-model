@@ -138,6 +138,24 @@ def implied_prob_to_american(prob: float) -> int:
         return round(-(prob * 100.0) / (1.0 - prob))
 
 
+def devig_two_way(home_odds: int, away_odds: int) -> tuple[float, float]:
+    """Remove the bookmaker vig from a two-way market.
+
+    Raw American odds imply probabilities that sum to >1 (the overround / vig).
+    Normalizing each side by the total recovers the book's true (no-vig)
+    probability estimate, which sums to 1.0 and is directly comparable to the
+    model's probability.
+
+    Returns (home_no_vig_prob, away_no_vig_prob).
+    """
+    home_implied = american_to_implied_prob(home_odds)
+    away_implied = american_to_implied_prob(away_odds)
+    total = home_implied + away_implied
+    if total <= 0:
+        return 0.5, 0.5
+    return home_implied / total, away_implied / total
+
+
 def decimal_to_implied_prob(odds: float) -> float:
     """Convert decimal odds to implied probability. 2.50 → 0.400."""
     if odds <= 0:

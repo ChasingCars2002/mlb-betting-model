@@ -5,10 +5,31 @@ from evaluate import (
     calculate_ev,
     calculate_edge,
     size_bet,
+    blend_with_market,
     filter_positive_ev,
     format_picks,
     format_stats,
 )
+
+
+# ---------------------------------------------------------------------------
+# blend_with_market
+# ---------------------------------------------------------------------------
+
+class TestBlendWithMarket:
+    def test_pure_market(self):
+        assert blend_with_market(0.70, 0.40, weight=1.0) == pytest.approx(0.40)
+
+    def test_pure_model(self):
+        assert blend_with_market(0.70, 0.40, weight=0.0) == pytest.approx(0.70)
+
+    def test_halfway(self):
+        assert blend_with_market(0.70, 0.40, weight=0.5) == pytest.approx(0.55)
+
+    def test_shrinks_toward_market(self):
+        # Blended value always lies between model and market
+        blended = blend_with_market(0.65, 0.45, weight=0.6)
+        assert 0.45 < blended < 0.65
 
 
 # ---------------------------------------------------------------------------
@@ -98,7 +119,10 @@ class TestSizeBet:
 # filter_positive_ev
 # ---------------------------------------------------------------------------
 
-def _make_game(home_prob=0.55, home_odds=-110, away_odds=-110, model_name="xgboost"):
+# Default: model 0.58 on home, priced +120 / -140. After de-vig the home
+# no-vig prob is ~0.438, a ~14-pt disagreement that survives the cap and,
+# once blended toward the market, still clears the edge threshold.
+def _make_game(home_prob=0.58, home_odds=+120, away_odds=-140, model_name="xgboost"):
     return {
         "game_date": "2026-04-02",
         "home_team": "NYY",
@@ -114,31 +138,48 @@ def _make_game(home_prob=0.55, home_odds=-110, away_odds=-110, model_name="xgboo
 
 class TestFilterPositiveEV:
     def test_no_picks_when_no_edge(self):
-        # -110 on both sides implies ~52.4% each; model at 52% → no edge
+        # -110 on both sides de-vigs to ~50% each; model at 52% → tiny edge, no bet
         game = _make_game(home_prob=0.52, home_odds=-110, away_odds=-110)
         picks = filter_positive_ev([game])
         assert picks == []
 
     def test_home_pick_generated(self):
-        # Strong model edge on home side
-        game = _make_game(home_prob=0.65, home_odds=+130, away_odds=-150)
+        # Moderate, plausible model edge on the home side
+        game = _make_game(home_prob=0.58, home_odds=+120, away_odds=-140)
         picks = filter_positive_ev([game])
         home_picks = [p for p in picks if p["pick_side"] == "Home"]
         assert len(home_picks) == 1
         assert home_picks[0]["pick"] == "NYY"
 
     def test_away_pick_generated(self):
-        # Strong model edge on away side
-        game = _make_game(home_prob=0.35, home_odds=-150, away_odds=+130)
+        # Mirror image: moderate model edge on the away side
+        game = _make_game(home_prob=0.42, home_odds=-140, away_odds=+120)
         picks = filter_positive_ev([game])
         away_picks = [p for p in picks if p["pick_side"] == "Away"]
         assert len(away_picks) == 1
         assert away_picks[0]["pick"] == "BOS"
 
+    def test_implausible_disagreement_rejected(self):
+        # Model says 0.65 but the market de-vigs to ~0.42 — a >20-pt gap that is
+        # almost certainly model error. The cap must reject it.
+        game = _make_game(home_prob=0.65, home_odds=+130, away_odds=-150)
+        picks = filter_positive_ev([game])
+        assert picks == []
+
+    def test_blended_prob_sits_between_model_and_market(self):
+        game = _make_game(home_prob=0.58, home_odds=+120, away_odds=-140)
+        picks = filter_positive_ev([game])
+        home = next(p for p in picks if p["pick_side"] == "Home")
+        # Recorded model_prob is the blended value: below the raw 0.58 model
+        # prob and above the no-vig market (implied_prob).
+        assert home["implied_prob"] < home["model_prob"] < 0.58
+        # edge is measured against the no-vig market
+        assert home["edge"] == pytest.approx(home["model_prob"] - home["implied_prob"], abs=1e-4)
+
     def test_picks_sorted_by_ev_desc(self):
         games = [
-            _make_game(home_prob=0.60, home_odds=+150, away_odds=-200),  # good edge
-            _make_game(home_prob=0.55, home_odds=+120, away_odds=-150),  # smaller edge
+            _make_game(home_prob=0.58, home_odds=+120, away_odds=-140),  # larger edge
+            _make_game(home_prob=0.56, home_odds=+110, away_odds=-130),  # smaller edge
         ]
         # Make teams unique
         games[1]["home_team"] = "LAD"
@@ -148,8 +189,9 @@ class TestFilterPositiveEV:
         assert evs == sorted(evs, reverse=True)
 
     def test_pick_dict_has_required_keys(self):
-        game = _make_game(home_prob=0.65, home_odds=+130, away_odds=-150)
+        game = _make_game(home_prob=0.58, home_odds=+120, away_odds=-140)
         picks = filter_positive_ev([game])
+        assert picks  # sanity: at least one pick
         required = {"date", "home_team", "away_team", "pick", "pick_side",
                     "model_prob", "implied_prob", "ev", "edge", "units",
                     "odds", "model_name", "home_pitcher", "away_pitcher"}
@@ -170,7 +212,7 @@ class TestFormatting:
         assert "No +EV picks" in output
 
     def test_format_picks_with_picks(self):
-        game = _make_game(home_prob=0.65, home_odds=+130, away_odds=-150)
+        game = _make_game(home_prob=0.58, home_odds=+120, away_odds=-140)
         picks = filter_positive_ev([game])
         output = format_picks(picks)
         assert "NYY" in output

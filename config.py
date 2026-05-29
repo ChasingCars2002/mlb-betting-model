@@ -33,10 +33,19 @@ DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 TRAINING_SEASONS = [2023, 2024, 2025]
 
 # --- EV & Bet Sizing ---
-EV_THRESHOLD  = 0.05  # Minimum edge to place a bet (5%)
+EV_THRESHOLD  = 0.05  # Minimum edge (vs no-vig market, on the blended prob) to bet
 KELLY_SCALE   = 13    # Multiplier: translates half-Kelly fraction → intuitive units
 MIN_BET_UNITS = 0.5   # Floor: any qualifying pick bets at least this many units
 MAX_BET_UNITS = 3.0   # Cap: never risk more than this per pick
+
+# --- Market blending & adverse-selection guards ---
+# The raw model is miscalibrated/under-dispersed and systematically overrates the
+# side it picks (empirically ~8 pts vs. a sharp market). We therefore (1) de-vig the
+# book consensus to a true probability, (2) shrink the model toward that consensus,
+# and (3) reject picks where the model disagrees with the de-vigged market by an
+# implausible margin (almost always model error, not real edge).
+MARKET_BLEND_WEIGHT  = 0.5   # weight on the de-vigged market consensus when blending (0=pure model, 1=pure market)
+MAX_RAW_DISAGREEMENT = 0.15  # skip a side if |model_prob - no_vig_market| exceeds this
 
 # --- Feature Engineering Windows ---
 PITCHER_ROLLING_DAYS = 30

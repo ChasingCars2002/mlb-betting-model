@@ -2,8 +2,15 @@
 
 import logging
 
-from config import EV_THRESHOLD, KELLY_SCALE, MIN_BET_UNITS, MAX_BET_UNITS
-from odds import american_to_implied_prob, american_to_decimal
+from config import (
+    EV_THRESHOLD,
+    KELLY_SCALE,
+    MIN_BET_UNITS,
+    MAX_BET_UNITS,
+    MARKET_BLEND_WEIGHT,
+    MAX_RAW_DISAGREEMENT,
+)
+from odds import american_to_implied_prob, american_to_decimal, devig_two_way
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +70,33 @@ def size_bet(model_prob: float, american_odds: int) -> float:
     return round(max(MIN_BET_UNITS, min(MAX_BET_UNITS, half_kelly * KELLY_SCALE)), 2)
 
 
+def blend_with_market(model_prob: float, no_vig_prob: float,
+                      weight: float = MARKET_BLEND_WEIGHT) -> float:
+    """Shrink the model probability toward the de-vigged market consensus.
+
+    blended = weight * market + (1 - weight) * model
+
+    A higher `weight` trusts the (sharp) market more. This is the primary
+    defense against adverse selection: the raw model overrates the side it
+    picks, so betting its un-shrunk probability systematically loses.
+    """
+    return weight * no_vig_prob + (1.0 - weight) * model_prob
+
+
 def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
-    """Filter games to only those with positive EV above threshold.
+    """Filter games to +EV picks using a market-blended, de-vigged probability.
+
+    For each side we:
+      1. De-vig the book consensus to a true probability (sums to 1.0).
+      2. Skip the side if the raw model disagrees with that no-vig market by
+         more than MAX_RAW_DISAGREEMENT (almost always model error).
+      3. Blend the model toward the market (MARKET_BLEND_WEIGHT).
+      4. Bet only if the blended prob is +EV at the offered price AND its edge
+         over the no-vig market clears EV_THRESHOLD.
+
+    EV, edge, and bet sizing all use the blended probability, so the recorded
+    `model_prob` reflects the probability the wager is actually based on and
+    `implied_prob` is the no-vig market estimate.
 
     Args:
         games_with_predictions: List of game dicts, each must have:
@@ -79,25 +111,30 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         model_prob_home = game["model_prob"]
         model_prob_away = 1.0 - model_prob_home
 
-        home_implied = american_to_implied_prob(game["home_odds"])
-        away_implied = american_to_implied_prob(game["away_odds"])
+        # De-vig the two-way market into true probabilities (sum to 1.0).
+        home_novig, away_novig = devig_two_way(game["home_odds"], game["away_odds"])
+
+        # Blend model toward the sharp market.
+        blended_home = blend_with_market(model_prob_home, home_novig)
+        blended_away = 1.0 - blended_home  # internally consistent with blended_home
 
         # Check home team bet
-        home_edge = calculate_edge(model_prob_home, home_implied)
-        home_ev = calculate_ev(model_prob_home, home_implied, game["home_odds"])
+        home_raw_gap = abs(model_prob_home - home_novig)
+        home_edge = calculate_edge(blended_home, home_novig)
+        home_ev = calculate_ev(blended_home, home_novig, game["home_odds"])
 
-        if home_ev > 0 and home_edge >= EV_THRESHOLD:
+        if home_raw_gap <= MAX_RAW_DISAGREEMENT and home_ev > 0 and home_edge >= EV_THRESHOLD:
             picks.append({
                 "date": game["game_date"],
                 "home_team": game["home_team"],
                 "away_team": game["away_team"],
                 "pick": game["home_team"],
                 "pick_side": "Home",
-                "model_prob": round(model_prob_home, 4),
-                "implied_prob": round(home_implied, 4),
+                "model_prob": round(blended_home, 4),
+                "implied_prob": round(home_novig, 4),
                 "ev": home_ev,
                 "edge": home_edge,
-                "units": size_bet(model_prob_home, game["home_odds"]),
+                "units": size_bet(blended_home, game["home_odds"]),
                 "odds": game["home_odds"],
                 "model_name": game.get("model_name", "xgboost"),
                 "home_pitcher": game.get("home_pitcher_name", ""),
@@ -105,21 +142,22 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
             })
 
         # Check away team bet
-        away_edge = calculate_edge(model_prob_away, away_implied)
-        away_ev = calculate_ev(model_prob_away, away_implied, game["away_odds"])
+        away_raw_gap = abs(model_prob_away - away_novig)
+        away_edge = calculate_edge(blended_away, away_novig)
+        away_ev = calculate_ev(blended_away, away_novig, game["away_odds"])
 
-        if away_ev > 0 and away_edge >= EV_THRESHOLD:
+        if away_raw_gap <= MAX_RAW_DISAGREEMENT and away_ev > 0 and away_edge >= EV_THRESHOLD:
             picks.append({
                 "date": game["game_date"],
                 "home_team": game["home_team"],
                 "away_team": game["away_team"],
                 "pick": game["away_team"],
                 "pick_side": "Away",
-                "model_prob": round(model_prob_away, 4),
-                "implied_prob": round(away_implied, 4),
+                "model_prob": round(blended_away, 4),
+                "implied_prob": round(away_novig, 4),
                 "ev": away_ev,
                 "edge": away_edge,
-                "units": size_bet(model_prob_away, game["away_odds"]),
+                "units": size_bet(blended_away, game["away_odds"]),
                 "odds": game["away_odds"],
                 "model_name": game.get("model_name", "xgboost"),
                 "home_pitcher": game.get("home_pitcher_name", ""),
