@@ -24,7 +24,12 @@ async function loadData() {
     statsData  = await statsRes.json();
     const rawHistory = await historyRes.json();
     allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
-    const todayPicks = picksRes.ok ? await picksRes.json() : [];
+    const rawToday = picksRes.ok ? await picksRes.json() : [];
+    // Only show picks that are actually for today (US Eastern). Between runs the
+    // committed picks_today.json still holds the previous day's picks; without
+    // this guard the site would display yesterday's matchups as "Today's Picks".
+    const today = easternDateStr();
+    const todayPicks = rawToday.filter(p => p.date === today);
 
     const loadingEl = document.getElementById('loading');
     const appEl     = document.getElementById('app');
@@ -48,6 +53,12 @@ async function loadData() {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function $(id) { return document.getElementById(id); }
+
+// Current date (YYYY-MM-DD) in US Eastern — matches how picks are dated and
+// keeps a day's picks visible through that day in the league's reference zone.
+function easternDateStr() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
 
 function setHTML(id, html) {
   const el = $(id);
