@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "date": "2026-05-30",
+    "home_team": "ATH",
+    "away_team": "NYY",
+    "pick": "ATH",
+    "pick_side": "Home",
+    "model_prob": 0.4931,
+    "implied_prob": 0.4206,
+    "edge": 0.0726,
+    "ev": 0.1293,
+    "units": 0.65,
+    "odds": 129,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "J.T. Ginn",
+    "away_pitcher": "Ryan Weathers",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": 4.27,
+    "predicted_away_runs": 4.32,
+    "total_delta": null,
+    "confidence": 4.0
+  }
+]
