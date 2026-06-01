@@ -18,7 +18,7 @@ from config import (
     RETRAIN_SCHEDULE_HOUR,
     RETRAIN_SCHEDULE_MINUTE,
 )
-from database import init_db, save_predictions, grade_predictions, get_roi_stats, get_all_predictions, upload_picks_to_supabase
+from database import init_db, save_predictions, grade_predictions, get_roi_stats, get_all_predictions, upload_picks_to_supabase, get_pending_dates
 from data import get_todays_games, get_yesterdays_results
 from features import build_game_features
 from model import load_model, predict_win_prob
@@ -231,25 +231,38 @@ def run_predictions(model_name: str = "xgboost"):
 # ---------------------------------------------------------------------------
 
 def run_grading():
-    """Phase 2: Fetch yesterday's results and grade pending predictions."""
+    """Phase 2: Grade every past date that still has pending predictions.
+
+    Sweeping all stale pending dates (not just yesterday) makes grading
+    self-healing: picks that missed their grading day — e.g. because a game was
+    postponed or a grade run was skipped — get settled on the next run instead of
+    sitting Pending forever.
+    """
     print(f"\n{'='*60}")
     print(f"  MLB BETTING MODEL — Grading ({date.today()})")
     print(f"{'='*60}")
 
-    print("\n  Fetching yesterday's results...")
-    try:
-        results = get_yesterdays_results()
-    except Exception as e:
-        print(f"  ERROR: MLB Stats API unavailable — {e}")
+    today_str = date.today().isoformat()
+    pending_dates = sorted(d for d in get_pending_dates() if d < today_str)
+    if not pending_dates:
+        print("\n  No pending predictions from past dates to grade.")
         export_dashboard_data()
         return
-    if not results:
-        print("  No results found for yesterday. Exiting.")
-        return
-    print(f"  Found results for {len(results)} games.")
 
-    print("  Grading pending predictions...")
-    grade_predictions(results)
+    print(f"\n  Grading pending picks across {len(pending_dates)} date(s): "
+          f"{', '.join(pending_dates)}")
+    for d in pending_dates:
+        print(f"\n  Fetching results for {d}...")
+        try:
+            results = get_yesterdays_results(target_date=date.fromisoformat(d))
+        except Exception as e:
+            print(f"  ERROR: MLB Stats API unavailable for {d} — {e}")
+            continue
+        if not results:
+            print(f"  No final results found for {d} yet — leaving pending.")
+            continue
+        print(f"  Found results for {len(results)} games; grading {d}...")
+        grade_predictions(results, target_date=d)
 
     # Show updated stats
     show_stats()

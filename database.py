@@ -59,6 +59,10 @@ def _migrate_db(conn: sqlite3.Connection):
         ("predicted_away_runs", "REAL"),
         ("total_delta", "REAL"),
         ("confidence", "INTEGER"),
+        # MLB gamePk — distinguishes the two games of a doubleheader (same date /
+        # teams). Part of the uniqueness key so legitimate doubleheader picks are
+        # not collapsed into one.
+        ("game_id", "INTEGER"),
     ]
     for col, col_type in new_columns:
         if col not in existing:
@@ -72,11 +76,19 @@ def _migrate_db(conn: sqlite3.Connection):
     # silently. Run `python main.py --dedupe` to clean up (logged + reversible);
     # the index is then created inside maintenance.dedupe_predictions().
     cols_now = {row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()}
-    if {"date", "home_team", "away_team", "bet_type", "model_name"}.issubset(cols_now):
+    index_cols = "date, home_team, away_team, bet_type, model_name, game_id"
+    if {"date", "home_team", "away_team", "bet_type", "model_name", "game_id"}.issubset(cols_now):
+        # If an older index without game_id exists, drop it so the definition can
+        # be upgraded (CREATE ... IF NOT EXISTS won't replace a same-named index).
+        existing_idx = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='index' AND name='ux_predictions_game'"
+        ).fetchone()
+        if existing_idx and existing_idx[0] and "game_id" not in existing_idx[0]:
+            conn.execute("DROP INDEX ux_predictions_game")
         try:
             conn.execute(
-                "CREATE UNIQUE INDEX IF NOT EXISTS ux_predictions_game "
-                "ON predictions(date, home_team, away_team, bet_type, model_name)"
+                f"CREATE UNIQUE INDEX IF NOT EXISTS ux_predictions_game "
+                f"ON predictions({index_cols})"
             )
         except sqlite3.Error:
             logger.warning(
@@ -111,12 +123,12 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
     # already-graded pick) — intended.
     sql = """
     INSERT OR IGNORE INTO predictions
-        (date, home_team, away_team, pick, pick_side, model_prob, implied_prob,
+        (date, game_id, home_team, away_team, pick, pick_side, model_prob, implied_prob,
          ev, edge, units, odds, status, model_name, home_pitcher, away_pitcher,
          bet_type, listed_total, predicted_total, predicted_home_runs,
          predicted_away_runs, total_delta, confidence)
     VALUES
-        (:date, :home_team, :away_team, :pick, :pick_side, :model_prob, :implied_prob,
+        (:date, :game_id, :home_team, :away_team, :pick, :pick_side, :model_prob, :implied_prob,
          :ev, :edge, :units, :odds, 'Pending', :model_name, :home_pitcher, :away_pitcher,
          :bet_type, :listed_total, :predicted_total, :predicted_home_runs,
          :predicted_away_runs, :total_delta, :confidence)
@@ -124,6 +136,7 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
     normalized = []
     for p in picks:
         row = dict(p)
+        row.setdefault("game_id", None)
         row.setdefault("bet_type", bet_type)
         row.setdefault("listed_total", None)
         row.setdefault("predicted_total", None)
@@ -138,19 +151,28 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
     logger.info("Saved %d predictions to database.", len(picks))
 
 
-def grade_predictions(results: dict[str, dict]):
+def grade_predictions(results: dict[str, dict], target_date: Optional[str] = None):
     """Grade pending predictions using actual game results.
 
     Args:
         results: Dict mapping game keys ("away @ home") to
                  {"home_score": int, "away_score": int, "winner": str}.
+        target_date: If given (YYYY-MM-DD), only grade pending picks from that
+                 date. This scopes grading when sweeping a backlog of stale
+                 dates so a result from one date can't grade a same-matchup
+                 pending pick on another date.
     """
+    query = (
+        "SELECT id, home_team, away_team, pick, units, odds, "
+        "bet_type, listed_total "
+        "FROM predictions WHERE status = 'Pending'"
+    )
+    params: list = []
+    if target_date:
+        query += " AND date = ?"
+        params.append(target_date)
     with get_connection() as conn:
-        pending = conn.execute(
-            "SELECT id, home_team, away_team, pick, units, odds, "
-            "bet_type, listed_total "
-            "FROM predictions WHERE status = 'Pending'"
-        ).fetchall()
+        pending = conn.execute(query, params).fetchall()
 
         if not pending:
             logger.info("No pending predictions to grade.")

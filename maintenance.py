@@ -90,18 +90,22 @@ def find_duplicates() -> list[dict]:
             "SELECT * FROM predictions "
             "ORDER BY date, home_team, away_team, "
             "COALESCE(bet_type, 'moneyline'), COALESCE(model_name, ''), "
-            "(status = 'Pending') ASC, id ASC"
+            "COALESCE(game_id, -1), (status = 'Pending') ASC, id ASC"
         ).fetchall()
 
     groups: dict[tuple, list[dict]] = {}
     for row in rows:
         r = dict(row)
+        # game_id is part of the key: the two games of a doubleheader share a
+        # date/teams/bet_type/model but have distinct gamePks, so they land in
+        # separate groups and are never treated as duplicates of each other.
         key = (
             r["date"],
             r["home_team"],
             r["away_team"],
             r.get("bet_type") or "moneyline",
             r.get("model_name") or "",
+            r.get("game_id"),
         )
         groups.setdefault(key, []).append(r)
 
@@ -197,7 +201,7 @@ def _ensure_unique_index() -> None:
         try:
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS ux_predictions_game "
-                "ON predictions(date, home_team, away_team, bet_type, model_name)"
+                "ON predictions(date, home_team, away_team, bet_type, model_name, game_id)"
             )
         except sqlite3.IntegrityError:
             logger.warning(
@@ -213,6 +217,22 @@ def _read_json(path: Path):
         return json.loads(path.read_text())
     except (FileNotFoundError, ValueError):
         return None
+
+
+def _acknowledged_off_days() -> set[str]:
+    """Dates the user has confirmed are off-days / genuine no-+EV days."""
+    data = _read_json(_maintenance_dir() / "acknowledged_off_days.json")
+    return set(data) if isinstance(data, list) else set()
+
+
+def acknowledge_off_day(day: str) -> None:
+    """Record a date as a known off-day / no-+EV day so health_check stops
+    flagging it as a possibly-missed prediction run. Committed for the record."""
+    path = _maintenance_dir() / "acknowledged_off_days.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    days = sorted(_acknowledged_off_days() | {day})
+    path.write_text(json.dumps(days, indent=2))
+    logger.info("Acknowledged %s as an off-day / no-pick day.", day)
 
 
 def health_check() -> dict:
@@ -232,6 +252,7 @@ def health_check() -> dict:
 
     report["today_predicted"] = today_count > 0
     report["today_pick_count"] = today_count
+    report["off_day_acknowledged"] = today in _acknowledged_off_days()
 
     ungraded = {r["date"]: r["c"] for r in pending_past}
     report["ungraded_past"] = sum(ungraded.values())
@@ -280,6 +301,17 @@ def health_check() -> dict:
 
     # Roll up issues
     issues = report["issues"]
+    # A zero-pick day can be legitimate (off-day / no +EV games) OR the symptom
+    # of a prediction run that failed before saving — and a failed run can still
+    # export a fresh stats.json + empty picks_today.json that "matches" the empty
+    # DB. So never treat an unexplained zero-pick day as healthy: flag it for
+    # verification unless the date has been explicitly acknowledged.
+    if not report["today_predicted"] and not report["off_day_acknowledged"]:
+        issues.append(
+            "No picks recorded for today — verify the Daily Predictions run "
+            "succeeded. If today is an off-day or had no +EV picks, acknowledge it "
+            "(maintenance.acknowledge_off_day) so this stops flagging."
+        )
     if report["ungraded_past"]:
         issues.append(
             f"{report['ungraded_past']} ungraded pick(s) from past dates "
@@ -312,8 +344,13 @@ def format_health_report(report: dict) -> str:
     status = "OK — no issues found" if report["ok"] else f"{len(report['issues'])} issue(s) found"
     lines.append(f"  Status: {status}")
     lines.append("")
-    lines.append(f"  Today's picks in DB:     {report['today_pick_count']}"
-                 f"{'' if report['today_predicted'] else '  (no games / not run yet)'}")
+    if report["today_predicted"]:
+        today_note = ""
+    elif report["off_day_acknowledged"]:
+        today_note = "  (acknowledged off-day)"
+    else:
+        today_note = "  (no picks — verify the prediction run!)"
+    lines.append(f"  Today's picks in DB:     {report['today_pick_count']}{today_note}")
     lines.append(f"  Ungraded past picks:     {report['ungraded_past']}")
     lines.append(f"  Duplicate rows:          {report['duplicate_rows']} "
                  f"in {report['duplicate_groups']} group(s)")

@@ -126,6 +126,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         if home_raw_gap <= MAX_RAW_DISAGREEMENT and home_ev > 0 and home_edge >= EV_THRESHOLD:
             picks.append({
                 "date": game["game_date"],
+                "game_id": game.get("game_id"),
                 "home_team": game["home_team"],
                 "away_team": game["away_team"],
                 "pick": game["home_team"],
@@ -149,6 +150,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         if away_raw_gap <= MAX_RAW_DISAGREEMENT and away_ev > 0 and away_edge >= EV_THRESHOLD:
             picks.append({
                 "date": game["game_date"],
+                "game_id": game.get("game_id"),
                 "home_team": game["home_team"],
                 "away_team": game["away_team"],
                 "pick": game["away_team"],

@@ -40,15 +40,23 @@ you can't reach GitHub, say so and move on.
   ```bash
   python main.py --grade
   ```
-- If **today was never predicted** (no picks, and it isn't an off-day), run:
+  `--grade` now sweeps **every** past date that still has pending picks (not just
+  yesterday), so a stale backlog gets settled in one run.
+- If **today shows no picks**, first confirm *why*. Check the latest **Daily
+  Predictions** workflow run (GitHub MCP). If it failed, re-run:
   ```bash
   python main.py --run-now
   ```
+  If it succeeded and today is genuinely an off-day or had no +EV picks,
+  acknowledge it so the check stops flagging it:
+  ```bash
+  python -c "import maintenance, datetime; maintenance.acknowledge_off_day(datetime.date.today().isoformat())"
+  ```
 
-Both hit external APIs (MLB Stats / The Odds API) and need secrets. In the web
-sandbox the network may be blocked — if either command fails for that reason,
-**do not force it**: report the gap in your summary and continue. Dedup and the
-health check below still work offline.
+The grade/predict commands hit external APIs (MLB Stats / The Odds API) and need
+secrets. In the web sandbox the network may be blocked — if either command fails
+for that reason, **do not force it**: report the gap in your summary and
+continue. Dedup and the health check below still work offline.
 
 ### 3. Remove duplicates (only if the report shows any)
 

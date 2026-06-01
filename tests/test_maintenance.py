@@ -29,6 +29,7 @@ def get_conn(db_path):
 def _make_pick(**overrides):
     base = {
         "date": "2026-04-02",
+        "game_id": 700001,  # MLB gamePk; production picks always carry one
         "home_team": "NYY",
         "away_team": "BOS",
         "pick": "NYY",
@@ -73,6 +74,18 @@ class TestSourceProtection:
         with get_conn(tmp_db) as conn:
             rows = conn.execute("SELECT * FROM predictions").fetchall()
         assert len(rows) == 1
+
+    def test_doubleheader_both_games_saved(self, tmp_db):
+        """Same teams/date but distinct gamePk (doubleheader) → two valid picks."""
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(game_id=700001)])
+            database.save_predictions([_make_pick(game_id=700002)])  # game 2
+        with get_conn(tmp_db) as conn:
+            rows = conn.execute("SELECT * FROM predictions").fetchall()
+        assert len(rows) == 2
+        # And neither is treated as a duplicate of the other.
+        with patch("database.DB_PATH", tmp_db):
+            assert maintenance.find_duplicates() == []
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +199,30 @@ class TestHealthCheck:
         assert report["duplicate_groups"] == 1
         assert report["duplicate_rows"] == 1
         assert any("duplicate" in i for i in report["issues"])
+
+    def test_flags_missing_today_run(self, tmp_db):
+        # No picks today and not acknowledged → must be surfaced, not "OK".
+        with patch("database.DB_PATH", tmp_db):
+            report = maintenance.health_check()
+        assert report["today_predicted"] is False
+        assert report["ok"] is False
+        assert any("today" in i.lower() for i in report["issues"])
+
+    def test_acknowledged_off_day_suppresses_missing_today(self, tmp_db):
+        today = date.today().isoformat()
+        with patch("database.DB_PATH", tmp_db):
+            maintenance.acknowledge_off_day(today)
+            report = maintenance.health_check()
+        assert report["off_day_acknowledged"] is True
+        assert not any("No picks recorded for today" in i for i in report["issues"])
+
+    def test_today_picks_present_no_missing_issue(self, tmp_db):
+        today = date.today().isoformat()
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(date=today, game_id=900001)])
+            report = maintenance.health_check()
+        assert report["today_predicted"] is True
+        assert not any("No picks recorded for today" in i for i in report["issues"])
 
     def test_report_formats(self, tmp_db):
         with patch("database.DB_PATH", tmp_db):
