@@ -433,6 +433,14 @@ def main():
         "--export", action="store_true",
         help="Export JSON files to docs/data/ for the GitHub Pages dashboard.",
     )
+    parser.add_argument(
+        "--health-check", action="store_true",
+        help="Read-only daily sanity check: freshness, grading, duplicates, JSON consistency.",
+    )
+    parser.add_argument(
+        "--dedupe", action="store_true",
+        help="Back up the DB, remove duplicate predictions (logged + reversible), and re-export.",
+    )
 
     args = parser.parse_args()
 
@@ -469,6 +477,20 @@ def main():
         run_scheduler()
     elif args.export:
         export_dashboard_data()
+    elif args.health_check:
+        from maintenance import health_check, format_health_report
+        print(format_health_report(health_check()))
+    elif args.dedupe:
+        from maintenance import dedupe_predictions
+        summary = dedupe_predictions()
+        if summary["removed_count"]:
+            print(f"\n  Removed {summary['removed_count']} duplicate row(s) "
+                  f"across {summary['group_count']} group(s).")
+            print(f"  Backup:  {summary['backup_path']}")
+            print(f"  Record:  {summary['record_path']}")
+            print("  Dashboard JSON re-exported. Revert via git or the backup above.\n")
+        else:
+            print("\n  No duplicate predictions found — nothing to remove.\n")
     else:
         # Default: run predictions
         parser.print_help()

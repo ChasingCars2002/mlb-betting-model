@@ -1,0 +1,1238 @@
+{
+  "removed_at": "2026-06-01T00:59:13.257703Z",
+  "backup": "/home/user/mlb-betting-model/backups/mlb_bets_20260601T005913Z.db",
+  "groups": [
+    {
+      "key": {
+        "date": "2026-04-02",
+        "home_team": "SF",
+        "away_team": "NYM",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 3,
+      "removed_ids": [
+        4
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "ATH",
+        "away_team": "HOU",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 14,
+      "removed_ids": [
+        24
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "BOS",
+        "away_team": "SD",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 21,
+      "removed_ids": [
+        31
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "CLE",
+        "away_team": "CHC",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 18,
+      "removed_ids": [
+        28
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "CWS",
+        "away_team": "TOR",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 13,
+      "removed_ids": [
+        26
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "KC",
+        "away_team": "MIL",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 15,
+      "removed_ids": [
+        25
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "LAA",
+        "away_team": "SEA",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 20,
+      "removed_ids": [
+        30
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "MIN",
+        "away_team": "TB",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 16,
+      "removed_ids": [
+        27
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "NYY",
+        "away_team": "MIA",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 19,
+      "removed_ids": [
+        29
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "PIT",
+        "away_team": "BAL",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 22,
+      "removed_ids": [
+        33
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "SF",
+        "away_team": "NYM",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 17,
+      "removed_ids": [
+        32
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-04",
+        "home_team": "WSH",
+        "away_team": "LAD",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 12,
+      "removed_ids": [
+        23
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-15",
+        "home_team": "ATH",
+        "away_team": "TEX",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 37,
+      "removed_ids": [
+        40
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-15",
+        "home_team": "LAD",
+        "away_team": "NYM",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 34,
+      "removed_ids": [
+        38
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-15",
+        "home_team": "SD",
+        "away_team": "SEA",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 36,
+      "removed_ids": [
+        39
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-16",
+        "home_team": "ATH",
+        "away_team": "TEX",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 45,
+      "removed_ids": [
+        52
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-16",
+        "home_team": "CWS",
+        "away_team": "TB",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 42,
+      "removed_ids": [
+        48
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-16",
+        "home_team": "DET",
+        "away_team": "KC",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 43,
+      "removed_ids": [
+        51
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-16",
+        "home_team": "HOU",
+        "away_team": "COL",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 41,
+      "removed_ids": [
+        49
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-16",
+        "home_team": "PIT",
+        "away_team": "WSH",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 46,
+      "removed_ids": [
+        53
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-16",
+        "home_team": "SD",
+        "away_team": "SEA",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 44,
+      "removed_ids": [
+        50
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-21",
+        "home_team": "AZ",
+        "away_team": "CWS",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 78,
+      "removed_ids": [
+        83
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-21",
+        "home_team": "CHC",
+        "away_team": "PHI",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 79,
+      "removed_ids": [
+        84
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-21",
+        "home_team": "NYM",
+        "away_team": "MIN",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 77,
+      "removed_ids": [
+        82
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-21",
+        "home_team": "SF",
+        "away_team": "LAD",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 76,
+      "removed_ids": [
+        81
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-04-21",
+        "home_team": "WSH",
+        "away_team": "ATL",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 80,
+      "removed_ids": [
+        85
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-05-18",
+        "home_team": "DET",
+        "away_team": "CLE",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 304,
+      "removed_ids": [
+        307
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-05-18",
+        "home_team": "NYY",
+        "away_team": "TOR",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 303,
+      "removed_ids": [
+        306
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-05-18",
+        "home_team": "SD",
+        "away_team": "LAD",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 302,
+      "removed_ids": [
+        305
+      ]
+    },
+    {
+      "key": {
+        "date": "2026-05-29",
+        "home_team": "ATH",
+        "away_team": "NYY",
+        "bet_type": "moneyline",
+        "model_name": "xgboost"
+      },
+      "kept_id": 350,
+      "removed_ids": [
+        351
+      ]
+    }
+  ],
+  "removed_rows": [
+    {
+      "id": 4,
+      "date": "2026-04-02",
+      "home_team": "SF",
+      "away_team": "NYM",
+      "pick": "SF",
+      "model_prob": 0.584,
+      "implied_prob": 0.4695,
+      "ev": 0.2438,
+      "edge": 0.1145,
+      "units": 3.0,
+      "odds": 113,
+      "status": "Win",
+      "result": "SF",
+      "profit": 3.3899999999999997,
+      "model_name": "xgboost",
+      "created_at": "2026-04-03 01:40:03",
+      "pick_side": "Home",
+      "home_pitcher": "Robbie Ray",
+      "away_pitcher": "David Peterson",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 24,
+      "date": "2026-04-04",
+      "home_team": "ATH",
+      "away_team": "HOU",
+      "pick": "ATH",
+      "model_prob": 0.6543,
+      "implied_prob": 0.5074,
+      "ev": 0.2896,
+      "edge": 0.1469,
+      "units": 3.0,
+      "odds": -103,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Luis Morales",
+      "away_pitcher": "Tatsuya Imai",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 31,
+      "date": "2026-04-04",
+      "home_team": "BOS",
+      "away_team": "SD",
+      "pick": "SD",
+      "model_prob": 0.4887,
+      "implied_prob": 0.4444,
+      "ev": 0.0995,
+      "edge": 0.0442,
+      "units": 2.0,
+      "odds": 125,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Away",
+      "home_pitcher": "Connelly Early",
+      "away_pitcher": "Randy V\u00e1squez",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 28,
+      "date": "2026-04-04",
+      "home_team": "CLE",
+      "away_team": "CHC",
+      "pick": "CLE",
+      "model_prob": 0.5182,
+      "implied_prob": 0.463,
+      "ev": 0.1193,
+      "edge": 0.0552,
+      "units": 2.0,
+      "odds": 116,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Slade Cecconi",
+      "away_pitcher": "Shota Imanaga",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 26,
+      "date": "2026-04-04",
+      "home_team": "CWS",
+      "away_team": "TOR",
+      "pick": "CWS",
+      "model_prob": 0.549,
+      "implied_prob": 0.4444,
+      "ev": 0.2353,
+      "edge": 0.1046,
+      "units": 3.0,
+      "odds": 125,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Grant Taylor",
+      "away_pitcher": "Mason Fluharty",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 25,
+      "date": "2026-04-04",
+      "home_team": "KC",
+      "away_team": "MIL",
+      "pick": "KC",
+      "model_prob": 0.6762,
+      "implied_prob": 0.5261,
+      "ev": 0.2854,
+      "edge": 0.1501,
+      "units": 3.0,
+      "odds": -111,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Seth Lugo",
+      "away_pitcher": "Brandon Sproat",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 30,
+      "date": "2026-04-04",
+      "home_team": "LAA",
+      "away_team": "SEA",
+      "pick": "SEA",
+      "model_prob": 0.6848,
+      "implied_prob": 0.6139,
+      "ev": 0.1155,
+      "edge": 0.0709,
+      "units": 3.0,
+      "odds": -159,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Away",
+      "home_pitcher": "Jack Kochanowicz",
+      "away_pitcher": "Emerson Hancock",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 27,
+      "date": "2026-04-04",
+      "home_team": "MIN",
+      "away_team": "TB",
+      "pick": "TB",
+      "model_prob": 0.6067,
+      "implied_prob": 0.5146,
+      "ev": 0.179,
+      "edge": 0.0921,
+      "units": 3.0,
+      "odds": -106,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Away",
+      "home_pitcher": "Mick Abel",
+      "away_pitcher": "Steven Matz",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 29,
+      "date": "2026-04-04",
+      "home_team": "NYY",
+      "away_team": "MIA",
+      "pick": "MIA",
+      "model_prob": 0.4223,
+      "implied_prob": 0.3774,
+      "ev": 0.1191,
+      "edge": 0.0449,
+      "units": 2.0,
+      "odds": 165,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Away",
+      "home_pitcher": "Ryan Weathers",
+      "away_pitcher": "Max Meyer",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 33,
+      "date": "2026-04-04",
+      "home_team": "PIT",
+      "away_team": "BAL",
+      "pick": "PIT",
+      "model_prob": 0.5516,
+      "implied_prob": 0.5305,
+      "ev": 0.0397,
+      "edge": 0.021,
+      "units": 1.0,
+      "odds": -113,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Carmen Mlodzinski",
+      "away_pitcher": "Shane Baz",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 32,
+      "date": "2026-04-04",
+      "home_team": "SF",
+      "away_team": "NYM",
+      "pick": "SF",
+      "model_prob": 0.5655,
+      "implied_prob": 0.5146,
+      "ev": 0.0991,
+      "edge": 0.051,
+      "units": 2.0,
+      "odds": -106,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Landen Roupp",
+      "away_pitcher": "Clay Holmes",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 23,
+      "date": "2026-04-04",
+      "home_team": "WSH",
+      "away_team": "LAD",
+      "pick": "WSH",
+      "model_prob": 0.5021,
+      "implied_prob": 0.289,
+      "ev": 0.7374,
+      "edge": 0.2131,
+      "units": 3.0,
+      "odds": 246,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-04 14:46:19",
+      "pick_side": "Home",
+      "home_pitcher": "Jake Irvin",
+      "away_pitcher": "Tyler Glasnow",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 40,
+      "date": "2026-04-15",
+      "home_team": "ATH",
+      "away_team": "TEX",
+      "pick": "ATH",
+      "model_prob": 0.5418,
+      "implied_prob": 0.495,
+      "ev": 0.0944,
+      "edge": 0.0467,
+      "units": 2.0,
+      "odds": 102,
+      "status": "Loss",
+      "result": "TEX",
+      "profit": -2.0,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 03:02:39",
+      "pick_side": "Home",
+      "home_pitcher": "J.T. Ginn",
+      "away_pitcher": "Kumar Rocker",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 38,
+      "date": "2026-04-15",
+      "home_team": "LAD",
+      "away_team": "NYM",
+      "pick": "NYM",
+      "model_prob": 0.4582,
+      "implied_prob": 0.1855,
+      "ev": 1.4698,
+      "edge": 0.2727,
+      "units": 3.0,
+      "odds": 439,
+      "status": "Pending",
+      "result": null,
+      "profit": null,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 03:02:39",
+      "pick_side": "Away",
+      "home_pitcher": "Shohei Ohtani",
+      "away_pitcher": "Clay Holmes",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 39,
+      "date": "2026-04-15",
+      "home_team": "SD",
+      "away_team": "SEA",
+      "pick": "SD",
+      "model_prob": 0.5418,
+      "implied_prob": 0.495,
+      "ev": 0.0944,
+      "edge": 0.0467,
+      "units": 2.0,
+      "odds": 102,
+      "status": "Win",
+      "result": "SD",
+      "profit": 2.04,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 03:02:39",
+      "pick_side": "Home",
+      "home_pitcher": "Randy V\u00e1squez",
+      "away_pitcher": "Emerson Hancock",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 52,
+      "date": "2026-04-16",
+      "home_team": "ATH",
+      "away_team": "TEX",
+      "pick": "ATH",
+      "model_prob": 0.5418,
+      "implied_prob": 0.5,
+      "ev": 0.0836,
+      "edge": 0.0418,
+      "units": 2.0,
+      "odds": 100,
+      "status": "Loss",
+      "result": "TEX",
+      "profit": -2.0,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 15:13:42",
+      "pick_side": "Home",
+      "home_pitcher": "Jacob Lopez",
+      "away_pitcher": "Jack Leiter",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 48,
+      "date": "2026-04-16",
+      "home_team": "CWS",
+      "away_team": "TB",
+      "pick": "CWS",
+      "model_prob": 0.5418,
+      "implied_prob": 0.4717,
+      "ev": 0.1486,
+      "edge": 0.0701,
+      "units": 3.0,
+      "odds": 112,
+      "status": "Loss",
+      "result": "TB",
+      "profit": -3.0,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 15:13:42",
+      "pick_side": "Home",
+      "home_pitcher": "Jordan Leasure",
+      "away_pitcher": "Steven Matz",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 51,
+      "date": "2026-04-16",
+      "home_team": "DET",
+      "away_team": "KC",
+      "pick": "DET",
+      "model_prob": 0.5418,
+      "implied_prob": 0.4975,
+      "ev": 0.089,
+      "edge": 0.0443,
+      "units": 2.0,
+      "odds": 101,
+      "status": "Win",
+      "result": "DET",
+      "profit": 2.02,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 15:13:42",
+      "pick_side": "Home",
+      "home_pitcher": "Keider Montero",
+      "away_pitcher": "Kris Bubic",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 49,
+      "date": "2026-04-16",
+      "home_team": "HOU",
+      "away_team": "COL",
+      "pick": "COL",
+      "model_prob": 0.4582,
+      "implied_prob": 0.4065,
+      "ev": 0.1272,
+      "edge": 0.0517,
+      "units": 2.0,
+      "odds": 146,
+      "status": "Win",
+      "result": "COL",
+      "profit": 2.92,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 15:13:42",
+      "pick_side": "Away",
+      "home_pitcher": "Ryan Weiss",
+      "away_pitcher": "Juan Mejia",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 53,
+      "date": "2026-04-16",
+      "home_team": "PIT",
+      "away_team": "WSH",
+      "pick": "WSH",
+      "model_prob": 0.4582,
+      "implied_prob": 0.4237,
+      "ev": 0.0814,
+      "edge": 0.0345,
+      "units": 1.0,
+      "odds": 136,
+      "status": "Win",
+      "result": "WSH",
+      "profit": 1.36,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 15:13:42",
+      "pick_side": "Away",
+      "home_pitcher": "Braxton Ashcraft",
+      "away_pitcher": "Foster Griffin",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 50,
+      "date": "2026-04-16",
+      "home_team": "SD",
+      "away_team": "SEA",
+      "pick": "SD",
+      "model_prob": 0.5418,
+      "implied_prob": 0.4926,
+      "ev": 0.0998,
+      "edge": 0.0492,
+      "units": 2.0,
+      "odds": 103,
+      "status": "Win",
+      "result": "SD",
+      "profit": 2.06,
+      "model_name": "xgboost",
+      "created_at": "2026-04-16 15:13:42",
+      "pick_side": "Home",
+      "home_pitcher": "Walker Buehler",
+      "away_pitcher": "Luis Castillo",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 83,
+      "date": "2026-04-21",
+      "home_team": "AZ",
+      "away_team": "CWS",
+      "pick": "CWS",
+      "model_prob": 0.4758,
+      "implied_prob": 0.431,
+      "ev": 0.1037,
+      "edge": 0.0447,
+      "units": 1.57,
+      "odds": 132,
+      "status": "Win",
+      "result": "CWS",
+      "profit": 2.0724,
+      "model_name": "xgboost",
+      "created_at": "2026-04-21 14:58:20",
+      "pick_side": "Away",
+      "home_pitcher": "Merrill Kelly",
+      "away_pitcher": "Sean Burke",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 84,
+      "date": "2026-04-21",
+      "home_team": "CHC",
+      "away_team": "PHI",
+      "pick": "CHC",
+      "model_prob": 0.5925,
+      "implied_prob": 0.5455,
+      "ev": 0.0863,
+      "edge": 0.0471,
+      "units": 2.07,
+      "odds": -120,
+      "status": "Win",
+      "result": "CHC",
+      "profit": 1.7249999999999999,
+      "model_name": "xgboost",
+      "created_at": "2026-04-21 14:58:20",
+      "pick_side": "Home",
+      "home_pitcher": "Shota Imanaga",
+      "away_pitcher": "Jes\u00fas Luzardo",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 82,
+      "date": "2026-04-21",
+      "home_team": "NYM",
+      "away_team": "MIN",
+      "pick": "MIN",
+      "model_prob": 0.4758,
+      "implied_prob": 0.4049,
+      "ev": 0.1751,
+      "edge": 0.0709,
+      "units": 2.38,
+      "odds": 147,
+      "status": "Win",
+      "result": "MIN",
+      "profit": 3.4985999999999997,
+      "model_name": "xgboost",
+      "created_at": "2026-04-21 14:58:20",
+      "pick_side": "Away",
+      "home_pitcher": "Nolan McLean",
+      "away_pitcher": "Simeon Woods Richardson",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 81,
+      "date": "2026-04-21",
+      "home_team": "SF",
+      "away_team": "LAD",
+      "pick": "SF",
+      "model_prob": 0.5197,
+      "implied_prob": 0.3937,
+      "ev": 0.32,
+      "edge": 0.126,
+      "units": 3.0,
+      "odds": 154,
+      "status": "Win",
+      "result": "SF",
+      "profit": 4.62,
+      "model_name": "xgboost",
+      "created_at": "2026-04-21 14:58:20",
+      "pick_side": "Home",
+      "home_pitcher": "Landen Roupp",
+      "away_pitcher": "Yoshinobu Yamamoto",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 85,
+      "date": "2026-04-21",
+      "home_team": "WSH",
+      "away_team": "ATL",
+      "pick": "WSH",
+      "model_prob": 0.4944,
+      "implied_prob": 0.463,
+      "ev": 0.0678,
+      "edge": 0.0314,
+      "units": 1.17,
+      "odds": 116,
+      "status": "Win",
+      "result": "WSH",
+      "profit": 1.3571999999999997,
+      "model_name": "xgboost",
+      "created_at": "2026-04-21 14:58:20",
+      "pick_side": "Home",
+      "home_pitcher": "Foster Griffin",
+      "away_pitcher": "Reynaldo L\u00f3pez",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": null,
+      "predicted_away_runs": null,
+      "total_delta": null,
+      "confidence": null
+    },
+    {
+      "id": 307,
+      "date": "2026-05-18",
+      "home_team": "DET",
+      "away_team": "CLE",
+      "pick": "CLE",
+      "model_prob": 0.4911,
+      "implied_prob": 0.4405,
+      "ev": 0.1149,
+      "edge": 0.0506,
+      "units": 0.59,
+      "odds": 127,
+      "status": "Win",
+      "result": "CLE",
+      "profit": 0.7493,
+      "model_name": "xgboost",
+      "created_at": "2026-05-18 16:39:58",
+      "pick_side": "Away",
+      "home_pitcher": "Framber Valdez",
+      "away_pitcher": "Slade Cecconi",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": 4.31,
+      "predicted_away_runs": 4.32,
+      "total_delta": null,
+      "confidence": 3
+    },
+    {
+      "id": 306,
+      "date": "2026-05-18",
+      "home_team": "NYY",
+      "away_team": "TOR",
+      "pick": "TOR",
+      "model_prob": 0.4634,
+      "implied_prob": 0.4115,
+      "ev": 0.1262,
+      "edge": 0.0519,
+      "units": 0.57,
+      "odds": 143,
+      "status": "Loss",
+      "result": "NYY",
+      "profit": -0.57,
+      "model_name": "xgboost",
+      "created_at": "2026-05-18 16:39:58",
+      "pick_side": "Away",
+      "home_pitcher": "Ryan Weathers",
+      "away_pitcher": "Patrick Corbin",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": 4.45,
+      "predicted_away_runs": 4.32,
+      "total_delta": null,
+      "confidence": 3
+    },
+    {
+      "id": 305,
+      "date": "2026-05-18",
+      "home_team": "SD",
+      "away_team": "LAD",
+      "pick": "SD",
+      "model_prob": 0.5679,
+      "implied_prob": 0.4405,
+      "ev": 0.2891,
+      "edge": 0.1273,
+      "units": 1.48,
+      "odds": 127,
+      "status": "Win",
+      "result": "SD",
+      "profit": 1.8796,
+      "model_name": "xgboost",
+      "created_at": "2026-05-18 16:39:58",
+      "pick_side": "Home",
+      "home_pitcher": "Michael King",
+      "away_pitcher": "Yoshinobu Yamamoto",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": 4.27,
+      "predicted_away_runs": 4.32,
+      "total_delta": null,
+      "confidence": 5
+    },
+    {
+      "id": 351,
+      "date": "2026-05-29",
+      "home_team": "ATH",
+      "away_team": "NYY",
+      "pick": "ATH",
+      "model_prob": 0.5018,
+      "implied_prob": 0.438,
+      "ev": 0.104,
+      "edge": 0.0639,
+      "units": 0.56,
+      "odds": 120,
+      "status": "Loss",
+      "result": "NYY",
+      "profit": -0.56,
+      "model_name": "xgboost",
+      "created_at": "2026-05-29 16:57:34",
+      "pick_side": "Home",
+      "home_pitcher": "Luis Severino",
+      "away_pitcher": "Carlos Rod\u00f3n",
+      "bet_type": "moneyline",
+      "listed_total": null,
+      "predicted_total": null,
+      "predicted_home_runs": 4.27,
+      "predicted_away_runs": 4.32,
+      "total_delta": null,
+      "confidence": 3
+    }
+  ]
+}

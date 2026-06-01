@@ -132,7 +132,7 @@ class TestSavePredictions:
     def test_saves_multiple_picks(self, tmp_db):
         picks = [
             _make_pick(pick="NYY", pick_side="Home"),
-            _make_pick(pick="BOS", pick_side="Away", home_team="NYY", away_team="BOS"),
+            _make_pick(pick="LAD", pick_side="Home", home_team="LAD", away_team="SF"),
         ]
         with patch("database.DB_PATH", tmp_db):
             database.save_predictions(picks)
@@ -223,8 +223,8 @@ class TestGetROIStats:
         pairs = [
             (_make_pick(pick="NYY", units=1, odds=-110),
              {"BOS @ NYY": {"winner": "NYY"}}),
-            (_make_pick(pick="NYY", units=1, odds=-110),
-             {"BOS @ NYY": {"winner": "BOS"}}),
+            (_make_pick(pick="LAD", units=1, odds=-110, home_team="LAD", away_team="SF"),
+             {"SF @ LAD": {"winner": "SF"}}),
         ]
         self._setup_graded(tmp_db, pairs)
         with patch("database.DB_PATH", tmp_db):

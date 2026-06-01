@@ -6,3 +6,7 @@ __pycache__/
 models/cache/
 .claude/worktrees/
 .claude/settings.local.json
+
+# Local DB snapshots written by `python main.py --dedupe` (in-session undo).
+# Git history is the durable record; these full copies should not be committed.
+backups/

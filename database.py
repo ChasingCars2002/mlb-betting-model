@@ -65,6 +65,25 @@ def _migrate_db(conn: sqlite3.Connection):
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
             logger.info("Migration: added column '%s' to predictions.", col)
 
+    # Enforce one pick per game / bet_type / model / day at the source. Combined
+    # with INSERT OR IGNORE in save_predictions(), this makes re-running a day a
+    # no-op instead of inserting duplicate rows. If the table already contains
+    # duplicates the index can't be created — we warn and skip rather than delete
+    # silently. Run `python main.py --dedupe` to clean up (logged + reversible);
+    # the index is then created inside maintenance.dedupe_predictions().
+    cols_now = {row[1] for row in conn.execute("PRAGMA table_info(predictions)").fetchall()}
+    if {"date", "home_team", "away_team", "bet_type", "model_name"}.issubset(cols_now):
+        try:
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_predictions_game "
+                "ON predictions(date, home_team, away_team, bet_type, model_name)"
+            )
+        except sqlite3.Error:
+            logger.warning(
+                "Duplicate predictions present — unique index not created. "
+                "Run 'python main.py --dedupe' to remove duplicates."
+            )
+
 
 def init_db():
     """Create the predictions table if it doesn't exist, then migrate."""
@@ -86,8 +105,12 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
         logger.info("No picks to save.")
         return
 
+    # INSERT OR IGNORE: once the ux_predictions_game unique index exists, a
+    # re-run of the same day silently skips already-saved games instead of
+    # creating duplicates. It keeps the original row (never overwrites a saved or
+    # already-graded pick) — intended.
     sql = """
-    INSERT INTO predictions
+    INSERT OR IGNORE INTO predictions
         (date, home_team, away_team, pick, pick_side, model_prob, implied_prob,
          ev, edge, units, odds, status, model_name, home_pitcher, away_pitcher,
          bet_type, listed_total, predicted_total, predicted_home_runs,
