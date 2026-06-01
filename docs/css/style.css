@@ -432,13 +432,6 @@ tr.row-pending td:first-child { border-left: 3px solid var(--border); }
   font-weight: 600;
 }
 
-/* ── Score prediction display ─────────────────────────────────── */
-.pick-meta.score-pred {
-  color: var(--muted);
-  font-size: 11px;
-  font-style: italic;
-}
-
 /* ── Pick card badges row ─────────────────────────────────────── */
 .pick-card .pick-badges {
   display: flex;

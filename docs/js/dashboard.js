@@ -183,9 +183,6 @@ function renderTodayPicks(picks) {
     const edge  = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
     const ev    = evBadge(p.ev);
     const conf  = confidenceBadge(p.confidence);
-    const pred  = (p.predicted_home_runs != null && p.predicted_away_runs != null)
-      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)}</span>`
-      : '';
     return `
       <div class="pick-card">
         <span class="game-label">${game}</span>
@@ -193,7 +190,6 @@ function renderTodayPicks(picks) {
         <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
         <span class="pick-meta">${edge} · EV: ${ev}</span>
         <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
-        ${pred}
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
       </div>`;
   }).join(''));
