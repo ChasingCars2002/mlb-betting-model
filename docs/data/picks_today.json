@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "date": "2026-06-01",
+    "home_team": "MIL",
+    "away_team": "SF",
+    "pick": "SF",
+    "pick_side": "Away",
+    "model_prob": 0.44,
+    "implied_prob": 0.378,
+    "edge": 0.062,
+    "ev": 0.1309,
+    "units": 0.54,
+    "odds": 157,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Shane Drohan",
+    "away_pitcher": "Landen Roupp",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": 4.4,
+    "predicted_away_runs": 4.32,
+    "total_delta": null,
+    "confidence": 3.0
+  }
+]
