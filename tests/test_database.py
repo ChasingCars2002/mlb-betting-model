@@ -132,7 +132,7 @@ class TestSavePredictions:
     def test_saves_multiple_picks(self, tmp_db):
         picks = [
             _make_pick(pick="NYY", pick_side="Home"),
-            _make_pick(pick="BOS", pick_side="Away", home_team="NYY", away_team="BOS"),
+            _make_pick(pick="LAD", pick_side="Home", home_team="LAD", away_team="SF"),
         ]
         with patch("database.DB_PATH", tmp_db):
             database.save_predictions(picks)
@@ -201,6 +201,21 @@ class TestGradePredictions:
             # Grade with no picks saved — should not error
             database.grade_predictions({"BOS @ NYY": {"winner": "NYY"}})
 
+    def test_target_date_scopes_grading(self, tmp_db):
+        """A result keyed by matchup only grades the pick on the given date,
+        leaving a same-matchup pick on another date untouched."""
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(date="2026-04-04", pick="NYY", game_id=1)])
+            database.save_predictions([_make_pick(date="2026-04-11", pick="NYY", game_id=2)])
+            results = {"BOS @ NYY": {"home_score": 5, "away_score": 3, "winner": "NYY"}}
+            database.grade_predictions(results, target_date="2026-04-04")
+
+        with get_conn(tmp_db) as conn:
+            rows = {r["date"]: r["status"] for r in
+                    conn.execute("SELECT date, status FROM predictions").fetchall()}
+        assert rows["2026-04-04"] == "Win"
+        assert rows["2026-04-11"] == "Pending"
+
 
 # ---------------------------------------------------------------------------
 # get_roi_stats
@@ -223,8 +238,8 @@ class TestGetROIStats:
         pairs = [
             (_make_pick(pick="NYY", units=1, odds=-110),
              {"BOS @ NYY": {"winner": "NYY"}}),
-            (_make_pick(pick="NYY", units=1, odds=-110),
-             {"BOS @ NYY": {"winner": "BOS"}}),
+            (_make_pick(pick="LAD", units=1, odds=-110, home_team="LAD", away_team="SF"),
+             {"SF @ LAD": {"winner": "SF"}}),
         ]
         self._setup_graded(tmp_db, pairs)
         with patch("database.DB_PATH", tmp_db):
