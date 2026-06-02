@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "date": "2026-06-02",
+    "home_team": "NYY",
+    "away_team": "CLE",
+    "pick": "CLE",
+    "pick_side": "Away",
+    "model_prob": 0.3904,
+    "implied_prob": 0.3173,
+    "edge": 0.0732,
+    "ev": 0.183,
+    "units": 0.59,
+    "odds": 203,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Cam Schlittler",
+    "away_pitcher": "Joey Cantillo",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": 4.45,
+    "predicted_away_runs": 4.32,
+    "total_delta": null,
+    "confidence": 4.0
+  }
+]
