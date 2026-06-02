@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 from datetime import date
+from pathlib import Path
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -117,14 +118,60 @@ def post_picks_to_discord(picks: list[dict]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Idempotency marker — lets us schedule the prediction run redundantly
+# ---------------------------------------------------------------------------
+#
+# GitHub Actions `schedule` crons are best-effort: at busy times they are
+# delayed by hours or silently dropped with no run ever created. To guarantee
+# predictions post, the workflow fires several times a day. This marker makes
+# those extra runs safe: once the pipeline reaches a terminal, successful state
+# (picks posted, or a confirmed off day), it records today's date and later
+# runs no-op. Transient failures (MLB/odds API outage, missing model) leave NO
+# marker on purpose, so a subsequent scheduled run retries and recovers.
+
+PREDICT_STATUS_FILE = Path("docs/data/predict_status.json")
+
+
+def _predictions_done_today() -> bool:
+    """True if the prediction pipeline already completed successfully today."""
+    import json
+    try:
+        data = json.loads(PREDICT_STATUS_FILE.read_text())
+    except (FileNotFoundError, ValueError, OSError):
+        return False
+    return data.get("date") == date.today().isoformat()
+
+
+def _mark_predictions_done(picks_posted: int) -> None:
+    """Record a terminal, successful prediction run for idempotency."""
+    import json
+    from datetime import datetime
+    PREDICT_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PREDICT_STATUS_FILE.write_text(json.dumps({
+        "date": date.today().isoformat(),
+        "picks_posted": picks_posted,
+        "ran_at": datetime.utcnow().isoformat() + "Z",
+    }, indent=2))
+
+
+# ---------------------------------------------------------------------------
 # Phase 1: Morning prediction run
 # ---------------------------------------------------------------------------
 
-def run_predictions(model_name: str = "xgboost"):
-    """Phase 1: Fetch today's games, predict, fetch odds, calculate EV, save picks."""
+def run_predictions(model_name: str = "xgboost", force: bool = False):
+    """Phase 1: Fetch today's games, predict, fetch odds, calculate EV, save picks.
+
+    Idempotent: if a successful run already posted today, this is a no-op unless
+    ``force`` is set. Redundant scheduled runs therefore can't double-post.
+    """
     print(f"\n{'='*60}")
     print(f"  MLB BETTING MODEL — Daily Predictions ({date.today()})")
     print(f"{'='*60}")
+
+    if not force and _predictions_done_today():
+        print("\n  Predictions already completed for today — skipping (idempotent).")
+        logger.info("Predictions already posted today; skipping redundant run.")
+        return
 
     # Step 1: Fetch today's games
     print("\n  [1/5] Fetching today's games...")
@@ -138,6 +185,7 @@ def run_predictions(model_name: str = "xgboost"):
     if not games:
         print("  No games found today (off day or no probable pitchers posted). Exiting.")
         export_dashboard_data()
+        _mark_predictions_done(0)
         return
     print(f"        Found {len(games)} games with probable pitchers.")
 
@@ -224,6 +272,7 @@ def run_predictions(model_name: str = "xgboost"):
     export_dashboard_data()
     post_picks_to_discord(ml_picks)
     post_picks_to_github_issue(ml_picks)
+    _mark_predictions_done(len(ml_picks))
 
 
 # ---------------------------------------------------------------------------
@@ -414,7 +463,8 @@ def main():
     )
     parser.add_argument(
         "--force", action="store_true",
-        help="With --retrain: wipe all caches and do a full rebuild from scratch.",
+        help="With --retrain: wipe caches and rebuild from scratch. "
+             "With --run-now: re-run predictions even if already posted today.",
     )
     parser.add_argument(
         "--model", type=str, default="xgboost",
@@ -449,9 +499,9 @@ def main():
     # Initialize database
     init_db()
 
-    # Guard: --force is only meaningful with --retrain
-    if args.force and not args.retrain:
-        parser.error("--force requires --retrain")
+    # Guard: --force is only meaningful with --retrain or --run-now
+    if args.force and not (args.retrain or args.run_now):
+        parser.error("--force requires --retrain or --run-now")
 
     # Determine action
     if args.train:
@@ -460,7 +510,7 @@ def main():
     elif args.retrain:
         run_retrain(force=args.force, tune=args.tune)
     elif args.run_now:
-        run_predictions(model_name=args.model)
+        run_predictions(model_name=args.model, force=args.force)
     elif args.grade:
         run_grading()
     elif args.stats:

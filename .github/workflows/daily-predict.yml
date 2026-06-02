@@ -2,7 +2,15 @@ name: Daily Predictions
 
 on:
   schedule:
-    - cron: '30 13 * * *'
+    # GitHub `schedule` crons are best-effort — at busy times (especially the
+    # top/half of the hour) they are delayed by hours or DROPPED entirely with
+    # no run created, which is how a day's predictions silently fail to post.
+    # We therefore fire several times a day at off-peak, non-round minutes. The
+    # run is idempotent (see PREDICT_STATUS_FILE in main.py), so once one
+    # attempt posts successfully the later ones cheaply no-op.
+    - cron: '7 13 * * *'    # ~09:07 ET — primary
+    - cron: '19 15 * * *'   # ~11:19 ET — backup if primary was dropped
+    - cron: '43 17 * * *'   # ~13:43 ET — last-chance before most first pitches
   workflow_dispatch:
 
 permissions:
@@ -77,3 +85,18 @@ jobs:
             echo "Push attempt $attempt failed, retrying in $((attempt * 2))s..."
             sleep $((attempt * 2))
           done
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # A dropped/never-created run can't alert (the redundant crons cover
+          # that). This catches the other failure mode: a run that started but
+          # crashed before posting, which would otherwise fail silently.
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            curl -fsS -H "Content-Type: application/json" \
+              -d "{\"content\": \"🚨 **Daily Predictions failed** for $(date -u +%Y-%m-%d). A later scheduled run will retry. Logs: ${run_url}\"}" \
+              "$DISCORD_WEBHOOK_URL" || true
+          fi
