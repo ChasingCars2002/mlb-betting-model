@@ -11,10 +11,11 @@ let filterText  = '';
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const [statsRes, historyRes, picksRes] = await Promise.all([
+    const [statsRes, historyRes, picksRes, totalsRes] = await Promise.all([
       fetch('data/stats.json'),
       fetch('data/picks_history.json'),
       fetch('data/picks_today.json'),
+      fetch('data/totals_today.json'),
     ]);
 
     if (!statsRes.ok || !historyRes.ok) {
@@ -25,11 +26,13 @@ async function loadData() {
     const rawHistory = await historyRes.json();
     allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
     const rawToday = picksRes.ok ? await picksRes.json() : [];
+    const rawTotals = totalsRes && totalsRes.ok ? await totalsRes.json() : [];
     // Only show picks that are actually for today (US Eastern). Between runs the
     // committed picks_today.json still holds the previous day's picks; without
     // this guard the site would display yesterday's matchups as "Today's Picks".
     const today = easternDateStr();
     const todayPicks = rawToday.filter(p => p.date === today);
+    const todayTotals = rawTotals.filter(p => p.date === today);
 
     const loadingEl = document.getElementById('loading');
     const appEl     = document.getElementById('app');
@@ -42,6 +45,7 @@ async function loadData() {
     renderTable(allHistory);
     renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
+    renderTodayTotals(todayTotals);
 
   } catch (err) {
     const loadingEl = document.getElementById('loading');
@@ -194,6 +198,35 @@ function renderTodayPicks(picks) {
         <span class="pick-meta">${edge} · EV: ${ev}</span>
         <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
         ${pred}
+        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
+      </div>`;
+  }).join(''));
+}
+
+// ── Today's totals (Over/Under) picks ──────────────────────────────────────
+function renderTodayTotals(picks) {
+  if (!picks || picks.length === 0) {
+    setHTML('today-totals', '<p class="picks-empty">No Over/Under picks for today yet — check back after the morning run.</p>');
+    return;
+  }
+
+  setHTML('today-totals', picks.map(p => {
+    const game = `${p.away_team} @ ${p.home_team}`;
+    const edge = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
+    const ev   = evBadge(p.ev);
+    const conf = confidenceBadge(p.confidence);
+    const line = p.listed_total != null ? ` ${fmt(p.listed_total)}` : '';
+    const model = p.predicted_total != null
+      ? `<span class="pick-meta score-pred">Model total: ${fmt(p.predicted_total)}</span>`
+      : '';
+    return `
+      <div class="pick-card">
+        <span class="game-label">${game}</span>
+        <span class="pick-team">${p.pick}${line}</span>
+        <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
+        <span class="pick-meta">${edge} · EV: ${ev}</span>
+        <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
+        ${model}
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
       </div>`;
   }).join(''));

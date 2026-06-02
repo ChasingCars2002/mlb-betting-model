@@ -2,15 +2,16 @@ name: Daily Predictions
 
 on:
   schedule:
-    # GitHub `schedule` crons are best-effort — at busy times (especially the
-    # top/half of the hour) they are delayed by hours or DROPPED entirely with
-    # no run created, which is how a day's predictions silently fail to post.
-    # We therefore fire several times a day at off-peak, non-round minutes. The
-    # run is idempotent (see PREDICT_STATUS_FILE in main.py), so once one
-    # attempt posts successfully the later ones cheaply no-op.
-    - cron: '7 13 * * *'    # ~09:07 ET — primary
-    - cron: '19 15 * * *'   # ~11:19 ET — backup if primary was dropped
-    - cron: '43 17 * * *'   # ~13:43 ET — last-chance before most first pitches
+    # Target: post by 11:00 AM ET. (MLB season is entirely EDT, so 11:00 ET =
+    # 15:00 UTC.) GitHub `schedule` crons are best-effort — at busy times
+    # (especially the top/half of the hour) they are delayed by hours or DROPPED
+    # entirely with no run created, which is how a day's predictions silently
+    # fail to post. We therefore fire several times around the target at
+    # off-peak, non-round minutes. The run is idempotent (see PREDICT_STATUS_FILE
+    # in main.py), so once one attempt posts the later ones cheaply no-op.
+    - cron: '4 15 * * *'    # ~11:04 ET — primary (the 11am target)
+    - cron: '34 15 * * *'   # ~11:34 ET — backup if primary was dropped
+    - cron: '19 16 * * *'   # ~12:19 ET — last-chance before most first pitches
   workflow_dispatch:
 
 permissions:

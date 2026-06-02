@@ -1,6 +1,9 @@
 """Tests for odds.py — conversion functions and consensus averaging."""
 
+from unittest.mock import patch, MagicMock
+
 import pytest
+import odds as odds_mod
 from odds import (
     american_to_implied_prob,
     american_to_decimal,
@@ -8,6 +11,7 @@ from odds import (
     implied_prob_to_american,
     devig_two_way,
     match_odds_to_games,
+    fetch_live_odds,
 )
 
 
@@ -195,3 +199,57 @@ class TestMatchOddsToGames:
         result = match_odds_to_games(odds, games)
         assert "game_date" in result[0]
         assert "home_odds" in result[0]
+
+
+# ---------------------------------------------------------------------------
+# fetch_live_odds — h2h + totals parsing
+# ---------------------------------------------------------------------------
+
+class TestFetchLiveOddsTotals:
+    def _event(self):
+        return {
+            "home_team": "New York Yankees",
+            "away_team": "Boston Red Sox",
+            "commence_time": "2026-04-02T23:05:00Z",
+            "bookmakers": [{
+                "key": "draftkings",
+                "markets": [
+                    {"key": "h2h", "outcomes": [
+                        {"name": "New York Yankees", "price": -140},
+                        {"name": "Boston Red Sox", "price": +120},
+                    ]},
+                    {"key": "totals", "outcomes": [
+                        {"name": "Over", "price": -110, "point": 8.5},
+                        {"name": "Under", "price": -110, "point": 8.5},
+                    ]},
+                ],
+            }],
+        }
+
+    def _fetch(self, raw):
+        resp = MagicMock()
+        resp.json.return_value = raw
+        resp.raise_for_status.return_value = None
+        with patch.object(odds_mod, "ODDS_API_KEY", "test-key"), \
+             patch.object(odds_mod.requests, "get", return_value=resp):
+            return fetch_live_odds()
+
+    def test_parses_totals_market(self):
+        result = self._fetch([self._event()])
+        assert len(result) == 1
+        rec = result[0]
+        assert rec["home_team"] == "NYY" and rec["away_team"] == "BOS"
+        assert rec["total_line"] == 8.5
+        assert rec["over_odds"] is not None
+        assert rec["under_odds"] is not None
+
+    def test_no_totals_market_leaves_none(self):
+        event = self._event()
+        # Drop the totals market, keep only h2h.
+        event["bookmakers"][0]["markets"] = [event["bookmakers"][0]["markets"][0]]
+        rec = self._fetch([event])[0]
+        assert rec["total_line"] is None
+        assert rec["over_odds"] is None
+        assert rec["under_odds"] is None
+        # Moneyline still parsed.
+        assert "home_odds" in rec
