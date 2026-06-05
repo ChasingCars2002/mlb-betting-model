@@ -1,1 +1,27 @@
-[]
+[
+  {
+    "date": "2026-06-05",
+    "home_team": "TEX",
+    "away_team": "CLE",
+    "pick": "TEX",
+    "pick_side": "Home",
+    "model_prob": 0.5215,
+    "implied_prob": 0.4639,
+    "edge": 0.0576,
+    "ev": 0.0848,
+    "units": 0.51,
+    "odds": 108,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Kumar Rocker",
+    "away_pitcher": "Parker Messick",
+    "bet_type": "moneyline",
+    "listed_total": null,
+    "predicted_total": null,
+    "predicted_home_runs": 4.49,
+    "predicted_away_runs": 4.32,
+    "total_delta": null,
+    "confidence": 3.0
+  }
+]
