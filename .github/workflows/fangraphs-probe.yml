@@ -5,6 +5,8 @@ name: FanGraphs Probe
 # Dispatch manually; safe (read-only, no commits).
 
 on:
+  push:
+    branches: [ "claude/predictions-not-posting-KIVES" ]
   workflow_dispatch:
 
 permissions:
