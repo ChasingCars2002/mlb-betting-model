@@ -1,0 +1,51 @@
+name: FanGraphs Probe
+
+# Temporary diagnostic: verifies the User-Agent fix lets pybaseball fetch
+# FanGraphs data from a GitHub runner IP (vs the silent 403 -> defaults).
+# Dispatch manually; safe (read-only, no commits).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Probe FanGraphs with and without the UA fix
+        run: |
+          python - <<'PY'
+          from datetime import date
+          season = date.today().year
+
+          # 1) WITHOUT the fix — establish the baseline 403.
+          import pybaseball
+          try:
+              df = pybaseball.pitching_stats(season, season, qual=1)
+              print(f"[no-fix] PITCHING OK rows={len(df)}")
+          except Exception as e:
+              print(f"[no-fix] PITCHING FAIL: {e}")
+
+          # 2) WITH the fix — importing data installs the browser User-Agent.
+          import importlib
+          pybaseball.cache.disable()
+          import data  # noqa: F401  (installs _install_browser_user_agent)
+          try:
+              df = pybaseball.pitching_stats(season, season, qual=1)
+              print(f"[ua-fix] PITCHING OK rows={len(df)} cols={list(df.columns)[:6]}")
+          except Exception as e:
+              print(f"[ua-fix] PITCHING FAIL: {e}")
+          try:
+              b = pybaseball.batting_stats(season, season, qual=1)
+              print(f"[ua-fix] BATTING OK rows={len(b)}")
+          except Exception as e:
+              print(f"[ua-fix] BATTING FAIL: {e}")
+          PY
