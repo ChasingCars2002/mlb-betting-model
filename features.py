@@ -50,8 +50,8 @@ def build_game_features(game: dict) -> Optional[dict]:
     """
     try:
         # --- Starting pitcher stats ---
-        home_pitcher = get_pitcher_stats(game["home_pitcher_name"])
-        away_pitcher = get_pitcher_stats(game["away_pitcher_name"])
+        home_pitcher = get_pitcher_stats(game.get("home_pitcher_id"), game["home_pitcher_name"])
+        away_pitcher = get_pitcher_stats(game.get("away_pitcher_id"), game["away_pitcher_name"])
 
         # --- Bullpen stats ---
         home_bullpen = get_bullpen_stats(game["home_team"])
@@ -151,17 +151,17 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
         home_pitcher_hand = hand_cache.get(hp_id, "R")
         away_pitcher_hand = hand_cache.get(ap_id, "R")
 
-        # --- Pitcher stats (cached) ---
+        # --- Pitcher stats (cached by id, looked up in the MLB leaderboard) ---
         hp_name = game.get("home_pitcher_name", "Unknown")
         ap_name = game.get("away_pitcher_name", "Unknown")
 
-        hp_key = (hp_name, season)
-        ap_key = (ap_name, season)
+        hp_key = (hp_id, season)
+        ap_key = (ap_id, season)
 
         if hp_key not in pitcher_cache:
-            pitcher_cache[hp_key] = get_pitcher_stats(hp_name, season=season, use_rolling=False)
+            pitcher_cache[hp_key] = get_pitcher_stats(hp_id, hp_name, season=season, use_rolling=False)
         if ap_key not in pitcher_cache:
-            pitcher_cache[ap_key] = get_pitcher_stats(ap_name, season=season, use_rolling=False)
+            pitcher_cache[ap_key] = get_pitcher_stats(ap_id, ap_name, season=season, use_rolling=False)
 
         home_pitcher = pitcher_cache[hp_key]
         away_pitcher = pitcher_cache[ap_key]
