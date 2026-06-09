@@ -1,0 +1,59 @@
+name: Feature Probe
+
+# Temporary diagnostic: verify the new MLB Stats API feature pipeline returns
+# REAL (non-default) values from a runner. Push-triggered (API dispatch blocked).
+
+on:
+  push:
+    branches: [ "claude/predictions-not-posting-KIVES" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -r requirements.txt
+      - name: Build real features from MLB Stats API
+        run: |
+          python - <<'PY'
+          import logging; logging.basicConfig(level=logging.INFO)
+          from datetime import date, timedelta
+          import data
+          from features import build_game_features
+
+          season = date.today().year
+
+          board = data._pitching_leaderboard(season)
+          print(f"PITCHING LEADERBOARD {season}: {len(board)} pitchers")
+          if board:
+              sample_id = next(iter(board))
+              print("SAMPLE pitcher stats:", data.get_pitcher_stats(sample_id, season=season, use_rolling=False))
+
+          print("BULLPEN NYY:", data.get_bullpen_stats("NYY", season=season))
+          print("HITTING NYY vs R:", data.get_team_hitting_splits("NYY", "R", season=season))
+          print("HITTING NYY vs L:", data.get_team_hitting_splits("NYY", "L", season=season))
+
+          # End-to-end: real upcoming slate
+          games = []
+          for off in range(0, 4):
+              games = data.get_todays_games(date.today() + timedelta(days=off))
+              if games:
+                  print(f"Using slate {date.today()+timedelta(days=off)} ({len(games)} games)")
+                  break
+          if games:
+              g = games[0]
+              feats = build_game_features(g)
+              print(f"FEATURES {g['away_team']} @ {g['home_team']}:")
+              for k, v in feats.items():
+                  print(f"   {k} = {v}")
+          else:
+              print("No slate found in next 4 days to feature-test.")
+          PY
