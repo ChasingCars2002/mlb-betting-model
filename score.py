@@ -10,7 +10,8 @@ def predict_game_scores(features: dict) -> dict:
     """Estimate expected runs for home and away teams from game features.
 
     Uses away starter xFIP and home team OPS to project home runs, and vice
-    versa for away runs.  Park factor is applied to the home team's offense.
+    versa for away runs.  The park factor applies to BOTH teams — they hit in
+    the same stadium — so e.g. Coors boosts the visitors' scoring too.
     Returns keys: predicted_home_score, predicted_away_score, predicted_total.
     """
     home_xfip = features.get("away_p_xFIP_season", _LEAGUE_AVG_ERA) or _LEAGUE_AVG_ERA
@@ -30,7 +31,8 @@ def predict_game_scores(features: dict) -> dict:
     away_runs = round(
         _BASE_RUNS
         * (away_xfip / _LEAGUE_AVG_ERA)
-        * (away_ops  / _LEAGUE_AVG_OPS),
+        * (away_ops  / _LEAGUE_AVG_OPS)
+        * park,
         2,
     )
 

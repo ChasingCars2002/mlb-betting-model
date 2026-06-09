@@ -6,12 +6,14 @@ from evaluate import (
     calculate_edge,
     size_bet,
     blend_with_market,
+    compute_confidence,
     filter_positive_ev,
     filter_totals_ev,
     total_over_probability,
     format_picks,
     format_stats,
 )
+from config import TOTALS_MAX_DISAGREEMENT
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +288,46 @@ class TestFilterTotalsEV:
 
     def test_empty_input(self):
         assert filter_positive_ev([]) == []
+
+
+# ---------------------------------------------------------------------------
+# compute_confidence
+# ---------------------------------------------------------------------------
+
+class TestComputeConfidence:
+    """Stars are scaled to the ACHIEVABLE edge band: with blend weight w and
+    disagreement cap c, no pick can exceed an edge of (1-w)*c. At the default
+    w=0.5 the moneyline band is [0.05, 0.075] and the totals band [0.05, 0.15].
+    """
+
+    def test_threshold_edge_is_one_star(self):
+        assert compute_confidence(0.05, 0.05) == 1
+
+    def test_max_achievable_edge_is_five_stars(self):
+        assert compute_confidence(0.075, 0.10) == 5
+
+    def test_all_tiers_reachable(self):
+        edges = (0.051, 0.056, 0.062, 0.068, 0.074)
+        stars = [compute_confidence(e, 0.05) for e in edges]
+        assert stars == [1, 2, 3, 4, 5]
+
+    def test_monotonic_in_edge(self):
+        stars = [compute_confidence(e, 0.05) for e in (0.05, 0.06, 0.07, 0.075)]
+        assert stars == sorted(stars)
+
+    def test_totals_band_uses_wider_cap(self):
+        # Same edge maps to fewer stars on totals because the band is wider.
+        ml = compute_confidence(0.074, 0.05)
+        ou = compute_confidence(0.074, 0.05,
+                                max_disagreement=TOTALS_MAX_DISAGREEMENT, weight=0.5)
+        assert ml == 5
+        assert ou < ml
+        assert compute_confidence(0.149, 0.2,
+                                  max_disagreement=TOTALS_MAX_DISAGREEMENT, weight=0.5) == 5
+
+    def test_never_below_one_or_above_five(self):
+        assert compute_confidence(0.0, 0.0) == 1
+        assert compute_confidence(0.5, 1.0) == 5
 
 
 # ---------------------------------------------------------------------------
