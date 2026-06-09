@@ -23,6 +23,46 @@ logger = logging.getLogger(__name__)
 # Suppress pybaseball's verbose output
 pybaseball.cache.enable()
 
+
+# ---------------------------------------------------------------------------
+# FanGraphs User-Agent fix
+# ---------------------------------------------------------------------------
+# pybaseball scrapes FanGraphs with the default ``python-requests`` User-Agent,
+# which FanGraphs blocks with HTTP 403. That silently degraded every pitching,
+# bullpen, and hitting feature to league-average defaults (see the flood of
+# "Received status code 403 ... Using defaults" warnings in the logs). We inject
+# a real browser User-Agent on every outbound request so the scrape succeeds
+# from CI/cloud IPs. requests.get() and Session.get() both route through
+# Session.request, so patching it once covers all of pybaseball; adding a UA is
+# harmless for the JSON APIs (MLB Stats, The-Odds-API, Supabase) we also call.
+_BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def _install_browser_user_agent() -> None:
+    """Make every requests call send a browser User-Agent (FanGraphs 403 fix)."""
+    session_cls = requests.sessions.Session
+    if getattr(session_cls, "_mlb_ua_patched", False):
+        return
+    _orig_request = session_cls.request
+
+    @functools.wraps(_orig_request)
+    def _request_with_ua(self, method, url, *args, **kwargs):
+        headers = dict(kwargs.get("headers") or {})
+        if not any(k.lower() == "user-agent" for k in headers):
+            headers["User-Agent"] = _BROWSER_USER_AGENT
+            kwargs["headers"] = headers
+        return _orig_request(self, method, url, *args, **kwargs)
+
+    session_cls.request = _request_with_ua
+    session_cls._mlb_ua_patched = True
+
+
+_install_browser_user_agent()
+
+
 # FanGraphs uses different abbreviations for some MLB teams
 _MLB_TO_FG_TEAM = {
     "KC": "KCR",
