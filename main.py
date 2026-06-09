@@ -3,7 +3,8 @@
 import argparse
 import logging
 import sys
-from datetime import date
+from datetime import date, timedelta
+from pathlib import Path
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -23,14 +24,14 @@ from data import get_todays_games, get_yesterdays_results
 from features import build_game_features
 from model import load_model, predict_win_prob
 from odds import fetch_live_odds, match_odds_to_games
-from evaluate import filter_positive_ev, format_picks, format_stats, compute_confidence
+from evaluate import filter_positive_ev, filter_totals_ev, format_picks, format_stats, compute_confidence
 from score import predict_game_scores
 
 logger = logging.getLogger(__name__)
 
 
-def post_picks_to_github_issue(picks: list[dict]) -> None:
-    """Create a GitHub Issue with today's picks.
+def post_picks_to_github_issue(picks: list[dict], totals_picks: list[dict] | None = None) -> None:
+    """Create a GitHub Issue with today's picks (moneyline + totals).
 
     Requires GITHUB_TOKEN and GITHUB_REPOSITORY env vars (set automatically in Actions).
     Silently skips if either is missing.
@@ -41,27 +42,45 @@ def post_picks_to_github_issue(picks: list[dict]) -> None:
     if not token or not repo:
         return
 
+    totals_picks = totals_picks or []
     today = date.today().isoformat()
+    total_count = len(picks) + len(totals_picks)
 
-    if not picks:
+    if total_count == 0:
         title = f"⚾ MLB Picks — No picks for {today}"
         body = "No +EV picks found today."
     else:
-        title = f"⚾ MLB Picks — {len(picks)} ML picks for {today}"
-        ml_rows = ["## Moneyline Picks",
-                   "| Game | Pick | Conf | Odds | Edge | EV | Units |",
-                   "|------|------|:----:|-----:|-----:|---:|------:|"]
-        for p in picks:
-            matchup  = f"{p['away_team']} @ {p['home_team']}"
-            odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
-            stars    = "★" * p.get("confidence", 1)
-            ml_rows.append(
-                f"| {matchup} | **{p['pick']}** | {stars} | {odds_str} "
-                f"| +{p['edge']:.1%} | {p['ev']:+.1%} | {p['units']:.1f}u |"
-            )
-        total_units = sum(p["units"] for p in picks)
-        ml_rows.append(f"\n_{len(picks)} picks · {total_units:.1f} units_")
-        body = "\n".join(ml_rows) + f"\n\n**Total: {len(picks)} picks · {total_units:.1f} units wagered**"
+        title = f"⚾ MLB Picks — {len(picks)} ML + {len(totals_picks)} O/U for {today}"
+        sections = []
+        if picks:
+            ml_rows = ["## Moneyline Picks",
+                       "| Game | Pick | Conf | Odds | Edge | EV | Units |",
+                       "|------|------|:----:|-----:|-----:|---:|------:|"]
+            for p in picks:
+                matchup  = f"{p['away_team']} @ {p['home_team']}"
+                odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+                stars    = "★" * p.get("confidence", 1)
+                ml_rows.append(
+                    f"| {matchup} | **{p['pick']}** | {stars} | {odds_str} "
+                    f"| +{p['edge']:.1%} | {p['ev']:+.1%} | {p['units']:.1f}u |"
+                )
+            sections.append("\n".join(ml_rows))
+        if totals_picks:
+            ou_rows = ["## Totals (Over/Under) Picks",
+                       "| Game | Pick | Conf | Odds | Model | Edge | EV | Units |",
+                       "|------|------|:----:|-----:|------:|-----:|---:|------:|"]
+            for p in totals_picks:
+                matchup  = f"{p['away_team']} @ {p['home_team']}"
+                odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+                stars    = "★" * p.get("confidence", 1)
+                ou_rows.append(
+                    f"| {matchup} | **{p['pick']} {p['listed_total']}** | {stars} | {odds_str} "
+                    f"| {p['predicted_total']} | +{p['edge']:.1%} | {p['ev']:+.1%} | {p['units']:.1f}u |"
+                )
+            sections.append("\n".join(ou_rows))
+        total_units = sum(p["units"] for p in picks) + sum(p["units"] for p in totals_picks)
+        sections.append(f"**Total: {total_count} picks · {total_units:.1f} units wagered**")
+        body = "\n\n".join(sections)
 
     try:
         import requests
@@ -80,19 +99,20 @@ def post_picks_to_github_issue(picks: list[dict]) -> None:
         logger.warning("GitHub Issue post failed: %s", e)
 
 
-def post_picks_to_discord(picks: list[dict]) -> None:
-    """POST today's picks to Discord via webhook.
+def post_picks_to_discord(picks: list[dict], totals_picks: list[dict] | None = None) -> None:
+    """POST today's picks (moneyline + totals) to Discord via webhook.
 
     Silently skips if DISCORD_WEBHOOK_URL is not configured.
-    Each pick is formatted as a Discord embed field.
     """
     from config import DISCORD_WEBHOOK_URL
     if not DISCORD_WEBHOOK_URL:
         return
 
-    if not picks:
-        content = "⚾ **BaseballBetBot** — No +EV picks for today."
-        payload = {"content": content}
+    totals_picks = totals_picks or []
+    total_count = len(picks) + len(totals_picks)
+
+    if total_count == 0:
+        payload = {"content": "⚾ **BaseballBetBot** — No +EV picks for today."}
     else:
         lines = ["⚾ **BaseballBetBot — Today's Picks**\n"]
         for p in picks:
@@ -104,27 +124,82 @@ def post_picks_to_discord(picks: list[dict]) -> None:
                 f"   Odds: `{odds_str}` · Edge: `+{p['edge']:.1%}` · "
                 f"Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
             )
-        lines.append(f"\n_{len(picks)} pick(s) today — Good luck! 🍀_")
+        for p in totals_picks:
+            matchup = f"{p['away_team']} @ {p['home_team']}"
+            odds_str = f"+{p['odds']}" if p["odds"] > 0 else str(p["odds"])
+            stars = "★" * p.get("confidence", 1)
+            lines.append(
+                f"📊 **{p['pick']} {p['listed_total']}** ({matchup}) {stars}\n"
+                f"   Odds: `{odds_str}` · Model: `{p['predicted_total']}` · "
+                f"Edge: `+{p['edge']:.1%}` · Units: `{p['units']:.1f}u` · EV: `{p['ev']:+.1%}`"
+            )
+        lines.append(f"\n_{total_count} pick(s) today — Good luck! 🍀_")
         payload = {"content": "\n".join(lines)}
 
     try:
         import requests
         resp = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
         resp.raise_for_status()
-        logger.info("Posted %d pick(s) to Discord.", len(picks))
+        logger.info("Posted %d pick(s) to Discord.", total_count)
     except Exception as e:
         logger.warning("Discord webhook failed: %s", e)
+
+
+# ---------------------------------------------------------------------------
+# Idempotency marker — lets us schedule the prediction run redundantly
+# ---------------------------------------------------------------------------
+#
+# GitHub Actions `schedule` crons are best-effort: at busy times they are
+# delayed by hours or silently dropped with no run ever created. To guarantee
+# predictions post, the workflow fires several times a day. This marker makes
+# those extra runs safe: once the pipeline reaches a terminal, successful state
+# (picks posted, or a confirmed off day), it records today's date and later
+# runs no-op. Transient failures (MLB/odds API outage, missing model) leave NO
+# marker on purpose, so a subsequent scheduled run retries and recovers.
+
+PREDICT_STATUS_FILE = Path("docs/data/predict_status.json")
+
+
+def _predictions_done_today() -> bool:
+    """True if the prediction pipeline already completed successfully today."""
+    import json
+    try:
+        data = json.loads(PREDICT_STATUS_FILE.read_text())
+    except (FileNotFoundError, ValueError, OSError):
+        return False
+    return data.get("date") == date.today().isoformat()
+
+
+def _mark_predictions_done(picks_posted: int) -> None:
+    """Record a terminal, successful prediction run for idempotency."""
+    import json
+    from datetime import datetime
+    PREDICT_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    PREDICT_STATUS_FILE.write_text(json.dumps({
+        "date": date.today().isoformat(),
+        "picks_posted": picks_posted,
+        "ran_at": datetime.utcnow().isoformat() + "Z",
+    }, indent=2))
 
 
 # ---------------------------------------------------------------------------
 # Phase 1: Morning prediction run
 # ---------------------------------------------------------------------------
 
-def run_predictions(model_name: str = "xgboost"):
-    """Phase 1: Fetch today's games, predict, fetch odds, calculate EV, save picks."""
+def run_predictions(model_name: str = "xgboost", force: bool = False):
+    """Phase 1: Fetch today's games, predict, fetch odds, calculate EV, save picks.
+
+    Idempotent: if a successful run already posted today, this is a no-op unless
+    ``force`` is set. Redundant scheduled runs therefore can't double-post.
+    """
     print(f"\n{'='*60}")
     print(f"  MLB BETTING MODEL — Daily Predictions ({date.today()})")
     print(f"{'='*60}")
+
+    if not force and _predictions_done_today():
+        print("\n  Predictions already completed for today — skipping (idempotent).")
+        logger.info("Predictions already posted today; skipping redundant run.")
+        return
 
     # Step 1: Fetch today's games
     print("\n  [1/5] Fetching today's games...")
@@ -138,6 +213,7 @@ def run_predictions(model_name: str = "xgboost"):
     if not games:
         print("  No games found today (off day or no probable pitchers posted). Exiting.")
         export_dashboard_data()
+        _mark_predictions_done(0)
         return
     print(f"        Found {len(games)} games with probable pitchers.")
 
@@ -160,6 +236,7 @@ def run_predictions(model_name: str = "xgboost"):
             game["model_prob"] = 0.5
             game["predicted_home_runs"] = None
             game["predicted_away_runs"] = None
+            game["predicted_total"] = None
             logger.warning("Using default 0.5 prob for %s @ %s",
                            game["away_team"], game["home_team"])
         else:
@@ -173,11 +250,13 @@ def run_predictions(model_name: str = "xgboost"):
                 scores = predict_game_scores(features)
                 game["predicted_home_runs"] = scores["predicted_home_score"]
                 game["predicted_away_runs"] = scores["predicted_away_score"]
+                game["predicted_total"] = scores["predicted_total"]
             except Exception as e:
                 logger.warning("Score prediction failed for %s @ %s: %s",
                                game["away_team"], game["home_team"], e)
                 game["predicted_home_runs"] = None
                 game["predicted_away_runs"] = None
+                game["predicted_total"] = None
         game["model_name"] = model_name
 
     # Step 4: Fetch moneyline odds and match
@@ -211,19 +290,34 @@ def run_predictions(model_name: str = "xgboost"):
         p["predicted_home_runs"] = matched.get("predicted_home_runs")
         p["predicted_away_runs"] = matched.get("predicted_away_runs")
 
+    # Totals (Over/Under) picks from the score model + posted O/U lines.
+    totals_picks = filter_totals_ev(games_with_odds)
+    for p in totals_picks:
+        p["confidence"] = compute_confidence(p["edge"], p["ev"])
+
     # Display picks
     print(format_picks(ml_picks))
+    if totals_picks:
+        print(f"  Plus {len(totals_picks)} Over/Under pick(s):")
+        for p in totals_picks:
+            print(f"    {p['away_team']} @ {p['home_team']}: {p['pick']} {p['listed_total']} "
+                  f"(model {p['predicted_total']}, edge +{p['edge']:.1%}, {p['units']:.1f}u)")
 
     # Save to database
     if ml_picks:
         save_predictions(ml_picks, bet_type="moneyline")
         print(f"  Saved {len(ml_picks)} moneyline picks to database.")
-    else:
+    if totals_picks:
+        save_predictions(totals_picks, bet_type="totals")
+        print(f"  Saved {len(totals_picks)} totals picks to database.")
+    if not ml_picks and not totals_picks:
         print("  No +EV picks to save.\n")
 
+    all_picks = ml_picks + totals_picks
     export_dashboard_data()
-    post_picks_to_discord(ml_picks)
-    post_picks_to_github_issue(ml_picks)
+    post_picks_to_discord(ml_picks, totals_picks)
+    post_picks_to_github_issue(ml_picks, totals_picks)
+    _mark_predictions_done(len(all_picks))
 
 
 # ---------------------------------------------------------------------------
@@ -231,25 +325,41 @@ def run_predictions(model_name: str = "xgboost"):
 # ---------------------------------------------------------------------------
 
 def run_grading():
-    """Phase 2: Fetch yesterday's results and grade pending predictions."""
+    """Phase 2: Grade pending predictions.
+
+    Grades yesterday's slate AND backfills any older still-pending dates. The
+    daily run used to only fetch yesterday's results, so any pick missed on its
+    day (a failed run, or a game not yet final) stayed Pending forever. We now
+    retry every date that still has pending picks, date-scoped so results from
+    one day can't grade a same-matchup pick on another.
+    """
     print(f"\n{'='*60}")
     print(f"  MLB BETTING MODEL — Grading ({date.today()})")
     print(f"{'='*60}")
 
-    print("\n  Fetching yesterday's results...")
-    try:
-        results = get_yesterdays_results()
-    except Exception as e:
-        print(f"  ERROR: MLB Stats API unavailable — {e}")
-        export_dashboard_data()
-        return
-    if not results:
-        print("  No results found for yesterday. Exiting.")
-        return
-    print(f"  Found results for {len(results)} games.")
+    from database import get_pending_dates
 
-    print("  Grading pending predictions...")
-    grade_predictions(results)
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    pending_dates = get_pending_dates()
+    dates_to_grade = sorted(set(pending_dates) | {yesterday})
+    print(f"\n  Grading dates: {', '.join(dates_to_grade)}")
+
+    graded_any = False
+    for d in dates_to_grade:
+        try:
+            results = get_yesterdays_results(date.fromisoformat(d))
+        except Exception as e:
+            print(f"  ERROR: results unavailable for {d} — {e}")
+            continue
+        if not results:
+            print(f"  {d}: no final results yet.")
+            continue
+        print(f"  {d}: grading against {len(results)} final games.")
+        grade_predictions(results, for_date=d)
+        graded_any = True
+
+    if not graded_any:
+        print("  Nothing graded this run.")
 
     # Show updated stats
     show_stats()
@@ -313,9 +423,11 @@ def export_dashboard_data():
 
     today_picks = [p for p in history if p["date"] == today_str]
     today_ml = [p for p in today_picks if p.get("bet_type", "moneyline") == "moneyline"]
+    today_totals = [p for p in today_picks if p.get("bet_type") == "totals"]
 
     upload_picks_to_supabase(today_ml, history_for_export)
     (out / "picks_today.json").write_text(json.dumps(_sanitize_json(today_ml), indent=2))
+    (out / "totals_today.json").write_text(json.dumps(_sanitize_json(today_totals), indent=2))
 
     if today_picks:
         top = max(today_picks, key=lambda p: p.get("edge") or 0)
@@ -414,7 +526,8 @@ def main():
     )
     parser.add_argument(
         "--force", action="store_true",
-        help="With --retrain: wipe all caches and do a full rebuild from scratch.",
+        help="With --retrain: wipe caches and rebuild from scratch. "
+             "With --run-now: re-run predictions even if already posted today.",
     )
     parser.add_argument(
         "--model", type=str, default="xgboost",
@@ -449,9 +562,9 @@ def main():
     # Initialize database
     init_db()
 
-    # Guard: --force is only meaningful with --retrain
-    if args.force and not args.retrain:
-        parser.error("--force requires --retrain")
+    # Guard: --force is only meaningful with --retrain or --run-now
+    if args.force and not (args.retrain or args.run_now):
+        parser.error("--force requires --retrain or --run-now")
 
     # Determine action
     if args.train:
@@ -460,7 +573,7 @@ def main():
     elif args.retrain:
         run_retrain(force=args.force, tune=args.tune)
     elif args.run_now:
-        run_predictions(model_name=args.model)
+        run_predictions(model_name=args.model, force=args.force)
     elif args.grade:
         run_grading()
     elif args.stats:

@@ -7,6 +7,8 @@ from evaluate import (
     size_bet,
     blend_with_market,
     filter_positive_ev,
+    filter_totals_ev,
+    total_over_probability,
     format_picks,
     format_stats,
 )
@@ -175,6 +177,90 @@ class TestFilterPositiveEV:
         assert home["implied_prob"] < home["model_prob"] < 0.58
         # edge is measured against the no-vig market
         assert home["edge"] == pytest.approx(home["model_prob"] - home["implied_prob"], abs=1e-4)
+
+
+# ---------------------------------------------------------------------------
+# total_over_probability
+# ---------------------------------------------------------------------------
+
+class TestTotalOverProbability:
+    def test_at_line_is_half(self):
+        # Predicted total exactly on the line → coin flip.
+        assert total_over_probability(8.5, 8.5) == pytest.approx(0.5, abs=1e-9)
+
+    def test_above_line_favors_over(self):
+        assert total_over_probability(10.0, 8.5) > 0.5
+
+    def test_below_line_favors_under(self):
+        assert total_over_probability(7.0, 8.5) < 0.5
+
+    def test_monotonic_in_prediction(self):
+        low  = total_over_probability(8.0, 8.5)
+        high = total_over_probability(9.5, 8.5)
+        assert high > low
+
+    def test_in_unit_interval(self):
+        for pred in (2.0, 8.5, 15.0):
+            p = total_over_probability(pred, 8.5)
+            assert 0.0 <= p <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# filter_totals_ev
+# ---------------------------------------------------------------------------
+
+def _make_totals_game(predicted_total=9.8, total_line=8.5,
+                      over_odds=-105, under_odds=-105):
+    return {
+        "game_date": "2026-04-02",
+        "home_team": "NYY",
+        "away_team": "BOS",
+        "home_pitcher_name": "Cole",
+        "away_pitcher_name": "Sale",
+        "model_name": "xgboost",
+        "predicted_total": predicted_total,
+        "predicted_home_runs": predicted_total / 2,
+        "predicted_away_runs": predicted_total / 2,
+        "total_line": total_line,
+        "over_odds": over_odds,
+        "under_odds": under_odds,
+    }
+
+
+class TestFilterTotalsEV:
+    def test_over_pick_generated(self):
+        # Model total well above the line → Over should clear the edge threshold.
+        picks = filter_totals_ev([_make_totals_game(predicted_total=10.2, total_line=8.5)])
+        overs = [p for p in picks if p["pick"] == "Over"]
+        assert len(overs) == 1
+        o = overs[0]
+        assert o["bet_type"] == "totals"
+        assert o["pick_side"] == "Over"
+        assert o["listed_total"] == 8.5
+        assert o["total_delta"] == pytest.approx(10.2 - 8.5, abs=1e-2)
+
+    def test_under_pick_generated(self):
+        picks = filter_totals_ev([_make_totals_game(predicted_total=6.8, total_line=8.5)])
+        unders = [p for p in picks if p["pick"] == "Under"]
+        assert len(unders) == 1
+        assert unders[0]["pick_side"] == "Under"
+
+    def test_no_pick_when_model_matches_line(self):
+        picks = filter_totals_ev([_make_totals_game(predicted_total=8.5, total_line=8.5)])
+        assert picks == []
+
+    def test_skipped_without_line_or_prediction(self):
+        no_line = _make_totals_game()
+        no_line["total_line"] = None
+        no_pred = _make_totals_game()
+        no_pred["predicted_total"] = None
+        assert filter_totals_ev([no_line, no_pred]) == []
+
+    def test_implausible_disagreement_rejected(self):
+        # A wildly high prediction creates a >MAX_RAW_DISAGREEMENT gap vs the
+        # ~50/50 no-vig market and must be rejected as model error.
+        picks = filter_totals_ev([_make_totals_game(predicted_total=16.0, total_line=8.5)])
+        assert picks == []
 
     def test_picks_sorted_by_ev_desc(self):
         games = [

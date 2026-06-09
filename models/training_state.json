@@ -1,21 +1,21 @@
 {
-  "last_trained": "2026-06-01T15:59:23",
+  "last_trained": "2026-06-09T00:47:35",
   "feature_columns_hash": "52b911512645991b",
   "seasons": {
     "2023": {
       "rows": 2437,
-      "cached": true
+      "cached": false
     },
     "2024": {
       "rows": 2432,
-      "cached": true
+      "cached": false
     },
     "2025": {
       "rows": 2434,
-      "cached": true
+      "cached": false
     },
     "2026": {
-      "rows": 887,
+      "rows": 979,
       "cached": false
     }
   }

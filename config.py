@@ -38,6 +38,20 @@ KELLY_SCALE   = 13    # Multiplier: translates half-Kelly fraction → intuitive
 MIN_BET_UNITS = 0.5   # Floor: any qualifying pick bets at least this many units
 MAX_BET_UNITS = 3.0   # Cap: never risk more than this per pick
 
+# --- Totals (Over/Under) ---
+# The score model yields a point estimate for total runs. To price an Over/Under
+# we treat the game total as Normal(predicted_total, TOTALS_SIGMA) and integrate
+# to get P(Over)/P(Under). ~3.0 runs is a reasonable residual SD for MLB game
+# totals around a model estimate; raise it to be more conservative (fewer, only
+# higher-confidence O/U picks), lower it to surface more. Totals reuse the same
+# EV_THRESHOLD gate as moneyline, but a looser disagreement cap: the score
+# model is analytical (not the overrating classifier the 0.15 moneyline cap
+# guards against), and with the 0.5 market blend a 0.15 cap would nearly
+# coincide with the EV gate and surface almost nothing. 0.30 leaves a real
+# betting window while still rejecting wild (>~2.5 run) model-vs-line gaps.
+TOTALS_SIGMA = 3.0
+TOTALS_MAX_DISAGREEMENT = 0.30
+
 # --- Market blending & adverse-selection guards ---
 # The raw model is miscalibrated/under-dispersed and systematically overrates the
 # side it picks (empirically ~8 pts vs. a sharp market). We therefore (1) de-vig the
@@ -65,7 +79,7 @@ RETRY_BACKOFF_BASE = 2  # seconds
 ODDS_API_BASE_URL = "https://api.the-odds-api.com/v4"
 ODDS_SPORT = "baseball_mlb"
 ODDS_REGIONS = "us"
-ODDS_MARKETS = "h2h"
+ODDS_MARKETS = "h2h,totals"
 
 # --- MLB Stats API ---
 MLB_STATS_API_BASE = "https://statsapi.mlb.com/api/v1"

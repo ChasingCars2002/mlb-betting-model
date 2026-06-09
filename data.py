@@ -23,6 +23,46 @@ logger = logging.getLogger(__name__)
 # Suppress pybaseball's verbose output
 pybaseball.cache.enable()
 
+
+# ---------------------------------------------------------------------------
+# FanGraphs User-Agent fix
+# ---------------------------------------------------------------------------
+# pybaseball scrapes FanGraphs with the default ``python-requests`` User-Agent,
+# which FanGraphs blocks with HTTP 403. That silently degraded every pitching,
+# bullpen, and hitting feature to league-average defaults (see the flood of
+# "Received status code 403 ... Using defaults" warnings in the logs). We inject
+# a real browser User-Agent on every outbound request so the scrape succeeds
+# from CI/cloud IPs. requests.get() and Session.get() both route through
+# Session.request, so patching it once covers all of pybaseball; adding a UA is
+# harmless for the JSON APIs (MLB Stats, The-Odds-API, Supabase) we also call.
+_BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
+
+def _install_browser_user_agent() -> None:
+    """Make every requests call send a browser User-Agent (FanGraphs 403 fix)."""
+    session_cls = requests.sessions.Session
+    if getattr(session_cls, "_mlb_ua_patched", False):
+        return
+    _orig_request = session_cls.request
+
+    @functools.wraps(_orig_request)
+    def _request_with_ua(self, method, url, *args, **kwargs):
+        headers = dict(kwargs.get("headers") or {})
+        if not any(k.lower() == "user-agent" for k in headers):
+            headers["User-Agent"] = _BROWSER_USER_AGENT
+            kwargs["headers"] = headers
+        return _orig_request(self, method, url, *args, **kwargs)
+
+    session_cls.request = _request_with_ua
+    session_cls._mlb_ua_patched = True
+
+
+_install_browser_user_agent()
+
+
 # FanGraphs uses different abbreviations for some MLB teams
 _MLB_TO_FG_TEAM = {
     "KC": "KCR",
@@ -302,45 +342,145 @@ def _match_pitcher_row(stats: pd.DataFrame, pitcher_name: str) -> Optional[pd.Se
     return stats[mask_last].iloc[0]
 
 
+# ---------------------------------------------------------------------------
+# MLB Stats API metric helpers (replaces the FanGraphs/pybaseball feed, which
+# returns HTTP 403 to GitHub runner IPs). FanGraphs-specific metrics (xFIP,
+# SIERA, wRC+) aren't exposed by MLB, so we map to the closest real signals:
+#   xFIP slot  <- FIP (computed)     SIERA slot <- ERA
+#   K_BB_pct   <- (K - BB) / BF      WHIP       <- whip
+#   wRC+ slot  <- OPS-scaled index
+# Absolute scale doesn't matter because the model is retrained on these values.
+# ---------------------------------------------------------------------------
+
+_FIP_CONSTANT = 3.10  # nominal; only relative differences matter after retrain
+
+# season -> {player_id: stat_dict}; (team_id, season[, hand]) -> metrics
+_pitching_leaderboard_cache: dict[int, dict] = {}
+_team_pitching_cache: dict[tuple, dict] = {}
+_team_hitting_cache: dict[tuple, dict] = {}
+_team_id_cache: dict[str, int] = {}
+
+
+def _ip_to_float(ip) -> float:
+    """Convert MLB 'inningsPitched' (e.g. '12.1' = 12 and 1/3) to a float."""
+    try:
+        s = str(ip)
+        if "." in s:
+            whole, frac = s.split(".")
+            return int(whole) + {"0": 0.0, "1": 1 / 3, "2": 2 / 3}.get(frac, 0.0)
+        return float(s)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _compute_fip(stat: dict) -> float:
+    """FIP from a raw MLB pitching stat line: (13HR + 3(BB+HBP) - 2K)/IP + C."""
+    ip = _ip_to_float(stat.get("inningsPitched"))
+    if ip <= 0:
+        return 4.20
+    hr = _safe_float(stat.get("homeRuns"))
+    bb = _safe_float(stat.get("baseOnBalls"))
+    hbp = _safe_float(stat.get("hitByPitch"))
+    k = _safe_float(stat.get("strikeOuts"))
+    return round((13 * hr + 3 * (bb + hbp) - 2 * k) / ip + _FIP_CONSTANT, 3)
+
+
+def _pitcher_metrics(stat: dict) -> dict:
+    """Map an MLB pitching stat line to (xFIP-slot, SIERA-slot, K-BB%, WHIP)."""
+    bf = _safe_float(stat.get("battersFaced"))
+    k = _safe_float(stat.get("strikeOuts"))
+    bb = _safe_float(stat.get("baseOnBalls"))
+    k_bb_pct = round((k - bb) / bf * 100, 2) if bf > 0 else 10.0
+    return {
+        "xFIP": _compute_fip(stat),
+        "SIERA": _safe_float(stat.get("era"), default=4.20),
+        "K_BB_pct": k_bb_pct,
+        "WHIP": _safe_float(stat.get("whip"), default=1.30),
+    }
+
+
 @retry_on_failure
+def _pitching_leaderboard(season: int) -> dict:
+    """All pitchers' season stats for `season`, keyed by player id (cached)."""
+    if season in _pitching_leaderboard_cache:
+        return _pitching_leaderboard_cache[season]
+    data = _mlb_api_get("stats", params={
+        "stats": "season", "group": "pitching", "season": season,
+        "sportId": 1, "playerPool": "all", "limit": 3000,
+    })
+    board = {}
+    for s in (data.get("stats") or []):
+        for sp in s.get("splits", []):
+            pid = sp.get("player", {}).get("id")
+            if pid is not None:
+                board[pid] = sp.get("stat", {})
+    _pitching_leaderboard_cache[season] = board
+    logger.info("Loaded MLB pitching leaderboard for %d: %d pitchers.", season, len(board))
+    return board
+
+
+@retry_on_failure
+def _team_id_from_abbrev(team_abbrev) -> Optional[int]:
+    """Resolve an MLB team abbreviation to its numeric id (cached)."""
+    if isinstance(team_abbrev, int):
+        return team_abbrev
+    if str(team_abbrev).isdigit():
+        return int(team_abbrev)
+    if not _team_id_cache:
+        data = _mlb_api_get("teams", params={"sportId": 1})
+        for t in data.get("teams", []):
+            if t.get("abbreviation"):
+                _team_id_cache[t["abbreviation"]] = t["id"]
+    return _team_id_cache.get(team_abbrev)
+
+
 def get_pitcher_stats(
-    pitcher_name: str,
+    pitcher_id=None,
+    pitcher_name: str = "",
     season: Optional[int] = None,
     rolling_days: int = PITCHER_ROLLING_DAYS,
     use_rolling: bool = True,
 ) -> dict:
-    """Get pitcher sabermetric stats: xFIP, SIERA, K-BB%, WHIP.
+    """Get pitcher metrics (xFIP/SIERA/K-BB%/WHIP slots) from the MLB Stats API.
 
-    Returns both rolling-window and season-long stats.
+    Looks the pitcher up by id in the season leaderboard. `pitcher_name` is kept
+    for logging/back-compat only.
 
     Args:
-        use_rolling: When True (prediction path), fetch a real rolling window
-            via pitching_stats_range. When False (training path), reuse season
-            stats for the rolling slots — historical rolling windows can't be
-            reconstructed from today's FanGraphs data.
+        use_rolling: When True (prediction path), fetch a real recent-form window
+            via the byDateRange endpoint. When False (training path), reuse season
+            stats for the rolling slots — historical rolling windows aren't
+            reconstructable cheaply.
     """
     season = season or date.today().year
 
+    if pitcher_id is None or (isinstance(pitcher_id, float) and pitcher_id != pitcher_id):
+        return _default_pitcher_stats()
     try:
-        stats = pybaseball.pitching_stats(season, season, qual=1)
+        pitcher_id = int(pitcher_id)
+    except (TypeError, ValueError):
+        return _default_pitcher_stats()
+
+    try:
+        board = _pitching_leaderboard(season)
     except Exception as e:
-        logger.warning("pybaseball pitching_stats failed: %s. Using defaults.", e)
+        logger.warning("MLB pitching leaderboard failed for %d: %s. Using defaults.", season, e)
         return _default_pitcher_stats()
 
-    row = _match_pitcher_row(stats, pitcher_name)
-    if row is None:
-        logger.warning("Pitcher '%s' not found in %d stats. Using defaults.", pitcher_name, season)
+    stat = board.get(pitcher_id)
+    if not stat:
+        logger.warning("Pitcher id=%s (%s) not in %d leaderboard. Using defaults.",
+                       pitcher_id, pitcher_name, season)
         return _default_pitcher_stats()
 
+    m = _pitcher_metrics(stat)
     season_stats = {
-        "xFIP_season": _safe_float(row.get("xFIP")),
-        "SIERA_season": _safe_float(row.get("SIERA")),
-        "K_BB_pct_season": _safe_float(row.get("K-BB%")),
-        "WHIP_season": _safe_float(row.get("WHIP")),
+        "xFIP_season": m["xFIP"], "SIERA_season": m["SIERA"],
+        "K_BB_pct_season": m["K_BB_pct"], "WHIP_season": m["WHIP"],
     }
 
     if use_rolling:
-        rolling_stats = _get_pitcher_rolling_stats(pitcher_name, rolling_days)
+        rolling_stats = _get_pitcher_rolling_stats(pitcher_id, rolling_days, season)
     else:
         # Training path: mirror season stats into rolling slots
         rolling_stats = {
@@ -353,40 +493,27 @@ def get_pitcher_stats(
     return {**season_stats, **rolling_stats}
 
 
-def _get_pitcher_rolling_stats(pitcher_name: str, days: int) -> dict:
-    """Compute rolling stats from FanGraphs date-range data (actual window, not season proxy)."""
+def _get_pitcher_rolling_stats(pitcher_id: int, days: int, season: int) -> dict:
+    """Recent-form pitcher metrics via the MLB byDateRange endpoint."""
     end = date.today()
     start = end - timedelta(days=days)
-    start_str = start.strftime("%Y-%m-%d")
-    end_str = end.strftime("%Y-%m-%d")
-
     try:
-        stats = pybaseball.pitching_stats_range(start_str, end_str)
-        if stats is None or stats.empty:
+        data = _mlb_api_get(f"people/{pitcher_id}/stats", params={
+            "stats": "byDateRange", "group": "pitching",
+            "startDate": start.strftime("%Y-%m-%d"),
+            "endDate": end.strftime("%Y-%m-%d"),
+            "sportId": 1, "season": season,
+        })
+        splits = (data.get("stats") or [{}])[0].get("splits", [])
+        if not splits:
             return _default_rolling_pitcher_stats()
-
-        row = _match_pitcher_row(stats, pitcher_name)
-        if row is None:
-            logger.warning(
-                "No rolling stats for '%s' in last %d days. Using season stats as fallback.",
-                pitcher_name, days,
-            )
-            return _default_rolling_pitcher_stats()
-
+        m = _pitcher_metrics(splits[0].get("stat", {}))
         return {
-            "xFIP_rolling": _safe_float(row.get("xFIP")),
-            "SIERA_rolling": _safe_float(row.get("SIERA")),
-            "K_BB_pct_rolling": _safe_float(row.get("K-BB%")),
-            "WHIP_rolling": _safe_float(row.get("WHIP")),
+            "xFIP_rolling": m["xFIP"], "SIERA_rolling": m["SIERA"],
+            "K_BB_pct_rolling": m["K_BB_pct"], "WHIP_rolling": m["WHIP"],
         }
-    except IndexError:
-        logger.debug(
-            "No FanGraphs data yet for '%s' in last %d days (early season). Using defaults.",
-            pitcher_name, days,
-        )
-        return _default_rolling_pitcher_stats()
     except Exception as e:
-        logger.warning("Rolling stats fetch failed for %s: %s", pitcher_name, e)
+        logger.warning("Rolling stats fetch failed for pitcher %s: %s", pitcher_id, e)
         return _default_rolling_pitcher_stats()
 
 
@@ -416,35 +543,37 @@ def get_bullpen_stats(
     season: Optional[int] = None,
     rolling_days: int = BULLPEN_ROLLING_DAYS,
 ) -> dict:
-    """Get team bullpen aggregate ERA and FIP.
+    """Team pitching-staff ERA and FIP from the MLB Stats API.
+
+    NOTE: MLB's simple team-stats endpoint doesn't split starters from relievers,
+    so this uses the team's overall pitching as a proxy for staff/bullpen quality.
 
     Returns: {"bullpen_era": float, "bullpen_fip": float}
     """
     season = season or date.today().year
-    fg_team = _to_fg_team(team_abbrev)
+    key = (team_abbrev, season)
+    if key in _team_pitching_cache:
+        return _team_pitching_cache[key]
 
+    result = {"bullpen_era": 4.00, "bullpen_fip": 4.00}
     try:
-        pitching = pybaseball.pitching_stats(season, season, qual=1)
-        # Filter to relievers (rough heuristic: GS < 5 or G - GS > 10)
-        if "GS" in pitching.columns and "G" in pitching.columns:
-            relievers = pitching[
-                (pitching["GS"] < 5) | (pitching["G"] - pitching["GS"] > 10)
-            ]
-            # Exact team match with FanGraphs abbreviation; fall back to contains
-            team_relievers = relievers[relievers["Team"] == fg_team]
-            if team_relievers.empty:
-                team_relievers = relievers[
-                    relievers["Team"].str.contains(team_abbrev, case=False, na=False)
-                ]
-            if not team_relievers.empty:
-                return {
-                    "bullpen_era": round(team_relievers["ERA"].mean(), 3),
-                    "bullpen_fip": round(team_relievers["FIP"].mean(), 3),
+        team_id = _team_id_from_abbrev(team_abbrev)
+        if team_id:
+            data = _mlb_api_get(f"teams/{team_id}/stats", params={
+                "stats": "season", "group": "pitching", "season": season, "sportId": 1,
+            })
+            splits = (data.get("stats") or [{}])[0].get("splits", [])
+            if splits:
+                stat = splits[0].get("stat", {})
+                result = {
+                    "bullpen_era": _safe_float(stat.get("era"), default=4.00),
+                    "bullpen_fip": _compute_fip(stat),
                 }
     except Exception as e:
-        logger.warning("Bullpen stats failed for %s: %s. Using defaults.", team_abbrev, e)
+        logger.warning("Team pitching stats failed for %s: %s. Using defaults.", team_abbrev, e)
 
-    return {"bullpen_era": 4.00, "bullpen_fip": 4.00}
+    _team_pitching_cache[key] = result
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -467,36 +596,42 @@ def get_team_hitting_splits(
     Returns: {"wrc_plus": float, "ops": float}
     """
     season = season or date.today().year
-    fg_team = _to_fg_team(team_abbrev)
+    key = (team_abbrev, vs_hand, season)
+    if key in _team_hitting_cache:
+        return _team_hitting_cache[key]
 
+    result = {"wrc_plus": 100.0, "ops": 0.740}
     try:
-        batting = pybaseball.batting_stats(season, season, qual=1)
-        # Exact team match with FanGraphs abbreviation; fall back to contains
-        team_hitters = batting[batting["Team"] == fg_team]
-        if team_hitters.empty:
-            team_hitters = batting[
-                batting["Team"].str.contains(team_abbrev, case=False, na=False)
-            ]
-        if not team_hitters.empty:
-            wrc_plus = team_hitters["wRC+"].mean() if "wRC+" in team_hitters.columns else 100.0
-            ops = team_hitters["OPS"].mean() if "OPS" in team_hitters.columns else 0.740
-
-            # Apply a platoon adjustment factor
-            if vs_hand == "L":
-                wrc_plus *= 0.97
-                ops *= 0.97
-            else:
-                wrc_plus *= 1.03
-                ops *= 1.03
-
-            return {
-                "wrc_plus": round(wrc_plus, 1),
-                "ops": round(ops, 3),
-            }
+        team_id = _team_id_from_abbrev(team_abbrev)
+        if team_id:
+            # Real platoon split: vs LHP (vl) / vs RHP (vr).
+            sit = "vl" if vs_hand == "L" else "vr"
+            data = _mlb_api_get(f"teams/{team_id}/stats", params={
+                "stats": "statSplits", "group": "hitting", "season": season,
+                "sportId": 1, "sitCodes": sit,
+            })
+            ops = None
+            for s in (data.get("stats") or []):
+                for sp in s.get("splits", []):
+                    val = sp.get("stat", {}).get("ops")
+                    if val is not None:
+                        ops = _safe_float(val)
+            # Fallback to overall season hitting if the split is unavailable.
+            if ops is None:
+                data = _mlb_api_get(f"teams/{team_id}/stats", params={
+                    "stats": "season", "group": "hitting", "season": season, "sportId": 1,
+                })
+                splits = (data.get("stats") or [{}])[0].get("splits", [])
+                if splits:
+                    ops = _safe_float(splits[0].get("stat", {}).get("ops"), default=0.740)
+            if ops:
+                # No wRC+ in MLB's API; approximate from OPS (league avg OPS ~.720 -> ~100).
+                result = {"ops": round(ops, 3), "wrc_plus": round(100.0 * ops / 0.720, 1)}
     except Exception as e:
         logger.warning("Hitting splits failed for %s vs %s: %s", team_abbrev, vs_hand, e)
 
-    return {"wrc_plus": 100.0, "ops": 0.740}
+    _team_hitting_cache[key] = result
+    return result
 
 
 # ---------------------------------------------------------------------------

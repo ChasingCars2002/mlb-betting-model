@@ -77,16 +77,29 @@ def fetch_live_odds() -> list[dict]:
         # Averaging American odds directly is nonlinear — go through prob space instead.
         home_probs = []
         away_probs = []
+        # Totals market: over/under prices (prob space) and the posted line (points).
+        over_probs = []
+        under_probs = []
+        total_points = []
 
         for bookmaker in event.get("bookmakers", []):
             for market in bookmaker.get("markets", []):
-                if market["key"] != "h2h":
-                    continue
-                for outcome in market.get("outcomes", []):
-                    if outcome["name"] == home_full:
-                        home_probs.append(american_to_implied_prob(outcome["price"]))
-                    elif outcome["name"] == away_full:
-                        away_probs.append(american_to_implied_prob(outcome["price"]))
+                key = market.get("key")
+                if key == "h2h":
+                    for outcome in market.get("outcomes", []):
+                        if outcome["name"] == home_full:
+                            home_probs.append(american_to_implied_prob(outcome["price"]))
+                        elif outcome["name"] == away_full:
+                            away_probs.append(american_to_implied_prob(outcome["price"]))
+                elif key == "totals":
+                    for outcome in market.get("outcomes", []):
+                        point = outcome.get("point")
+                        if outcome["name"] == "Over":
+                            over_probs.append(american_to_implied_prob(outcome["price"]))
+                            if point is not None:
+                                total_points.append(point)
+                        elif outcome["name"] == "Under":
+                            under_probs.append(american_to_implied_prob(outcome["price"]))
 
         if not home_probs or not away_probs:
             continue
@@ -97,14 +110,25 @@ def fetch_live_odds() -> list[dict]:
         home_odds = implied_prob_to_american(avg_home_prob)
         away_odds = implied_prob_to_american(avg_away_prob)
 
-        odds_list.append({
+        record = {
             "home_team": home_abbrev,
             "away_team": away_abbrev,
             "home_odds": home_odds,
             "away_odds": away_odds,
             "commence_time": event.get("commence_time", ""),
             "num_bookmakers": len(event.get("bookmakers", [])),
-        })
+            "over_odds": None,
+            "under_odds": None,
+            "total_line": None,
+        }
+
+        # Consensus totals market (only if a book offered an O/U line).
+        if over_probs and under_probs and total_points:
+            record["over_odds"] = implied_prob_to_american(sum(over_probs) / len(over_probs))
+            record["under_odds"] = implied_prob_to_american(sum(under_probs) / len(under_probs))
+            record["total_line"] = round(sum(total_points) / len(total_points), 1)
+
+        odds_list.append(record)
 
     logger.info("Fetched odds for %d games from The-Odds-API.", len(odds_list))
     return odds_list

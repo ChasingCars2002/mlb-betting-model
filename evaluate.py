@@ -1,6 +1,7 @@
 """EV calculation, bet sizing, and pick filtering."""
 
 import logging
+import math
 
 from config import (
     EV_THRESHOLD,
@@ -9,6 +10,8 @@ from config import (
     MAX_BET_UNITS,
     MARKET_BLEND_WEIGHT,
     MAX_RAW_DISAGREEMENT,
+    TOTALS_SIGMA,
+    TOTALS_MAX_DISAGREEMENT,
 )
 from odds import american_to_implied_prob, american_to_decimal, devig_two_way
 
@@ -167,6 +170,102 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
     # Sort by EV descending
     picks.sort(key=lambda x: x["ev"], reverse=True)
     logger.info("Found %d +EV picks from %d games.", len(picks), len(games_with_predictions))
+    return picks
+
+
+def total_over_probability(predicted_total: float, line: float,
+                           sigma: float = TOTALS_SIGMA) -> float:
+    """Probability the game total finishes Over `line`, per the score model.
+
+    Treats the actual total as Normal(predicted_total, sigma) and returns
+    P(total > line) = 1 - Phi((line - predicted_total) / sigma). Uses math.erf
+    so there is no scipy/numpy dependency.
+    """
+    if sigma <= 0:
+        return 1.0 if predicted_total > line else 0.0
+    z = (line - predicted_total) / sigma
+    cdf = 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+    return 1.0 - cdf
+
+
+def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
+    """Filter games to +EV Over/Under picks, mirroring filter_positive_ev.
+
+    For each game with a posted total line and the score model's predicted_total
+    we: derive P(Over)/P(Under) from the model, de-vig the book's O/U prices,
+    skip sides where the raw model disagrees with the no-vig market by more than
+    MAX_RAW_DISAGREEMENT, blend toward the market, and keep sides that are +EV
+    and clear EV_THRESHOLD. Returns totals pick dicts ready for the database.
+    """
+    picks = []
+
+    for game in games_with_odds:
+        line = game.get("total_line")
+        over_odds = game.get("over_odds")
+        under_odds = game.get("under_odds")
+        predicted_total = game.get("predicted_total")
+        if line is None or over_odds is None or under_odds is None or predicted_total is None:
+            continue
+
+        model_over = total_over_probability(predicted_total, line)
+        model_under = 1.0 - model_over
+
+        over_novig, under_novig = devig_two_way(over_odds, under_odds)
+        blended_over = blend_with_market(model_over, over_novig)
+        blended_under = 1.0 - blended_over
+
+        delta = round(predicted_total - line, 2)
+        base = {
+            "date": game["game_date"],
+            "home_team": game["home_team"],
+            "away_team": game["away_team"],
+            "bet_type": "totals",
+            "model_name": game.get("model_name", "xgboost"),
+            "home_pitcher": game.get("home_pitcher_name", ""),
+            "away_pitcher": game.get("away_pitcher_name", ""),
+            "listed_total": line,
+            "predicted_total": predicted_total,
+            "predicted_home_runs": game.get("predicted_home_runs"),
+            "predicted_away_runs": game.get("predicted_away_runs"),
+            "total_delta": delta,
+        }
+
+        # Over
+        over_gap = abs(model_over - over_novig)
+        over_edge = calculate_edge(blended_over, over_novig)
+        over_ev = calculate_ev(blended_over, over_novig, over_odds)
+        if over_gap <= TOTALS_MAX_DISAGREEMENT and over_ev > 0 and over_edge >= EV_THRESHOLD:
+            picks.append({
+                **base,
+                "pick": "Over",
+                "pick_side": "Over",
+                "model_prob": round(blended_over, 4),
+                "implied_prob": round(over_novig, 4),
+                "ev": over_ev,
+                "edge": over_edge,
+                "units": size_bet(blended_over, over_odds),
+                "odds": over_odds,
+            })
+
+        # Under
+        under_gap = abs(model_under - under_novig)
+        under_edge = calculate_edge(blended_under, under_novig)
+        under_ev = calculate_ev(blended_under, under_novig, under_odds)
+        if under_gap <= TOTALS_MAX_DISAGREEMENT and under_ev > 0 and under_edge >= EV_THRESHOLD:
+            picks.append({
+                **base,
+                "pick": "Under",
+                "pick_side": "Under",
+                "model_prob": round(blended_under, 4),
+                "implied_prob": round(under_novig, 4),
+                "ev": under_ev,
+                "edge": under_edge,
+                "units": size_bet(blended_under, under_odds),
+                "odds": under_odds,
+            })
+
+    picks.sort(key=lambda x: x["ev"], reverse=True)
+    logger.info("Found %d +EV totals picks from %d games.", len(picks), len(games_with_odds))
     return picks
 
 
