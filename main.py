@@ -3,7 +3,7 @@
 import argparse
 import logging
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -325,25 +325,41 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
 # ---------------------------------------------------------------------------
 
 def run_grading():
-    """Phase 2: Fetch yesterday's results and grade pending predictions."""
+    """Phase 2: Grade pending predictions.
+
+    Grades yesterday's slate AND backfills any older still-pending dates. The
+    daily run used to only fetch yesterday's results, so any pick missed on its
+    day (a failed run, or a game not yet final) stayed Pending forever. We now
+    retry every date that still has pending picks, date-scoped so results from
+    one day can't grade a same-matchup pick on another.
+    """
     print(f"\n{'='*60}")
     print(f"  MLB BETTING MODEL — Grading ({date.today()})")
     print(f"{'='*60}")
 
-    print("\n  Fetching yesterday's results...")
-    try:
-        results = get_yesterdays_results()
-    except Exception as e:
-        print(f"  ERROR: MLB Stats API unavailable — {e}")
-        export_dashboard_data()
-        return
-    if not results:
-        print("  No results found for yesterday. Exiting.")
-        return
-    print(f"  Found results for {len(results)} games.")
+    from database import get_pending_dates
 
-    print("  Grading pending predictions...")
-    grade_predictions(results)
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    pending_dates = get_pending_dates()
+    dates_to_grade = sorted(set(pending_dates) | {yesterday})
+    print(f"\n  Grading dates: {', '.join(dates_to_grade)}")
+
+    graded_any = False
+    for d in dates_to_grade:
+        try:
+            results = get_yesterdays_results(date.fromisoformat(d))
+        except Exception as e:
+            print(f"  ERROR: results unavailable for {d} — {e}")
+            continue
+        if not results:
+            print(f"  {d}: no final results yet.")
+            continue
+        print(f"  {d}: grading against {len(results)} final games.")
+        grade_predictions(results, for_date=d)
+        graded_any = True
+
+    if not graded_any:
+        print("  Nothing graded this run.")
 
     # Show updated stats
     show_stats()
