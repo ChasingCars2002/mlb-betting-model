@@ -5,7 +5,8 @@
 let allHistory  = [];
 let statsData   = {};
 let chart       = null;
-let mode        = 'ytd';    // 'ytd' | 'all_time'
+let mode        = 'ytd';        // 'ytd' | 'last30' | 'all_time'
+let market      = 'moneyline';  // 'moneyline' | 'totals' | 'all'
 let filterText  = '';
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
@@ -23,8 +24,7 @@ async function loadData() {
     }
 
     statsData  = await statsRes.json();
-    const rawHistory = await historyRes.json();
-    allHistory = rawHistory.filter(p => !p.bet_type || p.bet_type === 'moneyline');
+    allHistory = await historyRes.json();   // all markets; filtered per-view
     const rawToday = picksRes.ok ? await picksRes.json() : [];
     const rawTotals = totalsRes && totalsRes.ok ? await totalsRes.json() : [];
     // Only show picks that are actually for today (US Eastern). Between runs the
@@ -40,8 +40,9 @@ async function loadData() {
     if (appEl)     appEl.style.display     = 'block';
 
     renderLastUpdated(statsData.last_updated);
+    renderModelStatus(statsData.model);
     renderStats();
-    renderChart(allHistory, mode);
+    renderChart(marketFiltered(allHistory), mode);
     renderTable(allHistory);
     renderPickOfDay(todayPicks);
     renderTodayPicks(todayPicks);
@@ -62,6 +63,27 @@ function $(id) { return document.getElementById(id); }
 // keeps a day's picks visible through that day in the league's reference zone.
 function easternDateStr() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+// Apply the active market filter (moneyline / totals / all) to history rows.
+function marketFiltered(history) {
+  if (market === 'all') return history;
+  if (market === 'totals') return history.filter(p => p.bet_type === 'totals');
+  return history.filter(p => !p.bet_type || p.bet_type === 'moneyline');
+}
+
+// True when a row falls inside the active time range.
+function inTimeRange(p, targetMode) {
+  if (!p.date) return false;
+  if (targetMode === 'ytd') {
+    return p.date.startsWith(String(new Date().getFullYear()));
+  }
+  if (targetMode === 'last30') {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString().slice(0, 10);
+    return p.date >= cutoff;
+  }
+  return true; // all_time
 }
 
 function setHTML(id, html) {
@@ -113,6 +135,25 @@ function evBadge(ev) {
   return `<span class="${cls}">${ev >= 0 ? '+' : ''}${pct}%</span>`;
 }
 
+// ── Model self-tuning status ───────────────────────────────────────────────
+function renderModelStatus(model) {
+  const el = $('model-status');
+  if (!el || !model || model.blend_weight == null) return;
+  const w = (model.blend_weight * 100).toFixed(0);
+  let text;
+  if (model.self_tuned) {
+    text = `🧠 <span class="tuned">Self-tuned</span>: picks blend ${w}% market /
+            ${100 - w}% model — learned from ${model.calibration_games.toLocaleString()}
+            graded games and re-fit after every grading run.`;
+  } else {
+    const n = model.calibration_games ?? 0;
+    text = `🧠 Self-tuning calibration is collecting data (${n} graded games so far) —
+            picks currently blend ${w}% market / ${100 - w}% model by default.`;
+  }
+  el.innerHTML = text;
+  el.style.display = 'block';
+}
+
 // ── Last updated ───────────────────────────────────────────────────────────
 function renderLastUpdated(iso) {
   if (!iso) return;
@@ -124,12 +165,9 @@ function renderLastUpdated(iso) {
     });
 }
 
-// ── Stats computed from filtered history (moneyline only) ─────────────────
+// ── Stats computed from filtered history ──────────────────────────────────
 function computeStats(history, targetMode) {
-  const ytdYear = String(new Date().getFullYear());
-  const rows = targetMode === 'ytd'
-    ? history.filter(p => p.date && p.date.startsWith(ytdYear))
-    : history;
+  const rows = history.filter(p => inTimeRange(p, targetMode));
   const graded  = rows.filter(p => p.status === 'Win' || p.status === 'Loss');
   const pending = rows.filter(p => p.status === 'Pending').length;
   const wins    = graded.filter(p => p.status === 'Win').length;
@@ -147,9 +185,11 @@ function computeStats(history, targetMode) {
 
 // ── Stats cards ────────────────────────────────────────────────────────────
 function renderStats() {
-  const s     = computeStats(allHistory, mode);
-  const other = computeStats(allHistory, mode === 'ytd' ? 'all_time' : 'ytd');
-  const otherLabel = mode === 'ytd' ? 'All-time' : 'YTD';
+  const rows  = marketFiltered(allHistory);
+  const s     = computeStats(rows, mode);
+  const otherMode  = mode === 'all_time' ? 'ytd' : 'all_time';
+  const other      = computeStats(rows, otherMode);
+  const otherLabel = otherMode === 'ytd' ? 'YTD' : 'All-time';
 
   const wins    = s.wins    ?? 0;
   const losses  = s.losses  ?? 0;
@@ -190,15 +230,22 @@ function renderTodayPicks(picks) {
     const pred  = (p.predicted_home_runs != null && p.predicted_away_runs != null)
       ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)}</span>`
       : '';
+    const model = p.raw_model_prob != null
+      ? `Model: ${fmt(p.raw_model_prob * 100)}% raw → ${fmt(p.model_prob * 100)}% blended`
+      : `Model: ${fmt(p.model_prob * 100)}%`;
+    const pitchers = (p.away_pitcher || p.home_pitcher)
+      ? `<span class="pick-pitchers">${p.away_pitcher || 'TBD'} vs ${p.home_pitcher || 'TBD'}</span>`
+      : '';
     return `
       <div class="pick-card">
         <span class="game-label">${game}</span>
         <span class="pick-team">${p.pick}</span>
         <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
         <span class="pick-meta">${edge} · EV: ${ev}</span>
-        <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
+        <span class="pick-meta" title="Raw model probability, then after shrinking toward the no-vig market">${model} · Implied: ${fmt(p.implied_prob * 100)}%</span>
         ${pred}
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
+        ${pitchers}
       </div>`;
   }).join(''));
 }
@@ -219,6 +266,9 @@ function renderTodayTotals(picks) {
     const model = p.predicted_total != null
       ? `<span class="pick-meta score-pred">Model total: ${fmt(p.predicted_total)}</span>`
       : '';
+    const pitchers = (p.away_pitcher || p.home_pitcher)
+      ? `<span class="pick-pitchers">${p.away_pitcher || 'TBD'} vs ${p.home_pitcher || 'TBD'}</span>`
+      : '';
     return `
       <div class="pick-card">
         <span class="game-label">${game}</span>
@@ -228,18 +278,15 @@ function renderTodayTotals(picks) {
         <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
         ${model}
         <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
+        ${pitchers}
       </div>`;
   }).join(''));
 }
 
 // ── Cumulative P&L chart ───────────────────────────────────────────────────
 function renderChart(history, currentMode) {
-  const ytdYear = new Date().getFullYear();
-
-  let graded = history.filter(p => p.status === 'Win' || p.status === 'Loss');
-  if (currentMode === 'ytd') {
-    graded = graded.filter(p => p.date && p.date.startsWith(String(ytdYear)));
-  }
+  let graded = history.filter(p =>
+    (p.status === 'Win' || p.status === 'Loss') && inTimeRange(p, currentMode));
   graded = [...graded].sort((a, b) => a.date.localeCompare(b.date));
 
   let cumulative = 0;
@@ -322,12 +369,7 @@ function renderChart(history, currentMode) {
 
 // ── History table ──────────────────────────────────────────────────────────
 function renderTable(history) {
-  const ytdYear = String(new Date().getFullYear());
-  let rows = history;
-
-  if (mode === 'ytd') {
-    rows = rows.filter(p => p.date && p.date.startsWith(ytdYear));
-  }
+  let rows = marketFiltered(history).filter(p => inTimeRange(p, mode));
 
   if (filterText) {
     const q = filterText.toLowerCase();
@@ -347,11 +389,14 @@ function renderTable(history) {
 
   setHTML('history-tbody', rows.map(p => {
     const game = `${p.away_team} @ ${p.home_team}`;
+    const pickLabel = (p.bet_type === 'totals' && p.listed_total != null)
+      ? `${p.pick} ${fmt(p.listed_total)}`
+      : (p.pick ?? '—');
     return `
       <tr class="${rowClass(p.status)}">
         <td>${p.date ?? '—'}</td>
         <td>${game}</td>
-        <td style="font-weight:600">${p.pick ?? '—'}</td>
+        <td style="font-weight:600">${pickLabel}</td>
         <td>${fmtOdds(p.odds)}</td>
         <td>${p.units ?? '—'}u</td>
         <td>${p.model_prob != null ? fmt(p.model_prob * 100) + '%' : '—'}</td>
@@ -393,21 +438,36 @@ function showError(msg) {
   if (text)   text.textContent = msg;
 }
 
-// ── Toggle (YTD / All-Time) ────────────────────────────────────────────────
+// ── Toggles (time range + market) ──────────────────────────────────────────
+function rerenderFiltered() {
+  renderStats();
+  renderChart(marketFiltered(allHistory), mode);
+  renderTable(allHistory);
+}
+
 function setMode(newMode) {
   mode = newMode;
-  document.querySelectorAll('.toggle-btn').forEach(btn => {
+  document.querySelectorAll('.toggle-btn[data-mode]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.mode === mode);
   });
-  renderStats();
-  renderChart(allHistory, mode);
-  renderTable(allHistory);
+  rerenderFiltered();
+}
+
+function setMarket(newMarket) {
+  market = newMarket;
+  document.querySelectorAll('.toggle-btn[data-market]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.market === market);
+  });
+  rerenderFiltered();
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.toggle-btn').forEach(btn => {
+  document.querySelectorAll('.toggle-btn[data-mode]').forEach(btn => {
     btn.addEventListener('click', () => setMode(btn.dataset.mode));
+  });
+  document.querySelectorAll('.toggle-btn[data-market]').forEach(btn => {
+    btn.addEventListener('click', () => setMarket(btn.dataset.market));
   });
 
   const searchInput = document.getElementById('table-search');

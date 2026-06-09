@@ -15,7 +15,7 @@
   <header>
     <div class="container inner">
       <div class="logo">⚾ <span>Baseball</span> Betting Bot
-        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · Moneyline</span>
+        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · Self-tuning</span>
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
@@ -46,11 +46,22 @@
     <!-- ── Main app (hidden until data loads) ───────────────── -->
     <div id="app" style="display:none">
 
-      <!-- Mode toggle -->
-      <div class="toggle-group">
-        <button class="toggle-btn active" data-mode="ytd">YTD</button>
-        <button class="toggle-btn"        data-mode="all_time">All-Time</button>
+      <!-- Filters: time range + market -->
+      <div class="toolbar">
+        <div class="toggle-group" role="group" aria-label="Time range">
+          <button class="toggle-btn active" data-mode="ytd">YTD</button>
+          <button class="toggle-btn"        data-mode="last30">Last 30d</button>
+          <button class="toggle-btn"        data-mode="all_time">All-Time</button>
+        </div>
+        <div class="toggle-group" role="group" aria-label="Market">
+          <button class="toggle-btn active" data-market="moneyline">Moneyline</button>
+          <button class="toggle-btn"        data-market="totals">Totals</button>
+          <button class="toggle-btn"        data-market="all">All</button>
+        </div>
       </div>
+
+      <!-- Model self-tuning status (populated from stats.json) -->
+      <div id="model-status" class="model-status" style="display:none"></div>
 
       <!-- ── Stat cards ──────────────────────────────────────── -->
       <div class="stats-grid">
@@ -117,11 +128,11 @@
                 <th>Date</th>
                 <th>Game</th>
                 <th>Pick</th>
-                <th>Odds</th>
-                <th>Units</th>
-                <th>Model%</th>
-                <th>Edge</th>
-                <th>Conf</th>
+                <th title="American odds at the time the pick was made (consensus across books)">Odds</th>
+                <th title="Bet size from half-Kelly staking — bigger edge = more units">Units</th>
+                <th title="Model win probability after blending toward the de-vigged market">Model%</th>
+                <th title="Model probability minus the no-vig market probability">Edge</th>
+                <th title="1–5 stars: where the edge sits in the achievable range">Conf</th>
                 <th>Status</th>
                 <th>Profit</th>
               </tr>

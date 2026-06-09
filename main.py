@@ -26,6 +26,14 @@ from model import load_model, predict_win_prob
 from odds import fetch_live_odds, match_odds_to_games
 from evaluate import filter_positive_ev, filter_totals_ev, format_picks, format_stats, compute_confidence
 from score import predict_game_scores
+from calibration import (
+    log_model_predictions,
+    update_blend_weight,
+    get_blend_state,
+    get_blend_weight,
+    is_self_tuned,
+)
+from config import MARKET_BLEND_WEIGHT, TOTALS_MAX_DISAGREEMENT
 
 logger = logging.getLogger(__name__)
 
@@ -277,8 +285,17 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
         return
     print(f"        Matched odds for {len(games_with_odds)} games.")
 
+    # Log raw model vs market probability for the FULL slate. Graded outcomes
+    # feed the self-tuning blend weight (see calibration.py).
+    try:
+        log_model_predictions(games_with_odds)
+    except Exception as e:
+        logger.warning("Calibration logging failed (non-fatal): %s", e)
+
     # Step 5: Calculate EV, attach confidence, and filter picks
     print("\n  [5/5] Calculating EV and filtering picks...")
+    print(f"        Market blend weight: {get_blend_weight():.2f} "
+          f"({'self-tuned' if is_self_tuned() else 'default'})")
     ml_picks = filter_positive_ev(games_with_odds)
     for p in ml_picks:
         p["confidence"] = compute_confidence(p["edge"], p["ev"])
@@ -293,7 +310,11 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
     # Totals (Over/Under) picks from the score model + posted O/U lines.
     totals_picks = filter_totals_ev(games_with_odds)
     for p in totals_picks:
-        p["confidence"] = compute_confidence(p["edge"], p["ev"])
+        p["confidence"] = compute_confidence(
+            p["edge"], p["ev"],
+            max_disagreement=TOTALS_MAX_DISAGREEMENT,
+            weight=MARKET_BLEND_WEIGHT,
+        )
 
     # Display picks
     print(format_picks(ml_picks))
@@ -337,11 +358,12 @@ def run_grading():
     print(f"  MLB BETTING MODEL — Grading ({date.today()})")
     print(f"{'='*60}")
 
-    from database import get_pending_dates
+    from database import get_pending_dates, get_model_log_dates_pending, grade_model_log
 
     yesterday = (date.today() - timedelta(days=1)).isoformat()
     pending_dates = get_pending_dates()
-    dates_to_grade = sorted(set(pending_dates) | {yesterday})
+    pending_log_dates = get_model_log_dates_pending()
+    dates_to_grade = sorted(set(pending_dates) | set(pending_log_dates) | {yesterday})
     print(f"\n  Grading dates: {', '.join(dates_to_grade)}")
 
     graded_any = False
@@ -356,10 +378,23 @@ def run_grading():
             continue
         print(f"  {d}: grading against {len(results)} final games.")
         grade_predictions(results, for_date=d)
+        grade_model_log(results, for_date=d)
         graded_any = True
 
     if not graded_any:
         print("  Nothing graded this run.")
+
+    # Self-tuning step: refit the market blend weight on all graded games.
+    try:
+        state = update_blend_weight()
+        if state:
+            print(f"\n  Blend weight self-tuned to {state['weight']:.2f} "
+                  f"on {state['n_games']} graded games "
+                  f"(log loss {state['log_loss']:.5f}).")
+        else:
+            print("\n  Blend weight: not enough graded games yet — using default.")
+    except Exception as e:
+        logger.warning("Blend weight update failed (non-fatal): %s", e)
 
     # Show updated stats
     show_stats()
@@ -404,9 +439,16 @@ def export_dashboard_data():
     out.mkdir(parents=True, exist_ok=True)
 
     ytd_since = f"{date.today().year}-01-01"
+    blend_state = get_blend_state()
     stats = {
         "ytd": {**get_roi_stats(since=ytd_since), "since": ytd_since},
         "all_time": get_roi_stats(),
+        "model": {
+            "blend_weight": get_blend_weight(),
+            "self_tuned": is_self_tuned(),
+            "calibration_games": (blend_state or {}).get("n_games", 0),
+            "calibration_updated": (blend_state or {}).get("updated_at"),
+        },
         "last_updated": datetime.utcnow().isoformat() + "Z",
     }
     (out / "stats.json").write_text(json.dumps(_sanitize_json(stats), indent=2))

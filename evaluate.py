@@ -14,6 +14,7 @@ from config import (
     TOTALS_MAX_DISAGREEMENT,
 )
 from odds import american_to_implied_prob, american_to_decimal, devig_two_way
+import calibration
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +56,9 @@ def size_bet(model_prob: float, american_odds: int) -> float:
     Kelly fraction = edge / (decimal_odds - 1)
     Half-Kelly = Kelly * 0.5  (reduces variance while preserving growth)
 
-    Result is capped at 3.0 units. Minimum is the raw half-Kelly value
-    (no artificial floor) so small-edge bets are sized proportionally small.
-    Returned as a float (e.g., 0.3u or 1.5u).
+    The scaled half-Kelly stake is clamped to [MIN_BET_UNITS, MAX_BET_UNITS]:
+    any qualifying pick risks at least the floor, and never more than the cap.
+    Returned as a float (e.g., 0.5u or 1.5u).
 
     Args:
         model_prob: Model's predicted win probability for this side.
@@ -74,7 +75,7 @@ def size_bet(model_prob: float, american_odds: int) -> float:
 
 
 def blend_with_market(model_prob: float, no_vig_prob: float,
-                      weight: float = MARKET_BLEND_WEIGHT) -> float:
+                      weight: float | None = None) -> float:
     """Shrink the model probability toward the de-vigged market consensus.
 
     blended = weight * market + (1 - weight) * model
@@ -82,7 +83,13 @@ def blend_with_market(model_prob: float, no_vig_prob: float,
     A higher `weight` trusts the (sharp) market more. This is the primary
     defense against adverse selection: the raw model overrates the side it
     picks, so betting its un-shrunk probability systematically loses.
+
+    When `weight` is None the self-tuned weight is used — learned weekly from
+    the model's own graded predictions (see calibration.py), falling back to
+    the static MARKET_BLEND_WEIGHT until enough games have been graded.
     """
+    if weight is None:
+        weight = calibration.get_blend_weight()
     return weight * no_vig_prob + (1.0 - weight) * model_prob
 
 
@@ -109,6 +116,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         List of +EV pick dicts ready for database storage.
     """
     picks = []
+    blend_weight = calibration.get_blend_weight()
 
     for game in games_with_predictions:
         model_prob_home = game["model_prob"]
@@ -117,8 +125,8 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         # De-vig the two-way market into true probabilities (sum to 1.0).
         home_novig, away_novig = devig_two_way(game["home_odds"], game["away_odds"])
 
-        # Blend model toward the sharp market.
-        blended_home = blend_with_market(model_prob_home, home_novig)
+        # Blend model toward the sharp market (weight is self-tuned, see calibration.py).
+        blended_home = blend_with_market(model_prob_home, home_novig, weight=blend_weight)
         blended_away = 1.0 - blended_home  # internally consistent with blended_home
 
         # Check home team bet
@@ -134,6 +142,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
                 "pick": game["home_team"],
                 "pick_side": "Home",
                 "model_prob": round(blended_home, 4),
+                "raw_model_prob": round(model_prob_home, 4),
                 "implied_prob": round(home_novig, 4),
                 "ev": home_ev,
                 "edge": home_edge,
@@ -157,6 +166,7 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
                 "pick": game["away_team"],
                 "pick_side": "Away",
                 "model_prob": round(blended_away, 4),
+                "raw_model_prob": round(model_prob_away, 4),
                 "implied_prob": round(away_novig, 4),
                 "ev": away_ev,
                 "edge": away_edge,
@@ -211,7 +221,10 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
         model_under = 1.0 - model_over
 
         over_novig, under_novig = devig_two_way(over_odds, under_odds)
-        blended_over = blend_with_market(model_over, over_novig)
+        # Totals use the static blend weight: the self-tuned weight is learned
+        # from the moneyline classifier's track record and doesn't transfer to
+        # the analytical score model.
+        blended_over = blend_with_market(model_over, over_novig, weight=MARKET_BLEND_WEIGHT)
         blended_under = 1.0 - blended_over
 
         delta = round(predicted_total - line, 2)
@@ -240,6 +253,7 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
                 "pick": "Over",
                 "pick_side": "Over",
                 "model_prob": round(blended_over, 4),
+                "raw_model_prob": round(model_over, 4),
                 "implied_prob": round(over_novig, 4),
                 "ev": over_ev,
                 "edge": over_edge,
@@ -257,6 +271,7 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
                 "pick": "Under",
                 "pick_side": "Under",
                 "model_prob": round(blended_under, 4),
+                "raw_model_prob": round(model_under, 4),
                 "implied_prob": round(under_novig, 4),
                 "ev": under_ev,
                 "edge": under_edge,
@@ -269,24 +284,37 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
     return picks
 
 
-def compute_confidence(edge: float, ev: float) -> int:
-    """Return a 1–5 star rating based on edge and EV thresholds.
+def compute_confidence(edge: float, ev: float,
+                       max_disagreement: float = MAX_RAW_DISAGREEMENT,
+                       weight: float | None = None) -> int:
+    """Return a 1–5 star rating from where the edge sits in the achievable band.
 
-    5 stars: edge >= 10% AND ev >= 0.20
-    4 stars: edge >= 7%  AND ev >= 0.12
-    3 stars: edge >= 5%  AND ev >= 0.08
-    2 stars: edge >= 3%  AND ev >= 0.04
-    1 star:  anything that cleared the EV threshold
+    Because every pick's probability is blended toward the market, the maximum
+    achievable edge is (1 - blend_weight) * max_disagreement — e.g. with a 0.5
+    weight and the 0.15 moneyline cap, no pick can ever exceed a 7.5% edge.
+    Fixed thresholds like "5 stars at 10% edge" were therefore unreachable and
+    every pick clustered at 2–3 stars. Instead, the band between EV_THRESHOLD
+    (the minimum edge to bet at all) and that achievable maximum is split into
+    five equal tiers, so the stars adapt automatically when the self-tuned
+    blend weight changes.
+
+    Args:
+        edge: The pick's blended edge over the no-vig market.
+        ev: The pick's expected value (kept for API compatibility / future use).
+        max_disagreement: The raw-disagreement cap for this market type
+            (MAX_RAW_DISAGREEMENT for moneyline, TOTALS_MAX_DISAGREEMENT for O/U).
+        weight: Blend weight used for this market; None = self-tuned moneyline weight.
     """
-    if edge >= 0.10 and ev >= 0.20:
-        return 5
-    if edge >= 0.07 and ev >= 0.12:
-        return 4
-    if edge >= 0.05 and ev >= 0.08:
-        return 3
-    if edge >= 0.03 and ev >= 0.04:
-        return 2
-    return 1
+    if weight is None:
+        weight = calibration.get_blend_weight()
+    max_edge = (1.0 - weight) * max_disagreement
+    span = max_edge - EV_THRESHOLD
+    if span <= 0:
+        return 1
+    frac = (edge - EV_THRESHOLD) / span
+    if frac <= 0:
+        return 1
+    return min(5, 1 + int(frac * 5))
 
 
 def format_picks(picks: list[dict]) -> str:

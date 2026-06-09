@@ -33,6 +33,25 @@ CREATE TABLE IF NOT EXISTS predictions (
     away_pitcher TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Raw model vs market probability for EVERY game with odds (not just picks).
+-- Graded outcomes feed calibration.update_blend_weight(), which learns how
+-- much to shrink the model toward the market. Logging the full slate avoids
+-- the adverse-selection bias a picks-only sample would have.
+CREATE TABLE IF NOT EXISTS model_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL,
+    home_team TEXT NOT NULL,
+    away_team TEXT NOT NULL,
+    raw_model_prob REAL NOT NULL,
+    market_prob REAL NOT NULL,
+    home_odds INTEGER,
+    away_odds INTEGER,
+    model_name TEXT,
+    home_win INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(date, home_team, away_team)
+);
 """
 
 
@@ -59,6 +78,8 @@ def _migrate_db(conn: sqlite3.Connection):
         ("predicted_away_runs", "REAL"),
         ("total_delta", "REAL"),
         ("confidence", "INTEGER"),
+        # Pre-blend model probability, kept for calibration audits
+        ("raw_model_prob", "REAL"),
     ]
     for col, col_type in new_columns:
         if col not in existing:
@@ -91,12 +112,12 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
         (date, home_team, away_team, pick, pick_side, model_prob, implied_prob,
          ev, edge, units, odds, status, model_name, home_pitcher, away_pitcher,
          bet_type, listed_total, predicted_total, predicted_home_runs,
-         predicted_away_runs, total_delta, confidence)
+         predicted_away_runs, total_delta, confidence, raw_model_prob)
     VALUES
         (:date, :home_team, :away_team, :pick, :pick_side, :model_prob, :implied_prob,
          :ev, :edge, :units, :odds, 'Pending', :model_name, :home_pitcher, :away_pitcher,
          :bet_type, :listed_total, :predicted_total, :predicted_home_runs,
-         :predicted_away_runs, :total_delta, :confidence)
+         :predicted_away_runs, :total_delta, :confidence, :raw_model_prob)
     """
     normalized = []
     for p in picks:
@@ -108,6 +129,7 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
         row.setdefault("predicted_away_runs", None)
         row.setdefault("total_delta", None)
         row.setdefault("confidence", None)
+        row.setdefault("raw_model_prob", None)
         normalized.append(row)
 
     with get_connection() as conn:
@@ -184,6 +206,85 @@ def grade_predictions(results: dict[str, dict], for_date: Optional[str] = None):
             graded += 1
 
         logger.info("Graded %d predictions.", graded)
+
+
+def save_model_log(rows: list[dict]):
+    """Upsert raw model vs market probabilities for a slate of games.
+
+    One row per (date, home_team, away_team). Re-running predictions for the
+    same day refreshes the probabilities, but never touches a graded outcome.
+    """
+    if not rows:
+        return
+    sql = """
+    INSERT INTO model_log
+        (date, home_team, away_team, raw_model_prob, market_prob,
+         home_odds, away_odds, model_name)
+    VALUES
+        (:date, :home_team, :away_team, :raw_model_prob, :market_prob,
+         :home_odds, :away_odds, :model_name)
+    ON CONFLICT(date, home_team, away_team) DO UPDATE SET
+        raw_model_prob = excluded.raw_model_prob,
+        market_prob    = excluded.market_prob,
+        home_odds      = excluded.home_odds,
+        away_odds      = excluded.away_odds,
+        model_name     = excluded.model_name
+    WHERE model_log.home_win IS NULL
+    """
+    with get_connection() as conn:
+        conn.executemany(sql, rows)
+    logger.info("Saved %d rows to model_log.", len(rows))
+
+
+def grade_model_log(results: dict[str, dict], for_date: Optional[str] = None):
+    """Attach actual outcomes to ungraded model_log rows.
+
+    Args:
+        results: Dict mapping "AWAY @ HOME" to {"home_score", "away_score", "winner"}.
+        for_date: Only grade rows on this date (YYYY-MM-DD) when given.
+    """
+    with get_connection() as conn:
+        sql = "SELECT id, home_team, away_team FROM model_log WHERE home_win IS NULL"
+        params: list = []
+        if for_date:
+            sql += " AND date = ?"
+            params.append(for_date)
+        pending = conn.execute(sql, params).fetchall()
+
+        graded = 0
+        for row in pending:
+            game_key = f"{row['away_team']} @ {row['home_team']}"
+            result = results.get(game_key)
+            if result is None:
+                continue
+            home_win = 1 if result["winner"] == row["home_team"] else 0
+            conn.execute(
+                "UPDATE model_log SET home_win = ? WHERE id = ?",
+                (home_win, row["id"]),
+            )
+            graded += 1
+        if pending:
+            logger.info("Graded %d / %d model_log rows%s.", graded, len(pending),
+                        f" for {for_date}" if for_date else "")
+
+
+def get_graded_model_log() -> list[dict]:
+    """Return all graded model_log rows for blend-weight calibration."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            """SELECT raw_model_prob, market_prob, home_win
+               FROM model_log WHERE home_win IS NOT NULL"""
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_model_log_dates_pending() -> list[str]:
+    """Distinct dates with ungraded model_log rows (for grading backfill)."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT date FROM model_log WHERE home_win IS NULL"
+        ).fetchall()
+    return [r["date"] for r in rows]
 
 
 def get_pending_dates() -> list[str]:
@@ -317,7 +418,8 @@ def get_all_predictions() -> list[dict]:
                       model_prob, implied_prob, edge, ev, units, odds,
                       status, result, profit, home_pitcher, away_pitcher,
                       bet_type, listed_total, predicted_total,
-                      predicted_home_runs, predicted_away_runs, total_delta, confidence
+                      predicted_home_runs, predicted_away_runs, total_delta,
+                      confidence, raw_model_prob
                FROM predictions
                ORDER BY date DESC, id DESC""",
             conn,
@@ -325,7 +427,7 @@ def get_all_predictions() -> list[dict]:
     float_cols = [
         "model_prob", "implied_prob", "edge", "ev", "units", "profit",
         "listed_total", "predicted_total", "predicted_home_runs",
-        "predicted_away_runs", "total_delta",
+        "predicted_away_runs", "total_delta", "raw_model_prob",
     ]
     for col in float_cols:
         if col in df.columns:
