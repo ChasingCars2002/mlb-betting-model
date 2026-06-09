@@ -115,22 +115,29 @@ def save_predictions(picks: list[dict], bet_type: str = "moneyline"):
     logger.info("Saved %d predictions to database.", len(picks))
 
 
-def grade_predictions(results: dict[str, dict]):
+def grade_predictions(results: dict[str, dict], for_date: Optional[str] = None):
     """Grade pending predictions using actual game results.
 
     Args:
         results: Dict mapping game keys ("away @ home") to
                  {"home_score": int, "away_score": int, "winner": str}.
+        for_date: If given, only grade pending predictions on this date
+                  (YYYY-MM-DD). Prevents a same-matchup result from one day
+                  grading a still-pending pick on a different day.
     """
     with get_connection() as conn:
-        pending = conn.execute(
-            "SELECT id, home_team, away_team, pick, units, odds, "
-            "bet_type, listed_total "
-            "FROM predictions WHERE status = 'Pending'"
-        ).fetchall()
+        sql = ("SELECT id, home_team, away_team, pick, units, odds, "
+               "bet_type, listed_total "
+               "FROM predictions WHERE status = 'Pending'")
+        params: list = []
+        if for_date:
+            sql += " AND date = ?"
+            params.append(for_date)
+        pending = conn.execute(sql, params).fetchall()
 
         if not pending:
-            logger.info("No pending predictions to grade.")
+            logger.info("No pending predictions to grade%s.",
+                        f" for {for_date}" if for_date else "")
             return
 
         graded = 0

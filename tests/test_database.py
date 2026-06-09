@@ -263,3 +263,31 @@ class TestGetROIStats:
             stats = database.get_roi_stats()
         assert stats["pending"] == 1
         assert stats["total_bets"] == 0  # pending not counted in totals
+
+
+class TestGradeBackfillByDate:
+    """Date-scoped grading: a result must only grade picks on the matching date."""
+
+    def test_for_date_only_grades_that_date(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            # Same matchup, two different dates, both pending.
+            database.save_predictions([_make_pick(date="2026-04-04", pick="NYY")])
+            database.save_predictions([_make_pick(date="2026-06-08", pick="NYY")])
+            results = {"BOS @ NYY": {"home_score": 5, "away_score": 3, "winner": "NYY"}}
+            database.grade_predictions(results, for_date="2026-04-04")
+
+            rows = {r["date"]: r["status"]
+                    for r in get_conn(tmp_db).execute(
+                        "SELECT date, status FROM predictions").fetchall()}
+        assert rows["2026-04-04"] == "Win"      # graded
+        assert rows["2026-06-08"] == "Pending"  # untouched
+
+    def test_stale_pending_can_be_backfilled(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(date="2026-04-04", pick="NYY", units=2, odds=-110)])
+            results = {"BOS @ NYY": {"home_score": 2, "away_score": 7, "winner": "BOS"}}
+            database.grade_predictions(results, for_date="2026-04-04")
+            row = get_conn(tmp_db).execute(
+                "SELECT status, profit FROM predictions").fetchone()
+        assert row["status"] == "Loss"
+        assert row["profit"] == pytest.approx(-2)
