@@ -3,15 +3,25 @@ name: Daily Predictions
 on:
   schedule:
     # Target: post by 11:00 AM ET. (MLB season is entirely EDT, so 11:00 ET =
-    # 15:00 UTC.) GitHub `schedule` crons are best-effort — at busy times
-    # (especially the top/half of the hour) they are delayed by hours or DROPPED
-    # entirely with no run created, which is how a day's predictions silently
-    # fail to post. We therefore fire several times around the target at
-    # off-peak, non-round minutes. The run is idempotent (see PREDICT_STATUS_FILE
-    # in main.py), so once one attempt posts the later ones cheaply no-op.
-    - cron: '4 15 * * *'    # ~11:04 ET — primary (the 11am target)
-    - cron: '34 15 * * *'   # ~11:34 ET — backup if primary was dropped
+    # 15:00 UTC.) GitHub `schedule` crons are best-effort — and in this repo the
+    # observed delay is 2-3 HOURS, with every cron of the day shifted late
+    # together (2026-06-09: the 15:04 cron fired at 17:27) or dropped outright
+    # (2026-06-10: none of the three crons ever created a run). Clustering
+    # backups around the target time therefore doesn't help. Instead, attempts
+    # are spread from early morning onward so that even a 3-hour delay still
+    # lands before the 11 ET target. The run is idempotent (see
+    # PREDICT_STATUS_FILE in main.py) and gated cheaply below, so once one
+    # attempt posts, later attempts no-op in seconds.
+    - cron: '3 12 * * *'    # ~8:03 ET nominal — lands near 11 ET under typical delay
+    - cron: '33 13 * * *'   # ~9:33 ET nominal
+    - cron: '4 15 * * *'    # ~11:04 ET — the on-time target
     - cron: '19 16 * * *'   # ~12:19 ET — last-chance before most first pitches
+  # Daily Grade's cron has fired every morning even on days the predict crons
+  # were dropped, so chain off its completion as an additional trigger.
+  # workflow_run events fire promptly (they are not subject to cron delays).
+  workflow_run:
+    workflows: ["Daily Grade"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -24,12 +34,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # With several redundant triggers a day, most runs arrive after picks have
+      # already posted. Bail out before the expensive Python/pip setup so the
+      # redundancy stays cheap. main.py has the same guard, so this is purely an
+      # optimization — removing it changes nothing but run time.
+      - name: Check whether today's picks already posted
+        id: gate
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          MARKER=$(python3 -c "import json;print(json.load(open('docs/data/predict_status.json')).get('date',''))" 2>/dev/null || echo "")
+          if [ "$MARKER" = "$TODAY" ]; then
+            echo "Predictions already posted for $TODAY — nothing to do."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No predictions yet for $TODAY (marker='$MARKER') — running pipeline."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.gate.outputs.skip == 'false'
         with:
           python-version: '3.12'
           cache: 'pip'
 
       - name: Restore feature cache
+        if: steps.gate.outputs.skip == 'false'
         uses: actions/cache@v4
         with:
           path: models/cache
@@ -38,8 +67,10 @@ jobs:
             feature-cache-
 
       - run: pip install -r requirements.txt
+        if: steps.gate.outputs.skip == 'false'
 
       - name: Retrain if models are missing or feature schema changed
+        if: steps.gate.outputs.skip == 'false'
         run: |
           python -c "
           import json, hashlib, sys
@@ -59,6 +90,7 @@ jobs:
           " || python main.py --retrain
 
       - name: Commit retrained models if schema changed
+        if: steps.gate.outputs.skip == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -66,6 +98,7 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: retrain models (schema change) $(date -u +%Y-%m-%d)"
 
       - name: Run today's predictions
+        if: steps.gate.outputs.skip == 'false'
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -76,6 +109,7 @@ jobs:
         run: python main.py --run-now
 
       - name: Commit updated database and dashboard data
+        if: steps.gate.outputs.skip == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
