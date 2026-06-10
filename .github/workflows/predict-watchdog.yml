@@ -2,16 +2,21 @@ name: Predictions Watchdog
 
 # Safety net for the Daily Predictions workflow. GitHub `schedule` crons are
 # best-effort and can be delayed for hours or dropped entirely, so even the
-# three redundant predict triggers could in theory all miss. This watchdog runs
-# once, after the last predict attempt, checks whether today's picks actually
-# posted (via docs/data/predict_status.json), and if not it runs the pipeline
-# itself and reports the outcome to Discord. It needs no PAT or external
-# service: it self-heals in-process rather than trying to re-dispatch a
-# workflow (which the built-in GITHUB_TOKEN is not permitted to do).
+# redundant predict triggers can all miss (this happened on 2026-06-10). This
+# watchdog runs after the last predict attempt, checks whether today's picks
+# actually posted (via docs/data/predict_status.json), and if not it runs the
+# pipeline itself and reports the outcome to Discord. It needs no PAT or
+# external service: it self-heals in-process rather than trying to re-dispatch
+# a workflow (which the built-in GITHUB_TOKEN is not permitted to do).
 
 on:
   schedule:
+    # Multiple crons because the watchdog itself is subject to the same 2-3h
+    # scheduler delays/drops it guards against. When healthy, each extra run
+    # is just a checkout + marker check (a few seconds).
     - cron: '11 17 * * *'   # ~13:11 ET — after the 12:19 ET last-chance predict run
+    - cron: '47 18 * * *'   # ~14:47 ET — backup sweep
+    - cron: '29 20 * * *'   # ~16:29 ET — final sweep before evening games
   workflow_dispatch:
 
 permissions:
