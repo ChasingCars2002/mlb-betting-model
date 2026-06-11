@@ -6,8 +6,12 @@ let allHistory  = [];
 let statsData   = {};
 let chart       = null;
 let mode        = 'ytd';        // 'ytd' | 'last30' | 'all_time'
-let market      = 'moneyline';  // 'moneyline' | 'totals' | 'all'
+let market      = 'all';        // 'moneyline' | 'totals' | 'all'
 let filterText  = '';
+
+// Totals (O/U) picks count toward the record from this date onward; earlier
+// totals picks were experimental (pre-fix score model) and are excluded.
+const TOTALS_TRACKED_SINCE = '2026-06-01';
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
@@ -65,10 +69,17 @@ function easternDateStr() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+// True when a totals row falls inside the tracked O/U window.
+function totalsTracked(p) {
+  return p.bet_type === 'totals' && p.date && p.date >= TOTALS_TRACKED_SINCE;
+}
+
 // Apply the active market filter (moneyline / totals / all) to history rows.
 function marketFiltered(history) {
-  if (market === 'all') return history;
-  if (market === 'totals') return history.filter(p => p.bet_type === 'totals');
+  if (market === 'all') {
+    return history.filter(p => p.bet_type !== 'totals' || totalsTracked(p));
+  }
+  if (market === 'totals') return history.filter(totalsTracked);
   return history.filter(p => !p.bet_type || p.bet_type === 'moneyline');
 }
 

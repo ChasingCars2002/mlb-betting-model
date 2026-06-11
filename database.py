@@ -7,7 +7,7 @@ from typing import Optional
 
 import pandas as pd
 
-from config import DB_PATH, SUPABASE_URL, SUPABASE_SERVICE_KEY
+from config import DB_PATH, SUPABASE_URL, SUPABASE_SERVICE_KEY, TOTALS_TRACKED_SINCE
 
 logger = logging.getLogger(__name__)
 
@@ -296,15 +296,21 @@ def get_pending_dates() -> list[str]:
     return [r["date"] for r in rows]
 
 
+# The official record: every moneyline pick, plus totals (Over/Under) picks
+# from TOTALS_TRACKED_SINCE onward (earlier totals were experimental).
+_RECORD_FILTER = ("(bet_type = 'moneyline' OR bet_type IS NULL "
+                  "OR (bet_type = 'totals' AND date >= ?))")
+
+
 def get_roi_stats(since: Optional[str] = None) -> dict:
-    """Calculate ROI statistics.
+    """Calculate ROI statistics across moneyline and tracked totals picks.
 
     Returns dict with: total_bets, wins, losses, pending, total_units_wagered,
     total_profit, roi_pct, brier_score, win_rate.
     """
     with get_connection() as conn:
-        where = "WHERE status != 'Pending' AND (bet_type = 'moneyline' OR bet_type IS NULL)"
-        params = []
+        where = f"WHERE status != 'Pending' AND {_RECORD_FILTER}"
+        params = [TOTALS_TRACKED_SINCE]
         if since:
             where += " AND date >= ?"
             params.append(since)
@@ -316,8 +322,9 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
 
     if not rows:
         with get_connection() as conn:
-            pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending' AND (bet_type = 'moneyline' OR bet_type IS NULL)"
-            pending_params = []
+            pending_sql = (f"SELECT COUNT(*) as cnt FROM predictions "
+                           f"WHERE status = 'Pending' AND {_RECORD_FILTER}")
+            pending_params = [TOTALS_TRACKED_SINCE]
             if since:
                 pending_sql += " AND date >= ?"
                 pending_params.append(since)
@@ -341,8 +348,9 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
     brier_score = brier_sum / len(rows)
 
     with get_connection() as conn:
-        pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
-        pending_params = []
+        pending_sql = (f"SELECT COUNT(*) as cnt FROM predictions "
+                       f"WHERE status = 'Pending' AND {_RECORD_FILTER}")
+        pending_params = [TOTALS_TRACKED_SINCE]
         if since:
             pending_sql += " AND date >= ?"
             pending_params.append(since)
