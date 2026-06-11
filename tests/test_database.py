@@ -265,6 +265,62 @@ class TestGetROIStats:
         assert stats["total_bets"] == 0  # pending not counted in totals
 
 
+def _make_totals_pick(**overrides):
+    base = _make_pick(
+        pick="Over", pick_side="Over", bet_type="totals",
+        listed_total=8.5, date="2026-06-09",
+    )
+    base.update(overrides)
+    return base
+
+
+class TestROIStatsIncludeTotals:
+    """Totals (O/U) picks count toward the record from TOTALS_TRACKED_SINCE."""
+
+    def test_tracked_totals_counted(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_totals_pick(units=1, odds=100)],
+                                      bet_type="totals")
+            results = {"BOS @ NYY": {"home_score": 6, "away_score": 4, "winner": "NYY"}}
+            database.grade_predictions(results)  # total 10 > 8.5 → Over wins
+            stats = database.get_roi_stats()
+        assert stats["total_bets"] == 1
+        assert stats["wins"] == 1
+        assert stats["total_profit"] == pytest.approx(1.0, abs=1e-4)
+
+    def test_pre_cutoff_totals_excluded(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_totals_pick(date="2026-05-02")],
+                                      bet_type="totals")
+            results = {"BOS @ NYY": {"home_score": 6, "away_score": 4, "winner": "NYY"}}
+            database.grade_predictions(results)
+            stats = database.get_roi_stats()
+        assert stats["total_bets"] == 0
+
+    def test_pending_totals_counted_after_cutoff_only(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions(
+                [_make_totals_pick(date="2026-05-02"),
+                 _make_totals_pick(date="2026-06-09")],
+                bet_type="totals",
+            )  # both left Pending
+            stats = database.get_roi_stats()
+        assert stats["pending"] == 1
+
+    def test_moneyline_and_totals_combined(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(date="2026-06-09", pick="NYY",
+                                                  units=1, odds=100)])
+            database.save_predictions([_make_totals_pick(pick="Under", pick_side="Under",
+                                                         units=1, odds=100)],
+                                      bet_type="totals")
+            results = {"BOS @ NYY": {"home_score": 5, "away_score": 3, "winner": "NYY"}}
+            database.grade_predictions(results)  # ML wins; total 8 < 8.5 → Under wins
+            stats = database.get_roi_stats()
+        assert stats["total_bets"] == 2
+        assert stats["wins"] == 2
+
+
 class TestGradeBackfillByDate:
     """Date-scoped grading: a result must only grade picks on the matching date."""
 

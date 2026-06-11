@@ -51,6 +51,10 @@ MAX_BET_UNITS = 3.0   # Cap: never risk more than this per pick
 # betting window while still rejecting wild (>~2.5 run) model-vs-line gaps.
 TOTALS_SIGMA = 3.0
 TOTALS_MAX_DISAGREEMENT = 0.30
+# Totals picks count toward the official record/ROI from this date onward.
+# Earlier O/U picks (May 2026) came from the pre-fix score/confidence logic
+# and stay visible in the raw history but are excluded from the score.
+TOTALS_TRACKED_SINCE = "2026-06-01"
 
 # --- Market blending & adverse-selection guards ---
 # The raw model is miscalibrated/under-dispersed and systematically overrates the
