@@ -3,7 +3,7 @@
     "total_bets": 330,
     "wins": 152,
     "losses": 178,
-    "pending": 3,
+    "pending": 7,
     "total_units_wagered": 461.02,
     "total_profit": 20.42,
     "roi_pct": 4.43,
@@ -15,7 +15,7 @@
     "total_bets": 330,
     "wins": 152,
     "losses": 178,
-    "pending": 3,
+    "pending": 7,
     "total_units_wagered": 461.02,
     "total_profit": 20.42,
     "roi_pct": 4.43,
@@ -28,5 +28,5 @@
     "calibration_games": 0,
     "calibration_updated": null
   },
-  "last_updated": "2026-06-15T16:58:06.605706Z"
+  "last_updated": "2026-06-15T16:59:27.169023Z"
 }
