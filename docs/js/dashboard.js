@@ -6,7 +6,7 @@ let allHistory  = [];
 let statsData   = {};
 let chart       = null;
 let mode        = 'ytd';        // 'ytd' | 'last30' | 'all_time'
-let market      = 'moneyline';  // 'moneyline' | 'totals' | 'all'
+let market      = 'all';        // 'moneyline' | 'totals' | 'all'
 let filterText  = '';
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
