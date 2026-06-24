@@ -3,7 +3,7 @@
     "total_bets": 356,
     "wins": 165,
     "losses": 191,
-    "pending": 13,
+    "pending": 7,
     "total_units_wagered": 476.53,
     "total_profit": 18.87,
     "roi_pct": 3.96,
@@ -15,7 +15,7 @@
     "total_bets": 356,
     "wins": 165,
     "losses": 191,
-    "pending": 13,
+    "pending": 7,
     "total_units_wagered": 476.53,
     "total_profit": 18.87,
     "roi_pct": 3.96,
@@ -23,10 +23,10 @@
     "win_rate": 46.35
   },
   "model": {
-    "blend_weight": 0.82,
+    "blend_weight": 0.91,
     "self_tuned": true,
-    "calibration_games": 153,
-    "calibration_updated": "2026-06-23T14:28:08.702091Z"
+    "calibration_games": 167,
+    "calibration_updated": "2026-06-24T14:06:44.344748Z"
   },
-  "last_updated": "2026-06-23T14:29:29.607558Z"
+  "last_updated": "2026-06-24T14:06:44.348422Z"
 }
