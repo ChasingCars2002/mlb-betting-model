@@ -1,8 +1,8 @@
 {
   "weight": 0.95,
-  "n_games": 231,
-  "log_loss": 0.69191,
-  "default_weight_log_loss": 0.70151,
-  "pure_market_log_loss": 0.69139,
-  "updated_at": "2026-06-29T15:40:39.408022Z"
+  "n_games": 242,
+  "log_loss": 0.69103,
+  "default_weight_log_loss": 0.70226,
+  "pure_market_log_loss": 0.69036,
+  "updated_at": "2026-06-30T12:35:53.102975Z"
 }
