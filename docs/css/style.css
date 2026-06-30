@@ -41,6 +41,12 @@
   --yellow-bg:   #fbf2da;
   --neutral-bg:  #eeece6;
 
+  /* Faint full-row tints for the history table (win / loss) */
+  --row-win-bg:        #f3f8f2;
+  --row-win-bg-hover:  #ecf4ea;
+  --row-loss-bg:       #fcf3f1;
+  --row-loss-bg-hover: #f8e9e6;
+
   --radius:      10px;
   --radius-sm:   6px;
   --shadow-card: 0 1px 2px rgba(31, 28, 20, .03);
@@ -685,6 +691,12 @@ tbody tr {
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--surface-2); }
 
+/* Faint full-row outcome tint — scannable wins/losses at a glance */
+tr.row-win  { background: var(--row-win-bg); }
+tr.row-loss { background: var(--row-loss-bg); }
+tr.row-win:hover  { background: var(--row-win-bg-hover); }
+tr.row-loss:hover { background: var(--row-loss-bg-hover); }
+
 tbody td {
   padding: 11px 14px;
   white-space: nowrap;
@@ -696,12 +708,13 @@ tbody td:nth-child(6),
 tbody td:nth-child(7),
 tbody td:nth-child(10) { font-family: var(--font-mono); font-size: 12px; }
 
-tr.row-win  td:first-child { box-shadow: inset 3px 0 0 var(--green); }
-tr.row-loss td:first-child { box-shadow: inset 3px 0 0 var(--red); }
-tr.row-pending td:first-child { box-shadow: inset 3px 0 0 var(--border-strong); }
+/* Full-height left accent bar marking the outcome */
+tr.row-win  td:first-child { box-shadow: inset 4px 0 0 var(--green); }
+tr.row-loss td:first-child { box-shadow: inset 4px 0 0 var(--red); }
+tr.row-pending td:first-child { box-shadow: inset 4px 0 0 var(--border-strong); }
 
-.profit-pos { color: var(--green); font-weight: 600; }
-.profit-neg { color: var(--red);   font-weight: 600; }
+.profit-pos { color: var(--green); font-weight: 700; }
+.profit-neg { color: var(--red);   font-weight: 700; }
 
 /* ── Loading / skeleton / error ───────────────────────────── */
 .loading {
