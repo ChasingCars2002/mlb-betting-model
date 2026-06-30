@@ -8,6 +8,12 @@ let chart       = null;
 let mode        = 'ytd';        // 'ytd' | 'last30' | 'all_time'
 let market      = 'all';        // 'moneyline' | 'totals' | 'all'
 let filterText  = '';
+let todayPicks  = [];           // today's moneyline slate (cached for sort/filter)
+let todayTotals = [];           // today's totals slate
+const slateState = {            // per-slate sort + tier filter (presentational only)
+  picks:  { sort: 'edge', tier: 'all' },
+  totals: { sort: 'edge', tier: 'all' },
+};
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
@@ -31,8 +37,8 @@ async function loadData() {
     // committed picks_today.json still holds the previous day's picks; without
     // this guard the site would display yesterday's matchups as "Today's Picks".
     const today = easternDateStr();
-    const todayPicks = rawToday.filter(p => p.date === today);
-    const todayTotals = rawTotals.filter(p => p.date === today);
+    todayPicks  = rawToday.filter(p => p.date === today);
+    todayTotals = rawTotals.filter(p => p.date === today);
 
     const loadingEl = document.getElementById('loading');
     const appEl     = document.getElementById('app');
@@ -45,8 +51,8 @@ async function loadData() {
     renderChart(marketFiltered(allHistory), mode);
     renderTable(allHistory);
     renderPickOfDay(todayPicks);
-    renderTodayPicks(todayPicks);
-    renderTodayTotals(todayTotals);
+    renderTodayPicks();
+    renderTodayTotals();
 
   } catch (err) {
     const loadingEl = document.getElementById('loading');
@@ -142,12 +148,12 @@ function renderModelStatus(model) {
   const w = (model.blend_weight * 100).toFixed(0);
   let text;
   if (model.self_tuned) {
-    text = `🧠 <span class="tuned">Self-tuned</span>: picks blend ${w}% market /
-            ${100 - w}% model — learned from ${model.calibration_games.toLocaleString()}
+    text = `<span class="tuned">Self-tuned</span> — picks blend ${w}% market /
+            ${100 - w}% model, learned from ${model.calibration_games.toLocaleString()}
             graded games and re-fit after every grading run.`;
   } else {
     const n = model.calibration_games ?? 0;
-    text = `🧠 Self-tuning calibration is collecting data (${n} graded games so far) —
+    text = `Self-tuning calibration is still collecting data (${n} graded games so far) —
             picks currently blend ${w}% market / ${100 - w}% model by default.`;
   }
   el.innerHTML = text;
@@ -215,70 +221,137 @@ function renderStats() {
      <div class="sub">${fmt(s.total_units_wagered, 1)}u wagered · ${otherLabel}: ${other.total_profit >= 0 ? '+' : ''}${fmt(other.total_profit, 2)}u</div>`);
 }
 
+// ── Slate helpers (presentational sort + tier filter) ──────────────────────
+// Apply the active sort + tier filter for a slate. Pure reordering/filtering —
+// no values are recomputed, so the numbers rendered are identical to source.
+function applySlate(list, st) {
+  let rows = (list || []).slice();
+  if (st.tier === 'high')     rows = rows.filter(p => (p.confidence ?? 0) >= 4);
+  else if (st.tier === 'mid') rows = rows.filter(p => Math.round(p.confidence ?? 0) === 3);
+  const key = st.sort;
+  rows.sort((a, b) => (b[key] ?? -Infinity) - (a[key] ?? -Infinity));
+  return rows;
+}
+
+// Composed empty state with an inline icon.
+function emptyState(title, desc) {
+  return `
+    <div class="empty-state">
+      <svg class="empty-icon" width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="15" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M3 9h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div class="empty-title">${title}</div>
+      <div class="empty-desc">${desc}</div>
+    </div>`;
+}
+
+// Model-vs-market probability bars rendered from existing fields only.
+function probDelta(modelProb, impliedProb) {
+  if (modelProb == null || impliedProb == null) return '';
+  const m = Math.max(0, Math.min(100, modelProb * 100));
+  const k = Math.max(0, Math.min(100, impliedProb * 100));
+  return `
+    <div class="prob-delta" aria-label="Model ${fmt(m)} percent versus market ${fmt(k)} percent">
+      <div class="prob-row">
+        <span class="prob-name">Model</span>
+        <span class="prob-bar model"><i style="width:${m}%"></i></span>
+        <span class="prob-val">${fmt(m)}%</span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-name">Market</span>
+        <span class="prob-bar market"><i style="width:${k}%"></i></span>
+        <span class="prob-val">${fmt(k)}%</span>
+      </div>
+    </div>`;
+}
+
+function edgeMetric(edge) {
+  if (edge == null) return `<span class="metric-value">—</span>`;
+  const cls = edge >= 0 ? 'ev-positive' : 'ev-negative';
+  return `<span class="metric-value ${cls}">${edge >= 0 ? '+' : ''}${fmt(edge * 100)}%</span>`;
+}
+
+function pitchersLine(p) {
+  return (p.away_pitcher || p.home_pitcher)
+    ? `<span class="pick-pitchers">${p.away_pitcher || 'TBD'} vs ${p.home_pitcher || 'TBD'}</span>`
+    : '';
+}
+
 // ── Today's moneyline picks ────────────────────────────────────────────────
-function renderTodayPicks(picks) {
-  if (!picks || picks.length === 0) {
-    setHTML('today-picks', '<p class="picks-empty">No moneyline picks for today yet — check back after the morning run.</p>');
+function renderTodayPicks() {
+  if (!todayPicks || todayPicks.length === 0) {
+    setHTML('today-picks', emptyState('No moneyline slate locked yet',
+      'Picks post after the morning model run. Check back later today.'));
+    return;
+  }
+  const rows = applySlate(todayPicks, slateState.picks);
+  if (rows.length === 0) {
+    setHTML('today-picks', '<p class="picks-empty">No picks match this tier filter.</p>');
     return;
   }
 
-  setHTML('today-picks', picks.map(p => {
-    const game  = `${p.away_team} @ ${p.home_team}`;
-    const edge  = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
-    const ev    = evBadge(p.ev);
-    const conf  = confidenceBadge(p.confidence);
-    const pred  = (p.predicted_home_runs != null && p.predicted_away_runs != null)
-      ? `<span class="pick-meta score-pred">Pred: ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)}</span>`
+  setHTML('today-picks', rows.map(p => {
+    const game = `${p.away_team} @ ${p.home_team}`;
+    const raw  = p.raw_model_prob != null
+      ? `<span class="pick-meta">Raw model ${fmt(p.raw_model_prob * 100)}% → ${fmt(p.model_prob * 100)}% blended</span>`
       : '';
-    const model = p.raw_model_prob != null
-      ? `Model: ${fmt(p.raw_model_prob * 100)}% raw → ${fmt(p.model_prob * 100)}% blended`
-      : `Model: ${fmt(p.model_prob * 100)}%`;
-    const pitchers = (p.away_pitcher || p.home_pitcher)
-      ? `<span class="pick-pitchers">${p.away_pitcher || 'TBD'} vs ${p.home_pitcher || 'TBD'}</span>`
+    const pred = (p.predicted_home_runs != null && p.predicted_away_runs != null)
+      ? `<span class="pick-meta score-pred">Pred ${fmt(p.predicted_away_runs)} – ${fmt(p.predicted_home_runs)}</span>`
       : '';
     return `
       <div class="pick-card">
         <span class="game-label">${game}</span>
-        <span class="pick-team">${p.pick}</span>
-        <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
-        <span class="pick-meta">${edge} · EV: ${ev}</span>
-        <span class="pick-meta" title="Raw model probability, then after shrinking toward the no-vig market">${model} · Implied: ${fmt(p.implied_prob * 100)}%</span>
-        ${pred}
-        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
-        ${pitchers}
+        <div class="pick-badges">${confidenceBadge(p.confidence)}${statusBadge(p.status)}</div>
+        <div class="pick-headline">
+          <span class="pick-team">${p.pick}</span>
+          <span class="pick-odds">${fmtOdds(p.odds)}</span>
+          <span class="pick-units">${p.units}u</span>
+        </div>
+        <div class="pick-metrics">
+          <div class="metric"><span class="metric-label">EV</span><span class="metric-value">${evBadge(p.ev)}</span></div>
+          <div class="metric"><span class="metric-label">Edge</span>${edgeMetric(p.edge)}</div>
+        </div>
+        ${probDelta(p.model_prob, p.implied_prob)}
+        <div class="pick-foot">${pitchersLine(p)}${pred}${raw}</div>
       </div>`;
   }).join(''));
 }
 
 // ── Today's totals (Over/Under) picks ──────────────────────────────────────
-function renderTodayTotals(picks) {
-  if (!picks || picks.length === 0) {
-    setHTML('today-totals', '<p class="picks-empty">No Over/Under picks for today yet — check back after the morning run.</p>');
+function renderTodayTotals() {
+  if (!todayTotals || todayTotals.length === 0) {
+    setHTML('today-totals', emptyState('No totals slate locked yet',
+      'Over/under picks post after the morning model run. Check back later today.'));
+    return;
+  }
+  const rows = applySlate(todayTotals, slateState.totals);
+  if (rows.length === 0) {
+    setHTML('today-totals', '<p class="picks-empty">No picks match this tier filter.</p>');
     return;
   }
 
-  setHTML('today-totals', picks.map(p => {
+  setHTML('today-totals', rows.map(p => {
     const game = `${p.away_team} @ ${p.home_team}`;
-    const edge = p.edge != null ? `Edge: +${fmt(p.edge * 100)}%` : '';
-    const ev   = evBadge(p.ev);
-    const conf = confidenceBadge(p.confidence);
     const line = p.listed_total != null ? ` ${fmt(p.listed_total)}` : '';
-    const model = p.predicted_total != null
-      ? `<span class="pick-meta score-pred">Model total: ${fmt(p.predicted_total)}</span>`
-      : '';
-    const pitchers = (p.away_pitcher || p.home_pitcher)
-      ? `<span class="pick-pitchers">${p.away_pitcher || 'TBD'} vs ${p.home_pitcher || 'TBD'}</span>`
+    const pred = p.predicted_total != null
+      ? `<span class="pick-meta score-pred">Model total ${fmt(p.predicted_total)}</span>`
       : '';
     return `
       <div class="pick-card">
         <span class="game-label">${game}</span>
-        <span class="pick-team">${p.pick}${line}</span>
-        <span class="pick-meta">${fmtOdds(p.odds)} · ${p.units}u</span>
-        <span class="pick-meta">${edge} · EV: ${ev}</span>
-        <span class="pick-meta">Model: ${fmt(p.model_prob * 100)}% · Implied: ${fmt(p.implied_prob * 100)}%</span>
-        ${model}
-        <div class="pick-badges">${conf}${statusBadge(p.status)}</div>
-        ${pitchers}
+        <div class="pick-badges">${confidenceBadge(p.confidence)}${statusBadge(p.status)}</div>
+        <div class="pick-headline">
+          <span class="pick-team">${p.pick}<span class="pick-line">${line}</span></span>
+          <span class="pick-odds">${fmtOdds(p.odds)}</span>
+          <span class="pick-units">${p.units}u</span>
+        </div>
+        <div class="pick-metrics">
+          <div class="metric"><span class="metric-label">EV</span><span class="metric-value">${evBadge(p.ev)}</span></div>
+          <div class="metric"><span class="metric-label">Edge</span>${edgeMetric(p.edge)}</div>
+        </div>
+        ${probDelta(p.model_prob, p.implied_prob)}
+        <div class="pick-foot">${pitchersLine(p)}${pred}</div>
       </div>`;
   }).join(''));
 }
@@ -307,7 +380,8 @@ function renderChart(history, currentMode) {
   if (chart) chart.destroy();
 
   const finalValue = values[values.length - 1] ?? 0;
-  const lineColor  = finalValue >= 0 ? '#3fb950' : '#f85149';
+  const lineColor  = finalValue >= 0 ? '#2f6b3a' : '#a3322f';
+  const monoFont   = "'JetBrains Mono', ui-monospace, monospace";
 
   chart = new Chart(ctx, {
     type: 'line',
@@ -319,10 +393,13 @@ function renderChart(history, currentMode) {
         borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 4,
+        pointHoverBackgroundColor: lineColor,
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 2,
         fill: true,
         backgroundColor: (ctx) => {
-          const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
-          gradient.addColorStop(0, lineColor + '33');
+          const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 240);
+          gradient.addColorStop(0, lineColor + '22');
           gradient.addColorStop(1, lineColor + '00');
           return gradient;
         },
@@ -336,11 +413,15 @@ function renderChart(history, currentMode) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#161b22',
-          borderColor: '#30363d',
+          backgroundColor: '#ffffff',
+          borderColor: '#e7e4dd',
           borderWidth: 1,
-          titleColor: '#8b949e',
-          bodyColor: '#e6edf3',
+          titleColor: '#8a877e',
+          bodyColor: '#23211c',
+          bodyFont: { family: monoFont },
+          padding: 10,
+          cornerRadius: 8,
+          displayColors: false,
           callbacks: {
             label: (ctx) => {
               const v = ctx.parsed.y;
@@ -351,16 +432,18 @@ function renderChart(history, currentMode) {
       },
       scales: {
         x: {
-          ticks: { color: '#8b949e', maxRotation: 0, font: { size: 11 } },
-          grid:  { color: '#30363d' },
+          ticks: { color: '#8a877e', maxRotation: 0, font: { family: monoFont, size: 10 } },
+          grid:  { color: 'rgba(35,33,28,.06)' },
+          border: { color: '#e7e4dd' },
         },
         y: {
           ticks: {
-            color: '#8b949e',
-            font: { size: 11 },
+            color: '#8a877e',
+            font: { family: monoFont, size: 10 },
             callback: (v) => (v >= 0 ? '+' : '') + v.toFixed(1) + 'u',
           },
-          grid: { color: '#30363d' },
+          grid: { color: 'rgba(35,33,28,.06)' },
+          border: { display: false },
         },
       },
     },
@@ -415,18 +498,19 @@ function renderPickOfDay(picks) {
     return;
   }
   const top = picks.reduce((best, p) => ((p.edge ?? 0) > (best.edge ?? 0) ? p : best), picks[0]);
-  const conf = confidenceBadge(top.confidence);
+  const line = (top.bet_type === 'totals' && top.listed_total != null) ? ` ${fmt(top.listed_total)}` : '';
   setHTML('potd-card', `
-    <div class="potd-label">★ Best Edge Today</div>
+    <div class="potd-label">Best edge today</div>
     <div class="potd-game">${top.away_team} @ ${top.home_team}</div>
-    <div class="potd-pick">${top.pick}</div>
+    <div class="potd-pick">${top.pick}${line}</div>
     <div class="potd-meta">
-      <span>Odds: ${fmtOdds(top.odds)}</span>
-      <span>Edge: +${fmt(top.edge * 100)}%</span>
-      <span>Model: ${fmt(top.model_prob * 100)}%</span>
-      <span>Units: ${top.units}u</span>
+      <div class="metric"><span class="metric-label">Edge</span><span class="metric-value positive">+${fmt(top.edge * 100)}%</span></div>
+      <div class="metric"><span class="metric-label">EV</span><span class="metric-value">${evBadge(top.ev)}</span></div>
+      <div class="metric"><span class="metric-label">Odds</span><span class="metric-value">${fmtOdds(top.odds)}</span></div>
+      <div class="metric"><span class="metric-label">Model</span><span class="metric-value">${fmt(top.model_prob * 100)}%</span></div>
+      <div class="metric"><span class="metric-label">Stake</span><span class="metric-value">${top.units}u</span></div>
     </div>
-    <div style="margin-top:8px">${conf}</div>`);
+    <div style="margin-top:14px">${confidenceBadge(top.confidence)}</div>`);
 }
 
 
@@ -468,6 +552,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('.toggle-btn[data-market]').forEach(btn => {
     btn.addEventListener('click', () => setMarket(btn.dataset.market));
+  });
+
+  // Today's-slate sort + tier controls (presentational re-render only)
+  document.querySelectorAll('.slate-controls').forEach(group => {
+    const kind   = group.dataset.slate;                 // 'picks' | 'totals'
+    const render = kind === 'totals' ? renderTodayTotals : renderTodayPicks;
+    group.querySelectorAll('.toggle-btn[data-sort]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        slateState[kind].sort = btn.dataset.sort;
+        group.querySelectorAll('.toggle-btn[data-sort]')
+          .forEach(b => b.classList.toggle('active', b === btn));
+        render();
+      });
+    });
+    group.querySelectorAll('.toggle-btn[data-tier]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        slateState[kind].tier = btn.dataset.tier;
+        group.querySelectorAll('.toggle-btn[data-tier]')
+          .forEach(b => b.classList.toggle('active', b === btn));
+        render();
+      });
+    });
   });
 
   const searchInput = document.getElementById('table-search');

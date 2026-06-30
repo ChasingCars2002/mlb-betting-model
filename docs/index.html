@@ -3,19 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Baseball Betting Bot</title>
+  <title>Baseball Betting Bot — forward-tested MLB model</title>
+  <meta name="description" content="A self-tuning MLB betting model. Daily moneyline and totals picks with transparent, forward-tested performance — record, ROI and cumulative units." />
+  <meta name="theme-color" content="#f7f6f3" />
+  <meta property="og:title" content="Baseball Betting Bot" />
+  <meta property="og:description" content="Self-tuning MLB model. Daily picks with forward-tested performance." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23ffffff' stroke='%231b1a16' stroke-width='2'/%3E%3Cpath d='M9 8c3 3 4.5 5 4.5 8S12 21 9 24M23 8c-3 3-4.5 5-4.5 8s1.5 5 4.5 8' fill='none' stroke='%23a3322f' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
+  <a href="#main" class="skip-link">Skip to content</a>
+
   <!-- ── Header ──────────────────────────────────────────────── -->
   <header>
     <div class="container inner">
-      <div class="logo">⚾ <span>Baseball</span> Betting Bot
-        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">XGBoost · Self-tuning</span>
+      <div class="logo">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="13" fill="#ffffff" stroke="currentColor" stroke-width="2"/>
+            <path d="M9 8c3 3 4.5 5 4.5 8S12 21 9 24M23 8c-3 3-4.5 5-4.5 8s1.5 5 4.5 8" stroke="#a3322f" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>Baseball Betting Bot</span>
+        <span class="logo-tag">XGBoost · Self-tuning</span>
       </div>
       <div class="header-right">
         <div id="last-updated" class="last-updated">Loading…</div>
@@ -33,15 +49,26 @@
     </div>
   </header>
 
-  <div class="container">
+  <main id="main" class="container">
 
     <!-- ── Error banner (hidden by default) ─────────────────── -->
-    <div id="error-banner" class="error-banner" style="display:none">
-      ⚠ <span id="error-text"></span>
+    <div id="error-banner" class="error-banner" style="display:none" role="alert">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span id="error-text"></span>
     </div>
 
-    <!-- ── Loading state ────────────────────────────────────── -->
-    <div id="loading" class="loading">Loading dashboard data…</div>
+    <!-- ── Loading state (skeleton) ─────────────────────────── -->
+    <div id="loading" class="loading" aria-busy="true" aria-label="Loading dashboard">
+      <div class="skeleton-grid">
+        <div class="skeleton-card"><div class="skeleton skeleton-line sk-sm"></div><div class="skeleton skeleton-line sk-lg"></div><div class="skeleton skeleton-line sk-sm"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-line sk-sm"></div><div class="skeleton skeleton-line sk-lg"></div><div class="skeleton skeleton-line sk-sm"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-line sk-sm"></div><div class="skeleton skeleton-line sk-lg"></div><div class="skeleton skeleton-line sk-sm"></div></div>
+        <div class="skeleton-card"><div class="skeleton skeleton-line sk-sm"></div><div class="skeleton skeleton-line sk-lg"></div><div class="skeleton skeleton-line sk-sm"></div></div>
+      </div>
+      <div class="skeleton skeleton-block"></div>
+    </div>
 
     <!-- ── Main app (hidden until data loads) ───────────────── -->
     <div id="app" style="display:none">
@@ -83,41 +110,77 @@
         </div>
       </div>
 
-      <!-- ── Cumulative P&L chart ────────────────────────────── -->
-      <div class="chart-section">
-        <div class="section-title">Cumulative P&amp;L (units)</div>
+      <!-- ── Cumulative units chart ──────────────────────────── -->
+      <section class="chart-section" aria-labelledby="pnl-title">
+        <div class="section-head">
+          <div class="section-title" id="pnl-title">Cumulative units</div>
+          <span class="section-note">Forward-test only — no backtested results shown</span>
+        </div>
         <div class="chart-wrap">
           <canvas id="pnl-chart"></canvas>
         </div>
-      </div>
+      </section>
 
       <!-- ── Pick of the Day ────────────────────────────────── -->
-      <div class="potd-section">
-        <div class="section-title" style="margin-bottom:12px">Pick of the Day</div>
+      <section class="potd-section" aria-labelledby="potd-title">
+        <div class="section-title" id="potd-title" style="margin-bottom:12px">Pick of the day</div>
         <div class="potd-inner">
           <div id="potd-card" class="potd-card">
             <p style="color:var(--muted)">Loading…</p>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- ── Today's moneyline picks ───────────────────────── -->
-      <div class="section-title" style="margin-bottom:10px">Today's Picks</div>
-      <div class="today-section">
+      <section class="today-section" aria-labelledby="ml-title">
+        <div class="section-head">
+          <div class="section-title" id="ml-title" style="margin-bottom:0">Today's moneyline picks</div>
+          <div class="slate-controls" data-slate="picks" role="group" aria-label="Sort and filter moneyline picks">
+            <span class="seg-label">Sort</span>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-sort="edge">Edge</button>
+              <button class="toggle-btn" data-sort="ev">EV</button>
+              <button class="toggle-btn" data-sort="confidence">Conf</button>
+            </div>
+            <span class="seg-label">Tier</span>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-tier="all">All</button>
+              <button class="toggle-btn" data-tier="high">4★+</button>
+              <button class="toggle-btn" data-tier="mid">3★</button>
+            </div>
+          </div>
+        </div>
         <div id="today-picks"><p class="picks-empty">Loading…</p></div>
-      </div>
+      </section>
 
       <!-- ── Today's Over/Under picks ──────────────────────── -->
-      <div class="section-title" style="margin-bottom:10px">Today's Totals (Over/Under)</div>
-      <div class="today-section">
+      <section class="today-section" aria-labelledby="ou-title">
+        <div class="section-head">
+          <div class="section-title" id="ou-title" style="margin-bottom:0">Today's totals (over / under)</div>
+          <div class="slate-controls" data-slate="totals" role="group" aria-label="Sort and filter totals picks">
+            <span class="seg-label">Sort</span>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-sort="edge">Edge</button>
+              <button class="toggle-btn" data-sort="ev">EV</button>
+              <button class="toggle-btn" data-sort="confidence">Conf</button>
+            </div>
+            <span class="seg-label">Tier</span>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-tier="all">All</button>
+              <button class="toggle-btn" data-tier="high">4★+</button>
+              <button class="toggle-btn" data-tier="mid">3★</button>
+            </div>
+          </div>
+        </div>
         <div id="today-totals"><p class="picks-empty">Loading…</p></div>
-      </div>
+      </section>
 
       <!-- ── Pick history table ──────────────────────────────── -->
-      <div class="table-section">
+      <section class="table-section" aria-labelledby="hist-title">
         <div class="table-header">
-          <div class="section-title" style="margin-bottom:0">Pick History</div>
+          <div class="section-title" id="hist-title" style="margin-bottom:0">Pick history</div>
           <div class="table-filter">
+            <label class="visually-hidden" for="table-search">Filter pick history</label>
             <input id="table-search" type="search" placeholder="Filter by team or status…" />
           </div>
         </div>
@@ -142,10 +205,10 @@
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
     </div><!-- /#app -->
-  </div><!-- /.container -->
+  </main><!-- /#main -->
 
   <!-- ── Footer ──────────────────────────────────────────────── -->
   <footer class="site-footer">
