@@ -214,8 +214,10 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
     try:
         games = get_todays_games()
     except Exception as e:
+        # Transient failure: leave the dashboard untouched. Nothing in the DB
+        # changed, and exporting here from an environment with a stale checkout
+        # once overwrote days of published picks and grades (2026-07-03).
         print(f"  ERROR: MLB Stats API unavailable — {e}")
-        export_dashboard_data()
         post_picks_to_discord([])
         return
     if not games:
@@ -232,7 +234,6 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
     except FileNotFoundError as e:
         print(f"  ERROR: {e}")
         print("  Models must be trained before running predictions.")
-        export_dashboard_data()
         post_picks_to_discord([])
         return
 
@@ -272,14 +273,12 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
     odds = fetch_live_odds()
     if not odds:
         print("  WARNING: Could not fetch odds (check ODDS_API_KEY). No picks today.")
-        export_dashboard_data()
         post_picks_to_discord([])
         post_picks_to_github_issue([])
         return
     games_with_odds = match_odds_to_games(odds, games)
     if not games_with_odds:
         print("  WARNING: No games matched with odds (possible team name mapping issue). No picks today.")
-        export_dashboard_data()
         post_picks_to_discord([])
         post_picks_to_github_issue([])
         return
@@ -429,6 +428,42 @@ def _sanitize_json(obj):
     return obj
 
 
+def _graded_fingerprint(entries):
+    """(latest graded date, graded count) for a list of prediction dicts."""
+    graded = [
+        e for e in entries
+        if isinstance(e, dict) and (e.get("status") or "Pending") != "Pending"
+    ]
+    latest = max((e.get("date") or "" for e in graded), default="")
+    return latest, len(graded)
+
+
+def _export_would_regress(history_for_export, history_file):
+    """True if writing would replace newer published dashboard data with older data.
+
+    The dashboard JSON in the checkout can be FRESHER than the local database:
+    grading runs elsewhere (GitHub Actions) push both, but a long-lived clone
+    keeps the DB it started with. Grading only ever adds graded rows, so if the
+    published history has more graded entries — or a later graded date — than
+    what we are about to write, the local DB is stale and exporting would wipe
+    real results (this clobbered days of picks/grades on 2026-07-03). Set
+    FORCE_DASHBOARD_EXPORT=1 to bypass after an intentional DB rollback.
+    """
+    import json
+    import os
+    if os.environ.get("FORCE_DASHBOARD_EXPORT") == "1":
+        return False
+    try:
+        existing = json.loads(history_file.read_text())
+    except (FileNotFoundError, ValueError, OSError):
+        return False
+    if not isinstance(existing, list):
+        return False
+    old_latest, old_n = _graded_fingerprint(existing)
+    new_latest, new_n = _graded_fingerprint(history_for_export)
+    return new_latest < old_latest or new_n < old_n
+
+
 def export_dashboard_data():
     """Write JSON files to docs/data/ for the GitHub Pages dashboard."""
     import json
@@ -437,6 +472,25 @@ def export_dashboard_data():
 
     out = Path("docs/data")
     out.mkdir(parents=True, exist_ok=True)
+
+    history = get_all_predictions()
+    today_str = date.today().isoformat()
+    # Exclude today's still-ungraded picks from history; they belong in the
+    # "today's picks" section until grading completes.
+    history_for_export = [
+        p for p in history
+        if not (p["date"] == today_str and (p.get("status") or "Pending") == "Pending")
+    ]
+
+    if _export_would_regress(history_for_export, out / "picks_history.json"):
+        logger.error(
+            "Dashboard export ABORTED: docs/data/picks_history.json holds more "
+            "graded results than the local database — this checkout's DB is "
+            "stale. Refusing to overwrite published dashboard data. "
+            "(Set FORCE_DASHBOARD_EXPORT=1 to override after a deliberate "
+            "database rollback.)"
+        )
+        return
 
     ytd_since = f"{date.today().year}-01-01"
     blend_state = get_blend_state()
@@ -453,14 +507,6 @@ def export_dashboard_data():
     }
     (out / "stats.json").write_text(json.dumps(_sanitize_json(stats), indent=2))
 
-    history = get_all_predictions()
-    today_str = date.today().isoformat()
-    # Exclude today's still-ungraded picks from history; they belong in the
-    # "today's picks" section until grading completes.
-    history_for_export = [
-        p for p in history
-        if not (p["date"] == today_str and (p.get("status") or "Pending") == "Pending")
-    ]
     (out / "picks_history.json").write_text(json.dumps(_sanitize_json(history_for_export), indent=2))
 
     today_picks = [p for p in history if p["date"] == today_str]
