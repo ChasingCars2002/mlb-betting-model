@@ -4,7 +4,7 @@
     "wins": 165,
     "losses": 191,
     "pending": 13,
-    "total_units_wagered": 476.53,
+    "total_units_wagered": 476.5299999999999,
     "total_profit": 18.87,
     "roi_pct": 3.96,
     "brier_score": 0.2502,
@@ -16,7 +16,7 @@
     "wins": 165,
     "losses": 191,
     "pending": 13,
-    "total_units_wagered": 476.53,
+    "total_units_wagered": 476.5299999999999,
     "total_profit": 18.87,
     "roi_pct": 3.96,
     "brier_score": 0.2502,
@@ -26,7 +26,7 @@
     "blend_weight": 0.95,
     "self_tuned": true,
     "calibration_games": 305,
-    "calibration_updated": "2026-07-05T13:08:24.740377Z"
+    "calibration_updated": "2026-07-05T15:46:12.239286Z"
   },
-  "last_updated": "2026-07-05T13:09:34.405744Z"
+  "last_updated": "2026-07-05T15:46:12.243231Z"
 }
