@@ -1,6 +1,7 @@
 """Tests for incremental retrain helpers in train.py."""
 
 import json
+import sys
 import pytest
 import numpy as np
 import pandas as pd
@@ -395,10 +396,15 @@ class TestRetrainAbortsOnDegradedData:
                             lambda s: called.__setitem__("state", True))
         monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
 
-        train_mod.run_incremental_retrain(force=True, current_year=2026)
+        result = train_mod.run_incremental_retrain(force=True, current_year=2026)
 
         assert called["train"] is False, "trained a model on league-average constants"
         assert called["state"] is False, "recorded a training run that never happened"
+        # Both weekly-retrain.yml and the retrain fallback in daily-predict.yml
+        # treat a zero exit as a successful retrain. A silent abort would leave
+        # the pipeline predicting with a stale/schema-mismatched model while CI
+        # reports green, so the abort MUST be reportable as a failure.
+        assert result is False
 
     def test_override_flag_allows_training(self, tmp_path, monkeypatch):
         import train as train_mod
@@ -413,9 +419,10 @@ class TestRetrainAbortsOnDegradedData:
         monkeypatch.setattr(train_mod, "save_training_state", lambda s: None)
         monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
 
-        train_mod.run_incremental_retrain(force=True, current_year=2026,
-                                          allow_degraded_data=True)
+        result = train_mod.run_incremental_retrain(force=True, current_year=2026,
+                                                   allow_degraded_data=True)
         assert called["train"] is True
+        assert result is True
 
     def test_clean_build_trains_normally(self, tmp_path, monkeypatch):
         import train as train_mod
@@ -430,5 +437,49 @@ class TestRetrainAbortsOnDegradedData:
         monkeypatch.setattr(train_mod, "save_training_state", lambda s: None)
         monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
 
-        train_mod.run_incremental_retrain(force=True, current_year=2026)
+        result = train_mod.run_incremental_retrain(force=True, current_year=2026)
         assert called["train"] is True
+        assert result is True
+
+
+class TestRetrainExitStatus:
+    """A data-quality abort must surface as a non-zero exit status.
+
+    .github/workflows/weekly-retrain.yml runs `python main.py --retrain`
+    directly, and daily-predict.yml uses it as the `|| python main.py --retrain`
+    fallback behind a missing-model / schema-change gate. Both read the exit
+    code, so returning normally would report a green retrain that never ran.
+    """
+
+    def test_no_training_data_reports_failure(self, monkeypatch):
+        import train as train_mod
+        monkeypatch.setattr(train_mod, "get_or_build_season_features",
+                            lambda season, force_rebuild: (
+                                pd.DataFrame(columns=FEATURE_COLUMNS),
+                                pd.Series([], dtype=int, name="home_win")))
+        monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
+        assert train_mod.run_incremental_retrain(force=True, current_year=2026) is False
+
+    def test_main_retrain_exits_non_zero_on_abort(self, monkeypatch):
+        import main as main_mod
+        monkeypatch.setattr(main_mod, "run_retrain", lambda **kw: False)
+        monkeypatch.setattr(main_mod, "init_db", lambda: None)
+        monkeypatch.setattr(sys, "argv", ["main.py", "--retrain"])
+        with pytest.raises(SystemExit) as exc:
+            main_mod.main()
+        assert exc.value.code == 1
+
+    def test_main_retrain_exits_zero_on_success(self, monkeypatch):
+        import main as main_mod
+        monkeypatch.setattr(main_mod, "run_retrain", lambda **kw: True)
+        monkeypatch.setattr(main_mod, "init_db", lambda: None)
+        monkeypatch.setattr(sys, "argv", ["main.py", "--retrain"])
+        main_mod.main()  # must not raise SystemExit
+
+    def test_run_retrain_forwards_the_status(self, monkeypatch):
+        import main as main_mod
+        import train as train_mod
+        monkeypatch.setattr(train_mod, "run_incremental_retrain", lambda **kw: False)
+        assert main_mod.run_retrain() is False
+        monkeypatch.setattr(train_mod, "run_incremental_retrain", lambda **kw: True)
+        assert main_mod.run_retrain() is True

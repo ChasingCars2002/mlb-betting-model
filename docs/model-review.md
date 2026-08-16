@@ -121,7 +121,11 @@ carries on.
 **Fixed:** `features.check_feature_quality()` now measures and logs the
 fallback rate per feature, and `train.run_incremental_retrain()` aborts rather
 than overwriting a live model when any feature exceeds 25% fallbacks
-(`--allow-degraded-data` overrides).
+(`--allow-degraded-data` overrides). The abort returns a failure status that
+the CLI turns into a non-zero exit — both `weekly-retrain.yml` and the
+`|| python main.py --retrain` fallback in `daily-predict.yml` read the exit
+code, so a silent abort would have reported a green retrain that never ran and
+left the daily run predicting with a stale, schema-mismatched model.
 
 **Still to do:** find out *why* the fetches fail. The most likely culprit is
 `get_historical_game_data()`, which relies on `hydrate=probablePitcher` for
@@ -301,7 +305,10 @@ Under picks in the book, this materially distorts the recorded totals record in
 the Unders' favour.
 
 **Fixed:** pushes grade to `status = "Push"`, `profit = 0.0`, and are excluded
-from the win/loss record and the ROI denominator.
+from the win/loss record and the ROI denominator — server-side in
+`get_roi_stats()` and in `docs/js/dashboard.js`, which computes its own stats
+from the exported history and previously mapped only Win/Loss/Pending (an
+unknown status fell through to pending styling and vanished from the record).
 
 ### 9. Final scores were never stored — MEDIUM
 
@@ -455,7 +462,8 @@ improvement listed above.
 | `calibration.py` | `weight_at_ceiling` / `model_adds_value` health flags with ERROR logging |
 | `main.py` | Warns when the pick gate is unreachable; exports per-market stats and health flags |
 | `model.py` | Schema drift imputes medians and logs instead of silently zero-filling |
-| `tests/` | 44 new regression tests (177 → 221) |
+| `docs/js/dashboard.js`, `docs/css/style.css` | Render and account for the new `Push` status |
+| `tests/` | 48 new regression tests (177 → 225) |
 
 No betting thresholds were loosened. The changes fix defects and make failure
 states visible; they do **not** by themselves give the model an edge. Items A–C

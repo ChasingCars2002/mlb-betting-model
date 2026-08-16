@@ -526,10 +526,15 @@ def export_dashboard_data():
 # Incremental retrain
 # ---------------------------------------------------------------------------
 
-def run_retrain(force: bool = False, tune: bool = False):
-    """Incremental model retrain entry point (used by CLI and scheduler)."""
+def run_retrain(force: bool = False, tune: bool = False) -> bool:
+    """Incremental model retrain entry point (used by CLI and scheduler).
+
+    Returns True when models were trained and saved, False when the run
+    aborted (no data, or a degraded feature matrix). The CLI turns False into
+    a non-zero exit so CI cannot mistake an aborted retrain for a green one.
+    """
     from train import run_incremental_retrain
-    run_incremental_retrain(force=force, tune=tune)
+    return bool(run_incremental_retrain(force=force, tune=tune))
 
 
 # ---------------------------------------------------------------------------
@@ -648,9 +653,11 @@ def main():
     # Determine action
     if args.train:
         from train import run_incremental_retrain
-        run_incremental_retrain(force=True, tune=args.tune)
+        if not run_incremental_retrain(force=True, tune=args.tune):
+            sys.exit(1)
     elif args.retrain:
-        run_retrain(force=args.force, tune=args.tune)
+        if not run_retrain(force=args.force, tune=args.tune):
+            sys.exit(1)
     elif args.run_now:
         run_predictions(model_name=args.model, force=args.force)
     elif args.grade:

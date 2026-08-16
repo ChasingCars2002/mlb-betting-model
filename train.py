@@ -106,6 +106,14 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
         tune: If True, run Optuna hyperparameter tuning before training.
         allow_degraded_data: Train even when most feature values are
             league-average fallbacks. Off by default — see check_feature_quality.
+
+    Returns:
+        True when models were trained and saved, False when the run aborted.
+        Callers that are CI entry points MUST translate False into a non-zero
+        exit status: both .github/workflows/weekly-retrain.yml and the retrain
+        fallback in daily-predict.yml treat a zero exit as a successful
+        retrain, so a silent abort would leave the pipeline predicting with a
+        stale or schema-mismatched model while the workflow reports green.
     """
     if current_year is None:
         current_year = date.today().year
@@ -156,7 +164,7 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
     if not all_X:
         print("\n  ERROR: No training data available across all seasons. Aborting.")
         logger.error("No training data available. Aborting retrain.")
-        return
+        return False
 
     # Seasons are iterated in chronological order (TRAINING_SEASONS + current year),
     # so ignore_index=True simply resets the integer index while preserving temporal order.
@@ -182,7 +190,7 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
               "Re-run with --allow-degraded-data to override.")
         logger.error("Retrain aborted: degraded feature quality (%s).", worst)
         if not allow_degraded_data:
-            return
+            return False
 
     tuned_params = None
     if tune:
@@ -198,6 +206,7 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
     }
     save_training_state(new_state)
     print("\n  Training state saved. Models ready.")
+    return True
 
 
 def main():
@@ -227,8 +236,10 @@ def main():
     print(f"\nMLB Betting Model — Full Training Pipeline")
     print(f"Seasons: {TRAINING_SEASONS} + current year (auto-detected)")
     print("=" * 50)
-    run_incremental_retrain(force=True, tune=args.tune,
-                            allow_degraded_data=args.allow_degraded_data)
+    ok = run_incremental_retrain(force=True, tune=args.tune,
+                                 allow_degraded_data=args.allow_degraded_data)
+    if not ok:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
