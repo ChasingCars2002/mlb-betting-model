@@ -366,7 +366,24 @@ def predict_win_prob(model, features: dict) -> float:
             pass
 
     if model_cols:  # empty list is falsy — avoids zero-column DataFrame crash
-        X = X.reindex(columns=model_cols, fill_value=0.0)
+        missing = [c for c in model_cols if c not in X.columns]
+        if missing:
+            # Never silently zero-fill: 0.0 is a *plausible-looking* value for
+            # every feature here (an ERA/FIP/WHIP of 0.0 reads as an unhittable
+            # pitcher), so a schema drift between the saved model and
+            # FEATURE_COLUMNS would produce confident nonsense instead of an
+            # error. Impute from training medians and make the drift loud.
+            logger.error(
+                "Model expects %d feature(s) not produced by the current "
+                "FEATURE_COLUMNS: %s. Imputing training medians — retrain to "
+                "resync the schema.",
+                len(missing), missing,
+            )
+        fill = {c: medians.get(c, 0.0) for c in missing} if medians else None
+        X = X.reindex(columns=model_cols)
+        if fill:
+            X = X.fillna(value=fill)
+        X = X.fillna(0.0)
 
     proba = model.predict_proba(X)
     if proba.shape[1] != 2:

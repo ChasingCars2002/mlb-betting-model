@@ -17,25 +17,73 @@ from data import (
 logger = logging.getLogger(__name__)
 
 # Feature column order (must match training and prediction).
+#
 # NOTE: is_home is intentionally excluded — it was constant (always 1) and
 # provided no discriminative signal during training.
+#
+# The eight *_rolling columns were REMOVED because they carried a train/serve
+# skew that silently destroyed the model. data.get_pitcher_stats() is called
+# with use_rolling=False on the training path, which copies each season value
+# straight into its rolling slot — so during training the rolling columns were
+# byte-identical duplicates of the season columns. At prediction time
+# use_rolling=True fetches a real 30-day window, so those same eight inputs
+# suddenly carried different values than anything the model saw while fitting.
+# The trees had split arbitrarily across the duplicate pairs (feature
+# importance was near-uniform at ~1/25 per column), and every one of those
+# splits was evaluated on a shifted distribution in production.
+#
+# The two *_wrc_plus columns were removed because they are perfectly collinear
+# with their OPS counterparts: data.get_team_hitting_splits() computes
+# wrc_plus = 100 * ops / 0.720, an exact affine transform, so they added no
+# information and only diluted split selection.
+#
+# Restoring genuine recent-form signal requires point-in-time rolling windows
+# on the TRAINING path too (see docs/model-review.md); until that exists,
+# season-to-date stats are the only inputs that mean the same thing in both
+# training and production.
 FEATURE_COLUMNS = [
-    # Home pitcher (season + rolling)
+    # Home pitcher (season to date)
     "home_p_xFIP_season", "home_p_SIERA_season", "home_p_K_BB_pct_season", "home_p_WHIP_season",
-    "home_p_xFIP_rolling", "home_p_SIERA_rolling", "home_p_K_BB_pct_rolling", "home_p_WHIP_rolling",
-    # Away pitcher (season + rolling)
+    # Away pitcher (season to date)
     "away_p_xFIP_season", "away_p_SIERA_season", "away_p_K_BB_pct_season", "away_p_WHIP_season",
-    "away_p_xFIP_rolling", "away_p_SIERA_rolling", "away_p_K_BB_pct_rolling", "away_p_WHIP_rolling",
     # Bullpens
     "home_bullpen_era", "home_bullpen_fip",
     "away_bullpen_era", "away_bullpen_fip",
     # Home team hitting vs away pitcher hand
-    "home_hit_wrc_plus", "home_hit_ops",
+    "home_hit_ops",
     # Away team hitting vs home pitcher hand
-    "away_hit_wrc_plus", "away_hit_ops",
+    "away_hit_ops",
     # Park factor
     "park_factor",
 ]
+
+
+def _assemble_row(home_pitcher: dict, away_pitcher: dict,
+                  home_bullpen: dict, away_bullpen: dict,
+                  home_hitting: dict, away_hitting: dict,
+                  park_factor: float) -> dict:
+    """Build one FEATURE_COLUMNS-shaped row from the raw stat dicts.
+
+    Shared by the prediction and training paths so the two can never drift
+    apart in column set or ordering.
+    """
+    return {
+        "home_p_xFIP_season": home_pitcher["xFIP_season"],
+        "home_p_SIERA_season": home_pitcher["SIERA_season"],
+        "home_p_K_BB_pct_season": home_pitcher["K_BB_pct_season"],
+        "home_p_WHIP_season": home_pitcher["WHIP_season"],
+        "away_p_xFIP_season": away_pitcher["xFIP_season"],
+        "away_p_SIERA_season": away_pitcher["SIERA_season"],
+        "away_p_K_BB_pct_season": away_pitcher["K_BB_pct_season"],
+        "away_p_WHIP_season": away_pitcher["WHIP_season"],
+        "home_bullpen_era": home_bullpen["bullpen_era"],
+        "home_bullpen_fip": home_bullpen["bullpen_fip"],
+        "away_bullpen_era": away_bullpen["bullpen_era"],
+        "away_bullpen_fip": away_bullpen["bullpen_fip"],
+        "home_hit_ops": home_hitting["ops"],
+        "away_hit_ops": away_hitting["ops"],
+        "park_factor": park_factor,
+    }
 
 
 def build_game_features(game: dict) -> Optional[dict]:
@@ -65,39 +113,10 @@ def build_game_features(game: dict) -> Optional[dict]:
             game["away_team"], game["home_pitcher_hand"]
         )
 
-        features = {
-            # Home pitcher
-            "home_p_xFIP_season": home_pitcher["xFIP_season"],
-            "home_p_SIERA_season": home_pitcher["SIERA_season"],
-            "home_p_K_BB_pct_season": home_pitcher["K_BB_pct_season"],
-            "home_p_WHIP_season": home_pitcher["WHIP_season"],
-            "home_p_xFIP_rolling": home_pitcher["xFIP_rolling"],
-            "home_p_SIERA_rolling": home_pitcher["SIERA_rolling"],
-            "home_p_K_BB_pct_rolling": home_pitcher["K_BB_pct_rolling"],
-            "home_p_WHIP_rolling": home_pitcher["WHIP_rolling"],
-            # Away pitcher
-            "away_p_xFIP_season": away_pitcher["xFIP_season"],
-            "away_p_SIERA_season": away_pitcher["SIERA_season"],
-            "away_p_K_BB_pct_season": away_pitcher["K_BB_pct_season"],
-            "away_p_WHIP_season": away_pitcher["WHIP_season"],
-            "away_p_xFIP_rolling": away_pitcher["xFIP_rolling"],
-            "away_p_SIERA_rolling": away_pitcher["SIERA_rolling"],
-            "away_p_K_BB_pct_rolling": away_pitcher["K_BB_pct_rolling"],
-            "away_p_WHIP_rolling": away_pitcher["WHIP_rolling"],
-            # Bullpens
-            "home_bullpen_era": home_bullpen["bullpen_era"],
-            "home_bullpen_fip": home_bullpen["bullpen_fip"],
-            "away_bullpen_era": away_bullpen["bullpen_era"],
-            "away_bullpen_fip": away_bullpen["bullpen_fip"],
-            # Hitting vs opposing pitcher hand
-            "home_hit_wrc_plus": home_hitting["wrc_plus"],
-            "home_hit_ops": home_hitting["ops"],
-            "away_hit_wrc_plus": away_hitting["wrc_plus"],
-            "away_hit_ops": away_hitting["ops"],
-            "park_factor": get_park_factor(game["home_team"]),
-        }
-
-        return features
+        return _assemble_row(
+            home_pitcher, away_pitcher, home_bullpen, away_bullpen,
+            home_hitting, away_hitting, get_park_factor(game["home_team"]),
+        )
 
     except Exception as e:
         logger.error(
@@ -194,33 +213,10 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
         home_hitting = hitting_cache[hh_key]
         away_hitting = hitting_cache[ah_key]
 
-        row = {
-            "home_p_xFIP_season": home_pitcher["xFIP_season"],
-            "home_p_SIERA_season": home_pitcher["SIERA_season"],
-            "home_p_K_BB_pct_season": home_pitcher["K_BB_pct_season"],
-            "home_p_WHIP_season": home_pitcher["WHIP_season"],
-            "home_p_xFIP_rolling": home_pitcher["xFIP_rolling"],
-            "home_p_SIERA_rolling": home_pitcher["SIERA_rolling"],
-            "home_p_K_BB_pct_rolling": home_pitcher["K_BB_pct_rolling"],
-            "home_p_WHIP_rolling": home_pitcher["WHIP_rolling"],
-            "away_p_xFIP_season": away_pitcher["xFIP_season"],
-            "away_p_SIERA_season": away_pitcher["SIERA_season"],
-            "away_p_K_BB_pct_season": away_pitcher["K_BB_pct_season"],
-            "away_p_WHIP_season": away_pitcher["WHIP_season"],
-            "away_p_xFIP_rolling": away_pitcher["xFIP_rolling"],
-            "away_p_SIERA_rolling": away_pitcher["SIERA_rolling"],
-            "away_p_K_BB_pct_rolling": away_pitcher["K_BB_pct_rolling"],
-            "away_p_WHIP_rolling": away_pitcher["WHIP_rolling"],
-            "home_bullpen_era": home_bullpen["bullpen_era"],
-            "home_bullpen_fip": home_bullpen["bullpen_fip"],
-            "away_bullpen_era": away_bullpen["bullpen_era"],
-            "away_bullpen_fip": away_bullpen["bullpen_fip"],
-            "home_hit_wrc_plus": home_hitting["wrc_plus"],
-            "home_hit_ops": home_hitting["ops"],
-            "away_hit_wrc_plus": away_hitting["wrc_plus"],
-            "away_hit_ops": away_hitting["ops"],
-            "park_factor": get_park_factor(game["home_team"]),
-        }
+        row = _assemble_row(
+            home_pitcher, away_pitcher, home_bullpen, away_bullpen,
+            home_hitting, away_hitting, get_park_factor(game["home_team"]),
+        )
 
         feature_rows.append(row)
         targets.append(game["home_win"])
@@ -235,5 +231,73 @@ def build_training_features(historical_games: pd.DataFrame) -> tuple[pd.DataFram
         "Built feature matrix: %d games x %d features. Home win rate: %.1f%%",
         len(X), len(FEATURE_COLUMNS), y.mean() * 100,
     )
+    check_feature_quality(X)
 
     return X, y
+
+
+# ---------------------------------------------------------------------------
+# Data-quality guard
+# ---------------------------------------------------------------------------
+#
+# Every upstream fetch in data.py swallows its exception and returns a
+# hard-coded league-average constant. That is the right behaviour for a single
+# missing pitcher on a live slate, but during a bulk training build it means a
+# broken endpoint, an expired scrape, or an unhydrated field degrades thousands
+# of rows to the SAME constant with nothing louder than a debug log — and the
+# resulting matrix trains a model that has no signal to find.
+#
+# This is not hypothetical: the medians persisted by the last training run
+# (models/feature_medians.joblib) are EXACTLY the fallback constants for all 24
+# non-park features (xFIP 4.20, SIERA 4.20, K-BB% 10.0, WHIP 1.30, bullpen
+# 4.00/4.00, OPS 0.740, wRC+ 100.0). A median lands exactly on the fallback
+# only if at least half the rows ARE the fallback.
+
+# Feature -> the league-average constant data.py substitutes on failure.
+FALLBACK_VALUES = {
+    "home_p_xFIP_season": 4.20, "away_p_xFIP_season": 4.20,
+    "home_p_SIERA_season": 4.20, "away_p_SIERA_season": 4.20,
+    "home_p_K_BB_pct_season": 10.0, "away_p_K_BB_pct_season": 10.0,
+    "home_p_WHIP_season": 1.30, "away_p_WHIP_season": 1.30,
+    "home_bullpen_era": 4.00, "away_bullpen_era": 4.00,
+    "home_bullpen_fip": 4.00, "away_bullpen_fip": 4.00,
+    "home_hit_ops": 0.740, "away_hit_ops": 0.740,
+}
+
+# Above this share of fallback rows a feature carries essentially no signal.
+MAX_FALLBACK_RATE = 0.25
+
+
+def feature_fallback_rates(X: pd.DataFrame) -> dict[str, float]:
+    """Fraction of rows equal to the league-average fallback, per feature."""
+    if X.empty:
+        return {c: 0.0 for c in FALLBACK_VALUES if c in X.columns}
+    return {
+        col: float((X[col] == val).mean())
+        for col, val in FALLBACK_VALUES.items()
+        if col in X.columns
+    }
+
+
+def check_feature_quality(X: pd.DataFrame,
+                          max_rate: float = MAX_FALLBACK_RATE) -> dict[str, float]:
+    """Log the per-feature fallback rate and flag degraded features.
+
+    Returns the rate map so callers (train.py) can abort a retrain rather than
+    overwrite a working model with one fitted on league-average constants.
+    """
+    rates = feature_fallback_rates(X)
+    degraded = {c: r for c, r in rates.items() if r > max_rate}
+
+    for col, rate in sorted(rates.items(), key=lambda kv: -kv[1]):
+        logger.info("Feature fallback rate — %-28s %.1f%%", col, rate * 100)
+
+    if degraded:
+        logger.error(
+            "DATA QUALITY: %d of %d features are league-average fallbacks in "
+            "more than %.0f%% of rows: %s. The upstream stat fetch is failing; "
+            "a model trained on this matrix will have no signal.",
+            len(degraded), len(rates), max_rate * 100,
+            ", ".join(f"{c} {r:.0%}" for c, r in sorted(degraded.items(), key=lambda kv: -kv[1])),
+        )
+    return rates

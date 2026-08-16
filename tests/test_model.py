@@ -27,14 +27,24 @@ class TestFeatureColumns:
         )
 
     def test_expected_count(self):
-        # 8 home pitcher + 8 away pitcher + 4 bullpen + 4 hitting + 1 park = 25
-        assert len(FEATURE_COLUMNS) == 25
+        # 4 home pitcher + 4 away pitcher + 4 bullpen + 2 hitting + 1 park = 15
+        assert len(FEATURE_COLUMNS) == 15
 
-    def test_rolling_and_season_both_present(self):
-        season_feats = [f for f in FEATURE_COLUMNS if "_season" in f]
-        rolling_feats = [f for f in FEATURE_COLUMNS if "_rolling" in f]
-        assert len(season_feats) == 8
-        assert len(rolling_feats) == 8
+    def test_no_rolling_features(self):
+        # The *_rolling columns are produced with use_rolling=False during
+        # training (making them exact copies of the season columns) but with a
+        # real 30-day window at prediction time. That train/serve skew means
+        # they must not be model inputs until the training path can build
+        # genuine point-in-time windows.
+        assert [f for f in FEATURE_COLUMNS if "_rolling" in f] == []
+        assert len([f for f in FEATURE_COLUMNS if "_season" in f]) == 8
+
+    def test_no_collinear_wrc_plus(self):
+        # data.get_team_hitting_splits derives wrc_plus = 100 * ops / 0.720,
+        # an exact affine transform of ops — keeping both is pure redundancy.
+        assert [f for f in FEATURE_COLUMNS if "wrc_plus" in f] == []
+        assert "home_hit_ops" in FEATURE_COLUMNS
+        assert "away_hit_ops" in FEATURE_COLUMNS
 
     def test_no_duplicates(self):
         assert len(FEATURE_COLUMNS) == len(set(FEATURE_COLUMNS))

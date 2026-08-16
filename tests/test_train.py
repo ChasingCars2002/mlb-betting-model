@@ -303,3 +303,132 @@ class TestRunIncrementalRetrain:
         assert "feature_columns_hash" in state
         assert "2023" in state["seasons"]
         assert "2026" in state["seasons"]
+
+
+# ---------------------------------------------------------------------------
+# Feature data-quality guard (regression)
+# ---------------------------------------------------------------------------
+
+import pandas as pd  # noqa: E402
+from features import (  # noqa: E402
+    FALLBACK_VALUES, MAX_FALLBACK_RATE, check_feature_quality,
+    feature_fallback_rates,
+)
+
+
+def _matrix(n=100, fallback_rows=0):
+    """n rows of realistic values, with `fallback_rows` degraded to defaults."""
+    rows = []
+    for i in range(n):
+        row = {}
+        for col in FEATURE_COLUMNS:
+            fb = FALLBACK_VALUES.get(col)
+            if fb is None:                      # park_factor
+                row[col] = 0.97 + (i % 5) * 0.01
+            elif i < fallback_rows:
+                row[col] = fb                   # upstream fetch failed
+            else:
+                row[col] = fb * (1.0 + ((i % 7) + 1) * 0.02)
+        rows.append(row)
+    return pd.DataFrame(rows, columns=FEATURE_COLUMNS)
+
+
+class TestFeatureQualityGuard:
+    """data.py swallows every upstream failure and returns a league-average
+    constant. In a bulk training build that silently turns a broken endpoint
+    into a full-size, signal-free matrix — which is exactly what the persisted
+    medians show happened (every one equals its fallback constant).
+    """
+
+    def test_clean_matrix_has_no_fallbacks(self):
+        rates = feature_fallback_rates(_matrix(fallback_rows=0))
+        assert rates
+        assert max(rates.values()) == 0.0
+
+    def test_fully_degraded_matrix_is_detected(self):
+        rates = feature_fallback_rates(_matrix(n=100, fallback_rows=100))
+        assert min(rates.values()) == 1.0
+
+    def test_rate_is_measured_per_feature(self):
+        rates = feature_fallback_rates(_matrix(n=100, fallback_rows=40))
+        for col, rate in rates.items():
+            assert rate == pytest.approx(0.40, abs=1e-9), col
+
+    def test_check_flags_only_above_threshold(self, caplog):
+        import logging
+        with caplog.at_level(logging.ERROR):
+            check_feature_quality(_matrix(n=100, fallback_rows=10))
+        assert "DATA QUALITY" not in caplog.text
+
+        caplog.clear()
+        with caplog.at_level(logging.ERROR):
+            check_feature_quality(_matrix(n=100, fallback_rows=90))
+        assert "DATA QUALITY" in caplog.text
+
+    def test_park_factor_is_not_a_fallback_feature(self):
+        # park_factor comes from a static table, never from a failing fetch.
+        assert "park_factor" not in FALLBACK_VALUES
+
+    def test_every_fetched_feature_has_a_known_fallback(self):
+        fetched = [c for c in FEATURE_COLUMNS if c != "park_factor"]
+        assert set(fetched) == set(FALLBACK_VALUES)
+
+    def test_threshold_is_a_sane_fraction(self):
+        assert 0.0 < MAX_FALLBACK_RATE < 1.0
+
+    def test_empty_matrix_does_not_crash(self):
+        assert check_feature_quality(pd.DataFrame(columns=FEATURE_COLUMNS)) is not None
+
+
+class TestRetrainAbortsOnDegradedData:
+    def test_degraded_build_does_not_train_or_save_state(self, tmp_path, monkeypatch):
+        import train as train_mod
+
+        degraded = _matrix(n=200, fallback_rows=200)
+        y = pd.Series([1, 0] * 100, name="home_win")
+        monkeypatch.setattr(train_mod, "get_or_build_season_features",
+                            lambda season, force_rebuild: (degraded, y))
+        called = {"train": False, "state": False}
+        monkeypatch.setattr(train_mod, "train_models",
+                            lambda *a, **k: called.__setitem__("train", True))
+        monkeypatch.setattr(train_mod, "save_training_state",
+                            lambda s: called.__setitem__("state", True))
+        monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
+
+        train_mod.run_incremental_retrain(force=True, current_year=2026)
+
+        assert called["train"] is False, "trained a model on league-average constants"
+        assert called["state"] is False, "recorded a training run that never happened"
+
+    def test_override_flag_allows_training(self, tmp_path, monkeypatch):
+        import train as train_mod
+
+        degraded = _matrix(n=200, fallback_rows=200)
+        y = pd.Series([1, 0] * 100, name="home_win")
+        monkeypatch.setattr(train_mod, "get_or_build_season_features",
+                            lambda season, force_rebuild: (degraded, y))
+        called = {"train": False}
+        monkeypatch.setattr(train_mod, "train_models",
+                            lambda *a, **k: called.__setitem__("train", True))
+        monkeypatch.setattr(train_mod, "save_training_state", lambda s: None)
+        monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
+
+        train_mod.run_incremental_retrain(force=True, current_year=2026,
+                                          allow_degraded_data=True)
+        assert called["train"] is True
+
+    def test_clean_build_trains_normally(self, tmp_path, monkeypatch):
+        import train as train_mod
+
+        clean = _matrix(n=200, fallback_rows=0)
+        y = pd.Series([1, 0] * 100, name="home_win")
+        monkeypatch.setattr(train_mod, "get_or_build_season_features",
+                            lambda season, force_rebuild: (clean, y))
+        called = {"train": False}
+        monkeypatch.setattr(train_mod, "train_models",
+                            lambda *a, **k: called.__setitem__("train", True))
+        monkeypatch.setattr(train_mod, "save_training_state", lambda s: None)
+        monkeypatch.setattr(train_mod, "load_training_state", lambda: {})
+
+        train_mod.run_incremental_retrain(force=True, current_year=2026)
+        assert called["train"] is True

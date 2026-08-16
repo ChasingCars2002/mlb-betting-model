@@ -80,6 +80,13 @@ def _migrate_db(conn: sqlite3.Connection):
         ("confidence", "INTEGER"),
         # Pre-blend model probability, kept for calibration audits
         ("raw_model_prob", "REAL"),
+        # Final score, captured at grading time. Without these the totals model
+        # can never be calibrated: TOTALS_SIGMA and the run-scale constants in
+        # score.py have to be fit against real residuals, and the residuals
+        # were being thrown away.
+        ("actual_home_score", "INTEGER"),
+        ("actual_away_score", "INTEGER"),
+        ("actual_total", "REAL"),
     ]
     for col, col_type in new_columns:
         if col not in existing:
@@ -173,23 +180,33 @@ def grade_predictions(results: dict[str, dict], for_date: Optional[str] = None):
             pick  = row["pick"]
             units = row["units"]
             odds  = row["odds"]
+            home_score = result.get("home_score", 0)
+            away_score = result.get("away_score", 0)
+            actual_total = home_score + away_score
 
             # Determine winner depending on bet type
             bet_type = row["bet_type"] if "bet_type" in row.keys() else "moneyline"
             if bet_type == "totals":
-                actual_total = result.get("home_score", 0) + result.get("away_score", 0)
                 listed = row["listed_total"] if "listed_total" in row.keys() else None
-                if listed is not None:
-                    actual_winner = "Over" if actual_total > listed else "Under"
-                else:
+                if listed is None:
                     actual_winner = None
+                elif actual_total == listed:
+                    # Whole-number line landing exactly on the total is a PUSH:
+                    # the stake is returned. Grading it as "Under" (the old
+                    # behaviour) booked a full-unit loss on every push and
+                    # understated the totals record.
+                    actual_winner = "Push"
+                else:
+                    actual_winner = "Over" if actual_total > listed else "Under"
             else:
                 actual_winner = result["winner"]
 
             if actual_winner is None:
                 continue
 
-            if actual_winner == pick:
+            if actual_winner == "Push":
+                status, profit = "Push", 0.0
+            elif actual_winner == pick:
                 status = "Win"
                 if odds > 0:
                     profit = units * (odds / 100)
@@ -200,8 +217,11 @@ def grade_predictions(results: dict[str, dict], for_date: Optional[str] = None):
                 profit = -units
 
             conn.execute(
-                "UPDATE predictions SET status = ?, result = ?, profit = ? WHERE id = ?",
-                (status, actual_winner, profit, row["id"]),
+                "UPDATE predictions SET status = ?, result = ?, profit = ?, "
+                "actual_home_score = ?, actual_away_score = ?, actual_total = ? "
+                "WHERE id = ?",
+                (status, actual_winner, profit, home_score, away_score,
+                 actual_total, row["id"]),
             )
             graded += 1
 
@@ -296,15 +316,35 @@ def get_pending_dates() -> list[str]:
     return [r["date"] for r in rows]
 
 
-def get_roi_stats(since: Optional[str] = None) -> dict:
+def get_roi_stats(since: Optional[str] = None,
+                  bet_type: Optional[str] = None) -> dict:
     """Calculate ROI statistics.
 
-    Returns dict with: total_bets, wins, losses, pending, total_units_wagered,
-    total_profit, roi_pct, brier_score, win_rate.
+    Args:
+        since: Only count picks on or after this ISO date.
+        bet_type: Restrict to one market ("moneyline" or "totals"). None (the
+            default) covers every market.
+
+    Pushes are excluded from the win/loss record and from the ROI denominator
+    (the stake is returned), but are reported in their own ``pushes`` count.
+
+    Returns dict with: total_bets, wins, losses, pushes, pending,
+    total_units_wagered, total_profit, roi_pct, brier_score, win_rate.
     """
+    # A NULL bet_type predates the totals migration and means moneyline.
+    if bet_type == "moneyline":
+        type_clause = " AND (bet_type = 'moneyline' OR bet_type IS NULL)"
+        type_params: list = []
+    elif bet_type:
+        type_clause = " AND bet_type = ?"
+        type_params = [bet_type]
+    else:
+        type_clause = ""
+        type_params = []
+
     with get_connection() as conn:
-        where = "WHERE status != 'Pending' AND (bet_type = 'moneyline' OR bet_type IS NULL)"
-        params = []
+        where = "WHERE status != 'Pending'" + type_clause
+        params = list(type_params)
         if since:
             where += " AND date >= ?"
             params.append(since)
@@ -314,50 +354,52 @@ def get_roi_stats(since: Optional[str] = None) -> dict:
             params,
         ).fetchall()
 
+        # The pending count must use the SAME bet_type and date filters as the
+        # graded query. It previously ignored bet_type entirely, so a
+        # moneyline-only stat block reported the pending count for every market.
+        pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'" + type_clause
+        pending_params = list(type_params)
+        if since:
+            pending_sql += " AND date >= ?"
+            pending_params.append(since)
+        pending_count = conn.execute(pending_sql, pending_params).fetchone()["cnt"]
+
     if not rows:
-        with get_connection() as conn:
-            pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending' AND (bet_type = 'moneyline' OR bet_type IS NULL)"
-            pending_params = []
-            if since:
-                pending_sql += " AND date >= ?"
-                pending_params.append(since)
-            pending_count = conn.execute(pending_sql, pending_params).fetchone()["cnt"]
         return {
-            "total_bets": 0, "wins": 0, "losses": 0, "pending": pending_count,
+            "total_bets": 0, "wins": 0, "losses": 0, "pushes": 0,
+            "pending": pending_count,
             "total_units_wagered": 0, "total_profit": 0.0,
             "roi_pct": 0.0, "brier_score": None, "win_rate": 0.0,
         }
 
     wins = sum(1 for r in rows if r["status"] == "Win")
     losses = sum(1 for r in rows if r["status"] == "Loss")
-    total_units = sum(r["units"] for r in rows)
+    pushes = sum(1 for r in rows if r["status"] == "Push")
+    decided = [r for r in rows if r["status"] in ("Win", "Loss")]
+    total_units = sum(r["units"] for r in decided)
     total_profit = sum(r["profit"] for r in rows if r["profit"] is not None)
 
-    # Brier score: mean squared error of predicted prob vs actual outcome
-    brier_sum = 0.0
-    for r in rows:
-        actual = 1.0 if r["status"] == "Win" else 0.0
-        brier_sum += (r["model_prob"] - actual) ** 2
-    brier_score = brier_sum / len(rows)
-
-    with get_connection() as conn:
-        pending_sql = "SELECT COUNT(*) as cnt FROM predictions WHERE status = 'Pending'"
-        pending_params = []
-        if since:
-            pending_sql += " AND date >= ?"
-            pending_params.append(since)
-        pending_count = conn.execute(pending_sql, pending_params).fetchone()["cnt"]
+    # Brier score: mean squared error of predicted prob vs actual outcome.
+    # Pushes have no binary outcome, so they are excluded.
+    brier_score = None
+    if decided:
+        brier_sum = sum(
+            (r["model_prob"] - (1.0 if r["status"] == "Win" else 0.0)) ** 2
+            for r in decided
+        )
+        brier_score = round(brier_sum / len(decided), 4)
 
     return {
         "total_bets": len(rows),
         "wins": wins,
         "losses": losses,
+        "pushes": pushes,
         "pending": pending_count,
         "total_units_wagered": total_units,
         "total_profit": round(total_profit, 2),
         "roi_pct": round((total_profit / total_units) * 100, 2) if total_units > 0 else 0.0,
-        "brier_score": round(brier_score, 4),
-        "win_rate": round((wins / len(rows)) * 100, 2) if rows else 0.0,
+        "brier_score": brier_score,
+        "win_rate": round((wins / len(decided)) * 100, 2) if decided else 0.0,
     }
 
 
@@ -419,7 +461,8 @@ def get_all_predictions() -> list[dict]:
                       status, result, profit, home_pitcher, away_pitcher,
                       bet_type, listed_total, predicted_total,
                       predicted_home_runs, predicted_away_runs, total_delta,
-                      confidence, raw_model_prob
+                      confidence, raw_model_prob,
+                      actual_home_score, actual_away_score, actual_total
                FROM predictions
                ORDER BY date DESC, id DESC""",
             conn,
@@ -427,7 +470,7 @@ def get_all_predictions() -> list[dict]:
     float_cols = [
         "model_prob", "implied_prob", "edge", "ev", "units", "profit",
         "listed_total", "predicted_total", "predicted_home_runs",
-        "predicted_away_runs", "total_delta", "raw_model_prob",
+        "predicted_away_runs", "total_delta", "raw_model_prob", "actual_total",
     ]
     for col in float_cols:
         if col in df.columns:

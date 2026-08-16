@@ -10,7 +10,10 @@ from datetime import date, datetime
 
 from config import TRAINING_SEASONS, LOG_FILE, CACHE_DIR, TRAINING_STATE_PATH
 from data import get_historical_game_data
-from features import build_training_features, FEATURE_COLUMNS
+from features import (
+    build_training_features, check_feature_quality, FEATURE_COLUMNS,
+    MAX_FALLBACK_RATE,
+)
 from model import train_models, tune_hyperparameters
 
 logger = logging.getLogger(__name__)
@@ -88,7 +91,8 @@ def get_or_build_season_features(
     return X, y
 
 
-def run_incremental_retrain(force: bool = False, current_year: int | None = None, tune: bool = False):
+def run_incremental_retrain(force: bool = False, current_year: int | None = None,
+                            tune: bool = False, allow_degraded_data: bool = False):
     """Retrain models using cached features for completed seasons.
 
     Completed seasons (year < current_year) load from parquet cache.
@@ -100,6 +104,8 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
         force: Wipe all caches and rebuild from scratch.
         current_year: Override the current year (used in tests).
         tune: If True, run Optuna hyperparameter tuning before training.
+        allow_degraded_data: Train even when most feature values are
+            league-average fallbacks. Off by default — see check_feature_quality.
     """
     if current_year is None:
         current_year = date.today().year
@@ -160,6 +166,24 @@ def run_incremental_retrain(force: bool = False, current_year: int | None = None
     print(f"\n  Combined: {len(X_combined)} games across {len(all_X)} seasons.")
     print(f"  Home win rate: {y_combined.mean():.3f}\n")
 
+    # Refuse to replace a live model with one fitted on league-average
+    # constants. data.py falls back to a fixed constant whenever an upstream
+    # fetch fails, so a broken endpoint yields a full-size, entirely
+    # signal-free training matrix that trains and saves without complaint.
+    rates = check_feature_quality(X_combined)
+    degraded = {c: r for c, r in rates.items() if r > MAX_FALLBACK_RATE}
+    if degraded:
+        worst = ", ".join(
+            f"{c} {r:.0%}" for c, r in sorted(degraded.items(), key=lambda kv: -kv[1])[:5]
+        )
+        print(f"\n  ERROR: aborting retrain — {len(degraded)} feature(s) are mostly "
+              f"league-average fallbacks (worst: {worst}).")
+        print("  Fix the upstream stat fetch, then retrain. "
+              "Re-run with --allow-degraded-data to override.")
+        logger.error("Retrain aborted: degraded feature quality (%s).", worst)
+        if not allow_degraded_data:
+            return
+
     tuned_params = None
     if tune:
         print("\n  Running Optuna hyperparameter tuning (this may take several minutes)...")
@@ -184,6 +208,12 @@ def main():
         action="store_true",
         help="Run Optuna hyperparameter tuning before training (adds ~5-10 min on CPU).",
     )
+    parser.add_argument(
+        "--allow-degraded-data",
+        action="store_true",
+        help="Train even if most feature values are league-average fallbacks "
+             "(i.e. the upstream stat fetch is failing). Not recommended.",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -197,7 +227,8 @@ def main():
     print(f"\nMLB Betting Model — Full Training Pipeline")
     print(f"Seasons: {TRAINING_SEASONS} + current year (auto-detected)")
     print("=" * 50)
-    run_incremental_retrain(force=True, tune=args.tune)
+    run_incremental_retrain(force=True, tune=args.tune,
+                            allow_degraded_data=args.allow_degraded_data)
 
 
 if __name__ == "__main__":
