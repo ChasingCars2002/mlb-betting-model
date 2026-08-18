@@ -291,3 +291,146 @@ class TestGradeBackfillByDate:
                 "SELECT status, profit FROM predictions").fetchone()
         assert row["status"] == "Loss"
         assert row["profit"] == pytest.approx(-2)
+
+
+# ---------------------------------------------------------------------------
+# Totals push grading (regression)
+# ---------------------------------------------------------------------------
+
+class TestTotalsPushGrading:
+    """A whole-number O/U line landing exactly on the total is a PUSH.
+
+    grade_predictions used to compute `"Over" if actual_total > listed else
+    "Under"`, which booked a full-unit LOSS on every Over pick that pushed and
+    a full-unit WIN on every Under pick that pushed. Both are wrong: the stake
+    is returned.
+    """
+
+    def _totals_pick(self, pick, listed=9.0):
+        return _make_pick(
+            pick=pick, pick_side=pick, bet_type="totals", listed_total=listed,
+            predicted_total=listed + 0.5, units=1.0, odds=-110,
+        )
+
+    def _results(self, home=5, away=4):
+        return {"BOS @ NYY": {"home_score": home, "away_score": away,
+                              "winner": "NYY"}}
+
+    def test_over_on_exact_line_is_push_not_loss(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([self._totals_pick("Over")], bet_type="totals")
+            database.grade_predictions(self._results(5, 4))  # total == 9.0
+        with get_conn(tmp_db) as conn:
+            row = conn.execute("SELECT * FROM predictions").fetchone()
+        assert row["status"] == "Push"
+        assert row["result"] == "Push"
+        assert row["profit"] == 0.0
+
+    def test_under_on_exact_line_is_push_not_win(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([self._totals_pick("Under")], bet_type="totals")
+            database.grade_predictions(self._results(5, 4))
+        with get_conn(tmp_db) as conn:
+            row = conn.execute("SELECT * FROM predictions").fetchone()
+        assert row["status"] == "Push"
+        assert row["profit"] == 0.0
+
+    def test_half_line_never_pushes(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions(
+                [self._totals_pick("Over", listed=8.5)], bet_type="totals")
+            database.grade_predictions(self._results(5, 4))  # 9 > 8.5
+        with get_conn(tmp_db) as conn:
+            row = conn.execute("SELECT * FROM predictions").fetchone()
+        assert row["status"] == "Win"
+        assert row["profit"] > 0
+
+    def test_actual_score_is_recorded(self, tmp_db):
+        """Residuals must be persisted so TOTALS_SIGMA can be fit from them."""
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions(
+                [self._totals_pick("Over", listed=8.5)], bet_type="totals")
+            database.grade_predictions(self._results(6, 3))
+        with get_conn(tmp_db) as conn:
+            row = conn.execute("SELECT * FROM predictions").fetchone()
+        assert row["actual_home_score"] == 6
+        assert row["actual_away_score"] == 3
+        assert row["actual_total"] == 9.0
+
+    def test_moneyline_scores_also_recorded(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(units=1.0)])
+            database.grade_predictions(self._results(7, 2))
+        with get_conn(tmp_db) as conn:
+            row = conn.execute("SELECT * FROM predictions").fetchone()
+        assert row["status"] == "Win"
+        assert row["actual_total"] == 9.0
+
+
+# ---------------------------------------------------------------------------
+# get_roi_stats bet_type scoping (regression)
+# ---------------------------------------------------------------------------
+
+class TestRoiStatsBetType:
+    def _seed(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions([_make_pick(units=1.0)])
+            database.save_predictions(
+                [_make_pick(pick="Over", pick_side="Over", bet_type="totals",
+                            listed_total=8.5, units=1.0)],
+                bet_type="totals",
+            )
+            # One pending pick in each market.
+            database.save_predictions([_make_pick(date="2026-09-09", units=1.0)])
+            database.save_predictions(
+                [_make_pick(date="2026-09-09", pick="Under", pick_side="Under",
+                            bet_type="totals", listed_total=8.5, units=1.0)],
+                bet_type="totals",
+            )
+            database.grade_predictions(
+                {"BOS @ NYY": {"home_score": 5, "away_score": 4, "winner": "NYY"}},
+                for_date="2026-04-02",
+            )
+
+    def test_default_covers_every_market(self, tmp_db):
+        self._seed(tmp_db)
+        with patch("database.DB_PATH", tmp_db):
+            stats = database.get_roi_stats()
+        assert stats["total_bets"] == 2  # one moneyline + one totals
+
+    def test_bet_type_filters_graded_rows(self, tmp_db):
+        self._seed(tmp_db)
+        with patch("database.DB_PATH", tmp_db):
+            ml = database.get_roi_stats(bet_type="moneyline")
+            ou = database.get_roi_stats(bet_type="totals")
+        assert ml["total_bets"] == 1
+        assert ou["total_bets"] == 1
+
+    def test_pending_count_respects_bet_type(self, tmp_db):
+        """The pending count used to ignore bet_type entirely, so a
+        moneyline-only stat block reported every market's pending picks."""
+        self._seed(tmp_db)
+        with patch("database.DB_PATH", tmp_db):
+            ml = database.get_roi_stats(bet_type="moneyline")
+            ou = database.get_roi_stats(bet_type="totals")
+            everything = database.get_roi_stats()
+        assert ml["pending"] == 1
+        assert ou["pending"] == 1
+        assert everything["pending"] == 2
+
+    def test_pushes_excluded_from_roi_denominator(self, tmp_db):
+        with patch("database.DB_PATH", tmp_db):
+            database.save_predictions(
+                [_make_pick(pick="Over", pick_side="Over", bet_type="totals",
+                            listed_total=9.0, units=2.0)],
+                bet_type="totals",
+            )
+            database.grade_predictions(
+                {"BOS @ NYY": {"home_score": 5, "away_score": 4, "winner": "NYY"}})
+            stats = database.get_roi_stats()
+        assert stats["pushes"] == 1
+        assert stats["wins"] == 0 and stats["losses"] == 0
+        # A push must not count as a wagered unit, and must not divide by zero.
+        assert stats["total_units_wagered"] == 0
+        assert stats["roi_pct"] == 0.0
+        assert stats["win_rate"] == 0.0

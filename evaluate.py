@@ -310,11 +310,44 @@ def compute_confidence(edge: float, ev: float,
     max_edge = (1.0 - weight) * max_disagreement
     span = max_edge - EV_THRESHOLD
     if span <= 0:
-        return 1
+        # The achievable band has collapsed below EV_THRESHOLD — see
+        # edge_band() below. Returning a flat 1 star (the old behaviour) made
+        # every pick look equally weak. Rank against the achievable band itself
+        # so the stars stay informative if a pick is somehow still produced.
+        if max_edge <= 0:
+            return 1
+        frac = edge / max_edge
+        return max(1, min(5, 1 + int(frac * 5)))
     frac = (edge - EV_THRESHOLD) / span
     if frac <= 0:
         return 1
     return min(5, 1 + int(frac * 5))
+
+
+def edge_band(max_disagreement: float = MAX_RAW_DISAGREEMENT,
+              weight: float | None = None) -> dict:
+    """Report whether a pick can mathematically clear EV_THRESHOLD right now.
+
+    Blending caps a pick's edge at ``(1 - weight) * max_disagreement``. When the
+    self-tuned weight rises above ``1 - EV_THRESHOLD / max_disagreement`` that
+    ceiling drops below EV_THRESHOLD and the filter becomes unsatisfiable: the
+    pipeline emits zero picks for that market every single day, with no error
+    and no warning. At the moneyline defaults (EV_THRESHOLD 0.05, cap 0.15) the
+    cutoff is weight > 0.667 — and the learned weight has been pinned at its
+    0.95 ceiling, so no moneyline pick has been possible for weeks.
+
+    Returns a dict with the weight, the achievable max edge, the required
+    threshold, and a ``reachable`` flag.
+    """
+    if weight is None:
+        weight = calibration.get_blend_weight()
+    max_edge = (1.0 - weight) * max_disagreement
+    return {
+        "weight": round(weight, 4),
+        "max_achievable_edge": round(max_edge, 5),
+        "required_edge": EV_THRESHOLD,
+        "reachable": max_edge >= EV_THRESHOLD,
+    }
 
 
 def format_picks(picks: list[dict]) -> str:
@@ -355,8 +388,10 @@ def format_stats(stats: dict) -> str:
     lines.append("  LIFETIME PERFORMANCE")
     lines.append("=" * 50)
     lines.append(f"  Total Bets:       {stats['total_bets']}")
-    lines.append(f"  Record:           {stats['wins']}W - {stats['losses']}L "
-                 f"({stats['win_rate']:.1f}%)")
+    record = f"{stats['wins']}W - {stats['losses']}L"
+    if stats.get("pushes"):
+        record += f" - {stats['pushes']}P"
+    lines.append(f"  Record:           {record} ({stats['win_rate']:.1f}%)")
     lines.append(f"  Pending:          {stats['pending']}")
     lines.append(f"  Units Wagered:    {stats['total_units_wagered']:.1f}")
     lines.append(f"  Total Profit:     {stats['total_profit']:+.2f}u")

@@ -13,7 +13,9 @@ from evaluate import (
     format_picks,
     format_stats,
 )
-from config import TOTALS_MAX_DISAGREEMENT
+from config import TOTALS_MAX_DISAGREEMENT, EV_THRESHOLD
+from unittest.mock import patch
+import calibration
 
 
 # ---------------------------------------------------------------------------
@@ -366,3 +368,60 @@ class TestFormatting:
         output = format_stats(stats)
         assert "Brier Score" in output
         assert "0.2123" in output
+
+
+# ---------------------------------------------------------------------------
+# edge_band — the silent dead zone (regression)
+# ---------------------------------------------------------------------------
+
+from evaluate import edge_band  # noqa: E402
+from config import MAX_RAW_DISAGREEMENT  # noqa: E402
+
+
+class TestEdgeBand:
+    """Blending caps a pick's edge at (1 - weight) * max_disagreement. Once the
+    self-tuned weight climbs past 1 - EV_THRESHOLD/cap that ceiling falls below
+    EV_THRESHOLD and the filter can never fire — the pipeline then emits zero
+    picks every day with no error at all. edge_band makes that state visible.
+    """
+
+    def test_reachable_at_default_weight(self):
+        band = edge_band(weight=0.5)
+        assert band["reachable"] is True
+        assert band["max_achievable_edge"] == pytest.approx(0.075, abs=1e-9)
+
+    def test_unreachable_at_the_learned_ceiling(self):
+        band = edge_band(weight=0.95)
+        assert band["reachable"] is False
+        assert band["max_achievable_edge"] < band["required_edge"]
+
+    def test_cutoff_is_where_the_band_equals_the_threshold(self):
+        cutoff = 1 - EV_THRESHOLD / MAX_RAW_DISAGREEMENT  # ~0.667
+        assert edge_band(weight=cutoff - 0.01)["reachable"] is True
+        assert edge_band(weight=cutoff + 0.01)["reachable"] is False
+
+    def test_no_moneyline_pick_survives_an_unreachable_band(self):
+        # Sanity-check the consequence end to end: at w=0.95 no game, however
+        # far the model strays from the market, can produce a pick.
+        assert edge_band(weight=0.95)["reachable"] is False
+        with patch.object(calibration, "get_blend_weight", lambda: 0.95):
+            for prob in (0.30, 0.42, 0.50, 0.58, 0.70):
+                game = _make_game(home_prob=prob, home_odds=+120, away_odds=-140)
+                assert filter_positive_ev([game]) == []
+
+    def test_totals_band_is_reachable_at_its_static_weight(self):
+        band = edge_band(max_disagreement=TOTALS_MAX_DISAGREEMENT, weight=0.5)
+        assert band["reachable"] is True
+
+
+class TestConfidenceWhenBandCollapses:
+    def test_stars_still_differentiate(self):
+        """compute_confidence returned a flat 1 for every pick once the span
+        went non-positive, erasing the rating entirely."""
+        stars = [compute_confidence(e, 0.01, weight=0.95) for e in (0.001, 0.004, 0.007)]
+        assert stars == sorted(stars)
+        assert max(stars) > min(stars)
+
+    def test_still_bounded_one_to_five(self):
+        for e in (0.0, 0.001, 0.5, 10.0):
+            assert 1 <= compute_confidence(e, 0.01, weight=0.95) <= 5

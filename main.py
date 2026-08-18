@@ -24,7 +24,10 @@ from data import get_todays_games, get_yesterdays_results
 from features import build_game_features
 from model import load_model, predict_win_prob
 from odds import fetch_live_odds, match_odds_to_games
-from evaluate import filter_positive_ev, filter_totals_ev, format_picks, format_stats, compute_confidence
+from evaluate import (
+    filter_positive_ev, filter_totals_ev, format_picks, format_stats,
+    compute_confidence, edge_band,
+)
 from score import predict_game_scores
 from calibration import (
     log_model_predictions,
@@ -33,7 +36,7 @@ from calibration import (
     get_blend_weight,
     is_self_tuned,
 )
-from config import MARKET_BLEND_WEIGHT, TOTALS_MAX_DISAGREEMENT
+from config import MARKET_BLEND_WEIGHT, TOTALS_MAX_DISAGREEMENT, MAX_RAW_DISAGREEMENT
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +299,22 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
     print("\n  [5/5] Calculating EV and filtering picks...")
     print(f"        Market blend weight: {get_blend_weight():.2f} "
           f"({'self-tuned' if is_self_tuned() else 'default'})")
+
+    # A high blend weight can push the achievable edge below EV_THRESHOLD, at
+    # which point the moneyline filter is unsatisfiable and quietly returns
+    # nothing every day. Say so out loud instead of reporting "0 picks" as if
+    # the slate simply had no value.
+    band = edge_band()
+    if not band["reachable"]:
+        msg = (f"Moneyline gate is UNREACHABLE at blend weight {band['weight']:.2f}: "
+               f"max achievable edge {band['max_achievable_edge']:.4f} < "
+               f"EV_THRESHOLD {band['required_edge']:.4f}. Zero moneyline picks "
+               f"are possible until the weight drops below "
+               f"{1 - band['required_edge'] / MAX_RAW_DISAGREEMENT:.3f} or the "
+               f"threshold is lowered.")
+        print(f"        WARNING: {msg}")
+        logger.warning(msg)
+
     ml_picks = filter_positive_ev(games_with_odds)
     for p in ml_picks:
         p["confidence"] = compute_confidence(p["edge"], p["ev"])
@@ -440,14 +459,32 @@ def export_dashboard_data():
 
     ytd_since = f"{date.today().year}-01-01"
     blend_state = get_blend_state()
+    # ytd/all_time now cover EVERY market. They used to be moneyline-only while
+    # being labelled generically, so once the moneyline gate became unreachable
+    # the dashboard kept advertising a frozen moneyline ROI from bets the model
+    # had long stopped making, and the live totals book was invisible.
     stats = {
         "ytd": {**get_roi_stats(since=ytd_since), "since": ytd_since},
         "all_time": get_roi_stats(),
+        "by_bet_type": {
+            bt: {
+                "ytd": get_roi_stats(since=ytd_since, bet_type=bt),
+                "all_time": get_roi_stats(bet_type=bt),
+            }
+            for bt in ("moneyline", "totals")
+        },
         "model": {
             "blend_weight": get_blend_weight(),
             "self_tuned": is_self_tuned(),
             "calibration_games": (blend_state or {}).get("n_games", 0),
             "calibration_updated": (blend_state or {}).get("updated_at"),
+            "model_adds_value": (blend_state or {}).get("model_adds_value"),
+            "weight_at_ceiling": (blend_state or {}).get("weight_at_ceiling"),
+            "moneyline_edge_band": edge_band(),
+            "totals_edge_band": edge_band(
+                max_disagreement=TOTALS_MAX_DISAGREEMENT,
+                weight=MARKET_BLEND_WEIGHT,
+            ),
         },
         "last_updated": datetime.utcnow().isoformat() + "Z",
     }
@@ -489,10 +526,15 @@ def export_dashboard_data():
 # Incremental retrain
 # ---------------------------------------------------------------------------
 
-def run_retrain(force: bool = False, tune: bool = False):
-    """Incremental model retrain entry point (used by CLI and scheduler)."""
+def run_retrain(force: bool = False, tune: bool = False) -> bool:
+    """Incremental model retrain entry point (used by CLI and scheduler).
+
+    Returns True when models were trained and saved, False when the run
+    aborted (no data, or a degraded feature matrix). The CLI turns False into
+    a non-zero exit so CI cannot mistake an aborted retrain for a green one.
+    """
     from train import run_incremental_retrain
-    run_incremental_retrain(force=force, tune=tune)
+    return bool(run_incremental_retrain(force=force, tune=tune))
 
 
 # ---------------------------------------------------------------------------
@@ -611,9 +653,11 @@ def main():
     # Determine action
     if args.train:
         from train import run_incremental_retrain
-        run_incremental_retrain(force=True, tune=args.tune)
+        if not run_incremental_retrain(force=True, tune=args.tune):
+            sys.exit(1)
     elif args.retrain:
-        run_retrain(force=args.force, tune=args.tune)
+        if not run_retrain(force=args.force, tune=args.tune):
+            sys.exit(1)
     elif args.run_now:
         run_predictions(model_name=args.model, force=args.force)
     elif args.grade:

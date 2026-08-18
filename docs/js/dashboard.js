@@ -114,12 +114,14 @@ function fmtProfit(n) {
 }
 
 function statusBadge(status) {
-  const cls = { Win: 'badge-win', Loss: 'badge-loss', Pending: 'badge-pending' }[status] ?? 'badge-pending';
+  const cls = { Win: 'badge-win', Loss: 'badge-loss', Push: 'badge-push',
+                Pending: 'badge-pending' }[status] ?? 'badge-pending';
   return `<span class="badge ${cls}">${status}</span>`;
 }
 
 function rowClass(status) {
-  return { Win: 'row-win', Loss: 'row-loss', Pending: 'row-pending' }[status] ?? 'row-pending';
+  return { Win: 'row-win', Loss: 'row-loss', Push: 'row-push',
+           Pending: 'row-pending' }[status] ?? 'row-pending';
 }
 
 function valueClass(n) {
@@ -174,18 +176,21 @@ function renderLastUpdated(iso) {
 // ── Stats computed from filtered history ──────────────────────────────────
 function computeStats(history, targetMode) {
   const rows = history.filter(p => inTimeRange(p, targetMode));
-  const graded  = rows.filter(p => p.status === 'Win' || p.status === 'Loss');
+  // A Push is graded but undecided: the stake is returned, so it counts in
+  // neither the W/L record nor the ROI denominator.
+  const decided = rows.filter(p => p.status === 'Win' || p.status === 'Loss');
+  const pushes  = rows.filter(p => p.status === 'Push').length;
   const pending = rows.filter(p => p.status === 'Pending').length;
-  const wins    = graded.filter(p => p.status === 'Win').length;
-  const losses  = graded.filter(p => p.status === 'Loss').length;
-  const wagered = graded.reduce((s, p) => s + (p.units ?? 0), 0);
-  const profit  = graded.reduce((s, p) => s + (p.profit ?? 0), 0);
+  const wins    = decided.filter(p => p.status === 'Win').length;
+  const losses  = decided.filter(p => p.status === 'Loss').length;
+  const wagered = decided.reduce((s, p) => s + (p.units ?? 0), 0);
+  const profit  = decided.reduce((s, p) => s + (p.profit ?? 0), 0);
   return {
-    wins, losses, pending,
+    wins, losses, pushes, pending,
     total_units_wagered: wagered,
     total_profit: profit,
     roi_pct:  wagered > 0 ? (profit / wagered) * 100 : 0,
-    win_rate: graded.length > 0 ? (wins / graded.length) * 100 : 0,
+    win_rate: decided.length > 0 ? (wins / decided.length) * 100 : 0,
   };
 }
 
@@ -199,14 +204,17 @@ function renderStats() {
 
   const wins    = s.wins    ?? 0;
   const losses  = s.losses  ?? 0;
+  const pushes  = s.pushes  ?? 0;
   const pending = s.pending ?? 0;
   const roi     = s.roi_pct ?? 0;
   const profit  = s.total_profit ?? 0;
   const winRate = s.win_rate ?? 0;
 
+  const pushSuffix = pushes > 0 ? `–${pushes}` : '';
+  const otherPushSuffix = (other.pushes ?? 0) > 0 ? `–${other.pushes}` : '';
   setHTML('card-record',
-    `<div class="value neutral">${wins}–${losses}</div>
-     <div class="sub">${pending} pending · ${otherLabel}: ${other.wins}–${other.losses}</div>`);
+    `<div class="value neutral">${wins}–${losses}${pushSuffix}</div>
+     <div class="sub">${pending} pending · ${otherLabel}: ${other.wins}–${other.losses}${otherPushSuffix}</div>`);
 
   setHTML('card-winrate',
     `<div class="value ${valueClass(winRate - 50)}">${fmt(winRate)}%</div>
@@ -358,6 +366,8 @@ function renderTodayTotals() {
 
 // ── Cumulative P&L chart ───────────────────────────────────────────────────
 function renderChart(history, currentMode) {
+  // Pushes are excluded on purpose: profit is 0, and the x-axis counts decided
+  // bets so the series stays consistent with the ROI denominator.
   let graded = history.filter(p =>
     (p.status === 'Win' || p.status === 'Loss') && inTimeRange(p, currentMode));
   graded = [...graded].sort((a, b) => a.date.localeCompare(b.date));
