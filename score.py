@@ -1,37 +1,80 @@
 """Analytical score prediction — estimates expected runs per team using existing features."""
 
-_LEAGUE_AVG_ERA = 4.50
-_LEAGUE_AVG_OPS = 0.720
-_BASE_RUNS      = 4.5
-_HOME_ADV       = 1.02  # ~2% scoring bump for home team
+# --- League reference scales -------------------------------------------------
+# IMPORTANT: the "xFIP" feature slot is not a real xFIP. data._compute_fip()
+# builds it as FIP with _FIP_CONSTANT = 3.10, whose league mean is ~4.00 — NOT
+# the ~4.50 of league ERA. Dividing that slot by 4.50 (as this module used to)
+# multiplied every run estimate by ~0.89, pushing the projected total ~0.5 runs
+# below the market line on average and making ~2/3 of all totals picks Unders.
+# Every reference constant below must be on the same scale as the feature it
+# normalizes.
+_LEAGUE_AVG_FIP = 4.00      # mean of the FIP slot produced by data._compute_fip()
+_LEAGUE_AVG_BULLPEN = 4.00  # mean of bullpen_era / bullpen_fip
+_LEAGUE_AVG_OPS = 0.740     # matches data.get_team_hitting_splits' league default
+_BASE_RUNS = 4.35           # league-average runs per team per game
+_HOME_ADV = 1.02            # ~2% scoring bump for home team
+
+# The starter throws roughly 55% of a modern game's innings; the bullpen covers
+# the rest. Attributing 100% of run prevention to the starter (the old
+# behaviour) left the projection far more volatile than the market — the model
+# swung ~1.4 runs around the line where books move ~0.4. Weighting the two
+# staffs by innings share, and damping the response, keeps the estimate in a
+# realistic band.
+_STARTER_INNINGS_SHARE = 0.55
+_PITCHING_ELASTICITY = 0.70  # runs allowed move less than 1:1 with staff quality
+_HITTING_ELASTICITY = 0.90   # runs scored move slightly less than 1:1 with OPS
+
+
+def _damped_ratio(value: float, league_avg: float, elasticity: float) -> float:
+    """Ratio of `value` to `league_avg`, shrunk toward 1.0 by `elasticity`.
+
+    A raw ratio treats a 20%-better pitcher as suppressing 20% of runs, which
+    over-extrapolates: run scoring is a team outcome that only partly reflects
+    one input. Damping keeps the projection inside a plausible range.
+    """
+    if not league_avg:
+        return 1.0
+    return 1.0 + elasticity * ((value / league_avg) - 1.0)
 
 
 def predict_game_scores(features: dict) -> dict:
     """Estimate expected runs for home and away teams from game features.
 
-    Uses away starter xFIP and home team OPS to project home runs, and vice
-    versa for away runs.  The park factor applies to BOTH teams — they hit in
-    the same stadium — so e.g. Coors boosts the visitors' scoring too.
+    Runs allowed by a team are driven by that team's starting pitcher and its
+    bullpen, weighted by innings share; runs scored are driven by the batting
+    team's OPS against the opposing starter's hand. The park factor applies to
+    BOTH teams — they hit in the same stadium — so e.g. Coors boosts the
+    visitors' scoring too.
+
     Returns keys: predicted_home_score, predicted_away_score, predicted_total.
     """
-    home_xfip = features.get("away_p_xFIP_season", _LEAGUE_AVG_ERA) or _LEAGUE_AVG_ERA
-    away_xfip = features.get("home_p_xFIP_season", _LEAGUE_AVG_ERA) or _LEAGUE_AVG_ERA
-    home_ops  = features.get("home_hit_ops", _LEAGUE_AVG_OPS) or _LEAGUE_AVG_OPS
-    away_ops  = features.get("away_hit_ops", _LEAGUE_AVG_OPS) or _LEAGUE_AVG_OPS
-    park      = features.get("park_factor", 1.0) or 1.0
+    # The home team scores against the AWAY staff, and vice versa.
+    away_starter = features.get("away_p_xFIP_season") or _LEAGUE_AVG_FIP
+    home_starter = features.get("home_p_xFIP_season") or _LEAGUE_AVG_FIP
+    away_pen = features.get("away_bullpen_fip") or _LEAGUE_AVG_BULLPEN
+    home_pen = features.get("home_bullpen_fip") or _LEAGUE_AVG_BULLPEN
+    home_ops = features.get("home_hit_ops") or _LEAGUE_AVG_OPS
+    away_ops = features.get("away_hit_ops") or _LEAGUE_AVG_OPS
+    park = features.get("park_factor") or 1.0
+
+    s, p = _STARTER_INNINGS_SHARE, 1.0 - _STARTER_INNINGS_SHARE
+
+    # Effective staff quality faced by each offense, on the FIP scale.
+    away_staff = s * away_starter + p * (away_pen * _LEAGUE_AVG_FIP / _LEAGUE_AVG_BULLPEN)
+    home_staff = s * home_starter + p * (home_pen * _LEAGUE_AVG_FIP / _LEAGUE_AVG_BULLPEN)
 
     home_runs = round(
         _BASE_RUNS
-        * (home_xfip / _LEAGUE_AVG_ERA)
-        * (home_ops  / _LEAGUE_AVG_OPS)
+        * _damped_ratio(away_staff, _LEAGUE_AVG_FIP, _PITCHING_ELASTICITY)
+        * _damped_ratio(home_ops, _LEAGUE_AVG_OPS, _HITTING_ELASTICITY)
         * park
         * _HOME_ADV,
         2,
     )
     away_runs = round(
         _BASE_RUNS
-        * (away_xfip / _LEAGUE_AVG_ERA)
-        * (away_ops  / _LEAGUE_AVG_OPS)
+        * _damped_ratio(home_staff, _LEAGUE_AVG_FIP, _PITCHING_ELASTICITY)
+        * _damped_ratio(away_ops, _LEAGUE_AVG_OPS, _HITTING_ELASTICITY)
         * park,
         2,
     )

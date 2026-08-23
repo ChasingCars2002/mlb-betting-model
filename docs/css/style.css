@@ -528,6 +528,7 @@ header .inner {
 .badge-pending { background: var(--neutral-bg); color: var(--text-2); }
 .badge-win     { background: var(--green-bg);   color: var(--green); }
 .badge-loss    { background: var(--red-bg);     color: var(--red);   }
+.badge-push    { background: var(--neutral-bg); color: var(--text-2); }
 
 /* Confidence (star rating) badge */
 .badge.conf-high { background: var(--green-bg);  color: var(--green); letter-spacing: .05em; }
@@ -712,6 +713,7 @@ tbody td:nth-child(10) { font-family: var(--font-mono); font-size: 12px; }
 tr.row-win  td:first-child { box-shadow: inset 4px 0 0 var(--green); }
 tr.row-loss td:first-child { box-shadow: inset 4px 0 0 var(--red); }
 tr.row-pending td:first-child { box-shadow: inset 4px 0 0 var(--border-strong); }
+tr.row-push    td:first-child { box-shadow: inset 4px 0 0 var(--text-3, var(--text-2)); }
 
 .profit-pos { color: var(--green); font-weight: 700; }
 .profit-neg { color: var(--red);   font-weight: 700; }

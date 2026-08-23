@@ -253,3 +253,143 @@ class TestFetchLiveOddsTotals:
         assert rec["under_odds"] is None
         # Moneyline still parsed.
         assert "home_odds" in rec
+
+
+# ---------------------------------------------------------------------------
+# match_odds_to_games — date scoping (regression)
+# ---------------------------------------------------------------------------
+
+class TestMatchOddsSeriesScoping:
+    """The-Odds-API returns every upcoming event, and MLB plays the same
+    matchup on consecutive days. Keying the lookup on (home, away) alone let
+    the LAST event in a series overwrite the earlier ones, so today's game
+    could be priced off tomorrow's line and tomorrow's starting pitcher.
+    """
+
+    def _odds(self, home, away, commence, home_odds=-110):
+        return {"home_team": home, "away_team": away,
+                "home_odds": home_odds, "away_odds": -110,
+                "commence_time": commence}
+
+    def _game(self, home, away, game_date):
+        return {"home_team": home, "away_team": away, "game_date": game_date}
+
+    def test_series_game_does_not_clobber_todays_line(self):
+        # A three-game series: only the 2026-04-02 game should match.
+        series = [
+            self._odds("NYY", "BOS", "2026-04-02T23:05:00Z", home_odds=-110),
+            self._odds("NYY", "BOS", "2026-04-03T23:05:00Z", home_odds=-200),
+            self._odds("NYY", "BOS", "2026-04-04T23:05:00Z", home_odds=+150),
+        ]
+        result = match_odds_to_games(series, [self._game("NYY", "BOS", "2026-04-02")])
+        assert len(result) == 1
+        assert result[0]["home_odds"] == -110
+
+    def test_matches_middle_game_of_series(self):
+        series = [
+            self._odds("NYY", "BOS", "2026-04-02T23:05:00Z", home_odds=-110),
+            self._odds("NYY", "BOS", "2026-04-03T23:05:00Z", home_odds=-200),
+        ]
+        result = match_odds_to_games(series, [self._game("NYY", "BOS", "2026-04-03")])
+        assert result[0]["home_odds"] == -200
+
+    def test_game_with_no_event_on_that_date_is_excluded(self):
+        odds = [self._odds("NYY", "BOS", "2026-04-05T23:05:00Z")]
+        result = match_odds_to_games(odds, [self._game("NYY", "BOS", "2026-04-02")])
+        assert result == []
+
+    def test_late_night_game_stays_on_its_eastern_date(self):
+        # 22:10 ET first pitch is 02:10Z the NEXT day. Bucketing on the raw UTC
+        # date would push it onto tomorrow's slate and drop the match.
+        odds = [self._odds("LAD", "SF", "2026-04-03T02:10:00Z")]
+        result = match_odds_to_games(odds, [self._game("LAD", "SF", "2026-04-02")])
+        assert len(result) == 1
+
+    def test_missing_commence_time_still_matches(self):
+        # Back-compat: an event with no usable commence_time falls back to a
+        # team-pair match rather than being silently dropped.
+        odds = [{"home_team": "NYY", "away_team": "BOS",
+                 "home_odds": -125, "away_odds": +105}]
+        result = match_odds_to_games(odds, [self._game("NYY", "BOS", "2026-04-02")])
+        assert len(result) == 1
+        assert result[0]["home_odds"] == -125
+
+    def test_doubleheader_resolves_to_first_game(self):
+        odds = [
+            self._odds("NYY", "BOS", "2026-04-02T21:05:00Z", home_odds=+120),
+            self._odds("NYY", "BOS", "2026-04-02T17:05:00Z", home_odds=-140),
+        ]
+        result = match_odds_to_games(odds, [self._game("NYY", "BOS", "2026-04-02")])
+        assert len(result) == 1
+        assert result[0]["home_odds"] == -140
+
+
+# ---------------------------------------------------------------------------
+# fetch_live_odds — totals must be bucketed by line (regression)
+# ---------------------------------------------------------------------------
+
+class TestTotalsLineBucketing:
+    """Prices are only meaningful attached to their own line. Averaging every
+    Over price across books posting 8.5 AND 9.0, then pairing the result with
+    the average line (8.75), produced a quote belonging to no real market.
+    """
+
+    def _book(self, name, line, over_price, under_price):
+        return {"key": name, "markets": [{"key": "totals", "outcomes": [
+            {"name": "Over", "price": over_price, "point": line},
+            {"name": "Under", "price": under_price, "point": line},
+        ]}]}
+
+    def _h2h(self, name):
+        return {"key": name, "markets": [{"key": "h2h", "outcomes": [
+            {"name": "New York Yankees", "price": -130},
+            {"name": "Boston Red Sox", "price": +110},
+        ]}]}
+
+    def _fetch(self, bookmakers):
+        event = {"home_team": "New York Yankees", "away_team": "Boston Red Sox",
+                 "commence_time": "2026-04-02T23:05:00Z", "bookmakers": bookmakers}
+        resp = MagicMock()
+        resp.json.return_value = [event]
+        resp.raise_for_status.return_value = None
+        with patch.object(odds_mod, "ODDS_API_KEY", "test-key"), \
+             patch.object(odds_mod.requests, "get", return_value=resp):
+            return fetch_live_odds()[0]
+
+    def test_consensus_line_is_the_most_posted_not_the_average(self):
+        rec = self._fetch([
+            self._h2h("a"),
+            self._book("a", 8.5, -110, -110),
+            self._book("b", 8.5, -105, -115),
+            self._book("c", 9.0, +100, -120),
+        ])
+        # Two books at 8.5, one at 9.0 → 8.5 wins. The old code averaged the
+        # points to 8.67 and rounded to 8.7, a line nobody offered.
+        assert rec["total_line"] == 8.5
+        assert rec["num_books_at_line"] == 2
+
+    def test_prices_come_only_from_the_consensus_line(self):
+        rec = self._fetch([
+            self._h2h("a"),
+            self._book("a", 8.5, -110, -110),
+            self._book("b", 8.5, -110, -110),
+            self._book("c", 9.0, +180, -220),  # far-off line, extreme prices
+        ])
+        # The 9.0 book's prices must not leak into the 8.5 quote.
+        assert rec["over_odds"] == -110
+        assert rec["under_odds"] == -110
+
+    def test_one_sided_line_is_ignored(self):
+        rec = self._fetch([
+            self._h2h("a"),
+            {"key": "b", "markets": [{"key": "totals", "outcomes": [
+                {"name": "Over", "price": -110, "point": 9.5},
+            ]}]},
+            self._book("c", 8.5, -105, -115),
+        ])
+        assert rec["total_line"] == 8.5
+
+    def test_no_totals_market_leaves_fields_none(self):
+        rec = self._fetch([self._h2h("a")])
+        assert rec["total_line"] is None
+        assert rec["over_odds"] is None

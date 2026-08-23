@@ -77,10 +77,13 @@ def fetch_live_odds() -> list[dict]:
         # Averaging American odds directly is nonlinear — go through prob space instead.
         home_probs = []
         away_probs = []
-        # Totals market: over/under prices (prob space) and the posted line (points).
-        over_probs = []
-        under_probs = []
-        total_points = []
+        # Totals market: over/under prices bucketed BY LINE. Books post
+        # different totals for the same game (8.5 here, 9.0 there), and a price
+        # is only meaningful attached to its own line. Averaging every Over
+        # price together and pairing it with the average line — the old
+        # behaviour — produced a quote that belonged to no real market and
+        # systematically mispriced the O/U edge.
+        totals_by_line: dict[float, dict[str, list[float]]] = {}
 
         for bookmaker in event.get("bookmakers", []):
             for market in bookmaker.get("markets", []):
@@ -94,12 +97,13 @@ def fetch_live_odds() -> list[dict]:
                 elif key == "totals":
                     for outcome in market.get("outcomes", []):
                         point = outcome.get("point")
-                        if outcome["name"] == "Over":
-                            over_probs.append(american_to_implied_prob(outcome["price"]))
-                            if point is not None:
-                                total_points.append(point)
-                        elif outcome["name"] == "Under":
-                            under_probs.append(american_to_implied_prob(outcome["price"]))
+                        side = outcome.get("name")
+                        if point is None or side not in ("Over", "Under"):
+                            continue
+                        bucket = totals_by_line.setdefault(
+                            float(point), {"Over": [], "Under": []}
+                        )
+                        bucket[side].append(american_to_implied_prob(outcome["price"]))
 
         if not home_probs or not away_probs:
             continue
@@ -122,11 +126,24 @@ def fetch_live_odds() -> list[dict]:
             "total_line": None,
         }
 
-        # Consensus totals market (only if a book offered an O/U line).
-        if over_probs and under_probs and total_points:
-            record["over_odds"] = implied_prob_to_american(sum(over_probs) / len(over_probs))
-            record["under_odds"] = implied_prob_to_american(sum(under_probs) / len(under_probs))
-            record["total_line"] = round(sum(total_points) / len(total_points), 1)
+        # Consensus totals market: use the most widely posted line (the market
+        # consensus), and average only the prices quoted at that same line.
+        priced = {
+            line: sides for line, sides in totals_by_line.items()
+            if sides["Over"] and sides["Under"]
+        }
+        if priced:
+            # Most books first; ties broken by the lower line for determinism.
+            consensus_line = min(
+                priced, key=lambda ln: (-len(priced[ln]["Over"]), ln)
+            )
+            sides = priced[consensus_line]
+            record["over_odds"] = implied_prob_to_american(
+                sum(sides["Over"]) / len(sides["Over"]))
+            record["under_odds"] = implied_prob_to_american(
+                sum(sides["Under"]) / len(sides["Under"]))
+            record["total_line"] = consensus_line
+            record["num_books_at_line"] = len(sides["Over"])
 
         odds_list.append(record)
 
@@ -195,28 +212,66 @@ def american_to_decimal(odds: int) -> float:
         return (100.0 / abs(odds)) + 1.0
 
 
+def commence_date(commence_time: str) -> Optional[str]:
+    """Local (US/Eastern) calendar date for an event's UTC commence_time.
+
+    The-Odds-API stamps commence_time in UTC, so a 7pm ET first pitch is
+    23:00Z or (for late games) the following day in UTC. Bucketing by the raw
+    UTC date would push every night game onto tomorrow's slate, so convert to
+    Eastern — the calendar MLB schedules against — before taking the date.
+    """
+    if not commence_time:
+        return None
+    try:
+        from datetime import datetime, timezone, timedelta
+        ts = datetime.fromisoformat(commence_time.replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        # Fixed -04:00 (EDT) covers the entire MLB regular season.
+        return (ts.astimezone(timezone(timedelta(hours=-4)))).date().isoformat()
+    except (ValueError, TypeError):
+        return None
+
+
 def match_odds_to_games(odds: list[dict], games: list[dict]) -> list[dict]:
     """Match fetched odds to today's game slate.
+
+    Odds are keyed by (home_team, away_team, commence_date). The-Odds-API
+    returns every upcoming event, not just today's, and MLB teams play the same
+    matchup on 3-4 consecutive days. Keying on the team pair alone (the old
+    behaviour) let the LAST event for a matchup win the dict slot, so today's
+    game could silently be priced off a future game in the same series — a
+    different starting pitcher, a different line. Including the date makes the
+    match exact, and events on other dates are ignored rather than substituted.
 
     Returns the games list enriched with odds data. Games without matching
     odds are excluded.
     """
-    odds_lookup = {}
+    odds_lookup: dict[tuple, dict] = {}
     for o in odds:
-        key = (o["home_team"], o["away_team"])
-        odds_lookup[key] = o
+        d = commence_date(o.get("commence_time", ""))
+        key = (o["home_team"], o["away_team"], d)
+        # Keep the earliest-starting event for a given matchup/date so a
+        # doubleheader resolves to game 1 rather than an arbitrary one.
+        prior = odds_lookup.get(key)
+        if prior is None or (o.get("commence_time") or "") < (prior.get("commence_time") or ""):
+            odds_lookup[key] = o
+
+    # Fallback index for events whose commence_time is missing or unparseable.
+    undated = {(o["home_team"], o["away_team"]): o
+               for o in odds if commence_date(o.get("commence_time", "")) is None}
 
     matched = []
     for game in games:
-        key = (game["home_team"], game["away_team"])
-        if key in odds_lookup:
-            game_with_odds = {**game, **odds_lookup[key]}
-            matched.append(game_with_odds)
+        pair = (game["home_team"], game["away_team"])
+        entry = odds_lookup.get((*pair, game["game_date"])) or undated.get(pair)
+        if entry is not None:
+            matched.append({**game, **entry})
         else:
             available = list(odds_lookup.keys())[:8]
             logger.warning(
-                "No odds found for %s @ %s — available keys (first 8): %s",
-                game["away_team"], game["home_team"], available,
+                "No odds found for %s @ %s on %s — available keys (first 8): %s",
+                game["away_team"], game["home_team"], game["game_date"], available,
             )
 
     logger.info("Matched odds for %d / %d games.", len(matched), len(games))

@@ -173,14 +173,40 @@ def update_blend_weight() -> Optional[dict]:
     market_loss = round(_blend_log_loss(1.0, model, market, y), 5)
     default_loss = round(_blend_log_loss(MARKET_BLEND_WEIGHT, model, market, y), 5)
 
+    # Health checks. The grid is clamped to BLEND_WEIGHT_MAX, so a weight that
+    # lands exactly on the ceiling means the unconstrained optimum is "ignore
+    # the model entirely" — the search was cut off, not satisfied. And if the
+    # best blend cannot beat pure market, the model is contributing negative
+    # information and no amount of blending will make it +EV. Both conditions
+    # were previously invisible: the state file just showed a plausible-looking
+    # weight and the pipeline carried on emitting (or silently not emitting) picks.
+    at_ceiling = best_weight >= BLEND_WEIGHT_MAX - 1e-9
+    adds_value = best_loss < market_loss
+
     state = {
         "weight": best_weight,
         "n_games": n,
         "log_loss": best_loss,
         "default_weight_log_loss": default_loss,
         "pure_market_log_loss": market_loss,
+        "weight_at_ceiling": at_ceiling,
+        "model_adds_value": adds_value,
         "updated_at": datetime.utcnow().isoformat() + "Z",
     }
+
+    if not adds_value:
+        logger.error(
+            "MODEL HEALTH: blending cannot beat the market (best log loss %.5f "
+            "vs %.5f pure market on %d games). The model is adding no "
+            "information — retrain before betting it.",
+            best_loss, market_loss, n,
+        )
+    elif at_ceiling:
+        logger.warning(
+            "MODEL HEALTH: learned blend weight is pinned at the %.2f ceiling; "
+            "the unconstrained optimum is to trust the market even more.",
+            BLEND_WEIGHT_MAX,
+        )
     BLEND_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
     BLEND_STATE_PATH.write_text(json.dumps(state, indent=2))
     _invalidate_cache()
