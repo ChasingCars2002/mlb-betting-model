@@ -4,7 +4,7 @@
     "wins": 382,
     "losses": 404,
     "pushes": 0,
-    "pending": 9,
+    "pending": 13,
     "total_units_wagered": 873.54,
     "total_profit": 8.86,
     "roi_pct": 1.01,
@@ -17,7 +17,7 @@
     "wins": 382,
     "losses": 404,
     "pushes": 0,
-    "pending": 9,
+    "pending": 13,
     "total_units_wagered": 873.54,
     "total_profit": 8.86,
     "roi_pct": 1.01,
@@ -57,7 +57,7 @@
         "wins": 217,
         "losses": 213,
         "pushes": 0,
-        "pending": 5,
+        "pending": 9,
         "total_units_wagered": 397.01,
         "total_profit": -10.01,
         "roi_pct": -2.52,
@@ -69,7 +69,7 @@
         "wins": 217,
         "losses": 213,
         "pushes": 0,
-        "pending": 5,
+        "pending": 9,
         "total_units_wagered": 397.01,
         "total_profit": -10.01,
         "roi_pct": -2.52,
@@ -98,5 +98,5 @@
       "reachable": true
     }
   },
-  "last_updated": "2026-08-24T12:26:25.757136Z"
+  "last_updated": "2026-08-24T12:27:27.506230Z"
 }
