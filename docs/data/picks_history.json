@@ -11,9 +11,9 @@
     "ev": 0.1106,
     "units": 0.83,
     "odds": -115,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Loss",
+    "result": "Under",
+    "profit": -0.83,
     "home_pitcher": "Troy Melton",
     "away_pitcher": "Freddy Peralta",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 1.38,
     "confidence": 2.0,
     "raw_model_prob": 0.6772,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 0.0,
+    "actual_away_score": 3.0,
+    "actual_total": 3.0
   },
   {
     "date": "2026-08-26",
@@ -40,9 +40,9 @@
     "ev": 0.1122,
     "units": 0.76,
     "odds": -104,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.7308,
     "home_pitcher": "Matt Waldron",
     "away_pitcher": "Tanner Gordon",
     "bet_type": "totals",
@@ -53,9 +53,9 @@
     "total_delta": 1.14,
     "confidence": 2.0,
     "raw_model_prob": 0.648,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 1.0,
+    "actual_away_score": 13.0,
+    "actual_total": 14.0
   },
   {
     "date": "2026-08-26",
@@ -69,9 +69,9 @@
     "ev": 0.1251,
     "units": 0.81,
     "odds": 100,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Loss",
+    "result": "Over",
+    "profit": -0.81,
     "home_pitcher": "J.T. Ginn",
     "away_pitcher": "Connor Prielipp",
     "bet_type": "totals",
@@ -82,9 +82,9 @@
     "total_delta": -1.13,
     "confidence": 2.0,
     "raw_model_prob": 0.6468,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 7.0,
+    "actual_away_score": 4.0,
+    "actual_total": 11.0
   },
   {
     "date": "2026-08-26",
@@ -98,9 +98,9 @@
     "ev": 0.1585,
     "units": 1.22,
     "odds": -118,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Loss",
+    "result": "Under",
+    "profit": -1.22,
     "home_pitcher": "Eduardo Rodriguez",
     "away_pitcher": "Matthew Boyd",
     "bet_type": "totals",
@@ -111,9 +111,9 @@
     "total_delta": 1.9,
     "confidence": 3.0,
     "raw_model_prob": 0.7367,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 2.0,
+    "actual_away_score": 0.0,
+    "actual_total": 2.0
   },
   {
     "date": "2026-08-25",
