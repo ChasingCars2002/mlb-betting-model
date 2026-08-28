@@ -96,26 +96,33 @@ def get_blend_weight() -> float:
 
 
 def log_model_predictions(games_with_odds: list[dict]) -> int:
-    """Persist raw model prob + no-vig market prob for every game with odds.
+    """Persist the model's raw view of every game with odds, for both markets.
 
     Called from the daily prediction run AFTER odds are matched but BEFORE pick
-    filtering, so the log covers the full slate (no adverse selection).
+    filtering, so the log covers the full slate (no adverse selection). Also
+    records the run projection against the posted total for the same reason —
+    see totals_calibration.
     Returns the number of games logged.
     """
     from database import save_model_log
     from odds import devig_two_way
+    from totals_calibration import get_level_adjust
 
     rows = []
     for g in games_with_odds:
         model_prob = g.get("model_prob")
-        if model_prob is None or model_prob == 0.5:
-            # 0.5 is the "features unavailable" fallback — not a real prediction,
-            # and including it would drag the fit toward pure market.
+        if model_prob is None:
             continue
         try:
             home_novig, _ = devig_two_way(g["home_odds"], g["away_odds"])
         except (KeyError, ZeroDivisionError):
             continue
+        # A model_prob of exactly 0.5 is the "features unavailable" fallback
+        # rather than a prediction, and get_graded_model_log() excludes it from
+        # the moneyline fit. The row is still written: the same game usually
+        # carries a usable run projection, and the totals fit needs the full
+        # slate to stay unselected.
+        predicted_total = g.get("predicted_total")
         rows.append({
             "date": g["game_date"],
             "home_team": g["home_team"],
@@ -125,6 +132,18 @@ def log_model_predictions(games_with_odds: list[dict]) -> int:
             "home_odds": g.get("home_odds"),
             "away_odds": g.get("away_odds"),
             "model_name": g.get("model_name", "xgboost"),
+            "predicted_total": (round(float(predicted_total), 2)
+                                if predicted_total is not None else None),
+            # predicted_total already has the learned level correction
+            # subtracted (score.predict_game_scores applies it). Record which
+            # correction that was, so the next refit can reconstruct the raw
+            # projection instead of re-measuring and re-subtracting a bias it
+            # has already removed.
+            "level_adjust_applied": (get_level_adjust()
+                                     if predicted_total is not None else None),
+            "market_total": g.get("total_line"),
+            "over_odds": g.get("over_odds"),
+            "under_odds": g.get("under_odds"),
         })
 
     if rows:

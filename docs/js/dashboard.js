@@ -147,6 +147,22 @@ function evBadge(ev) {
 function renderModelStatus(model) {
   const el = $('model-status');
   if (!el || !model || model.blend_weight == null) return;
+
+  // A closed market outranks the blend percentage: if nothing is being bet,
+  // that is the status, and burying it under "self-tuned" reads as business
+  // as usual.
+  const closed = [
+    [model.moneyline_gate, 'Moneyline'],
+    [model.totals_gate, 'Totals'],
+  ].filter(([g]) => g && !g.bettable);
+  if (closed.length) {
+    el.innerHTML = closed.map(([g, name]) =>
+      `<span class="tuned">${name} paused</span> — ${g.detail || 'no measured edge over the market.'}`
+    ).join('<br>');
+    el.style.display = 'block';
+    return;
+  }
+
   const w = (model.blend_weight * 100).toFixed(0);
   let text;
   if (model.self_tuned) {
@@ -286,10 +302,30 @@ function pitchersLine(p) {
     : '';
 }
 
+// ── Market gate ────────────────────────────────────────────────────────────
+// A market only produces picks while the model has been measured beating the
+// market at the thing the bet depends on. When it hasn't, the slate is empty
+// for a reason, and "check back later today" is the wrong thing to say — no
+// picks are coming until the gate reopens. Render the reason instead.
+function gateEmptyState(gate, marketName) {
+  if (!gate || gate.bettable) return null;
+  const titles = {
+    no_calibration: `${marketName} betting is paused — still calibrating`,
+    no_edge:        `${marketName} betting is paused — no measured edge`,
+    unreachable:    `${marketName} betting is paused — edge gate unreachable`,
+  };
+  const title = titles[gate.reason] || `${marketName} betting is paused`;
+  const desc  = gate.detail
+    ? `${gate.detail} No ${marketName.toLowerCase()} picks will post until that changes.`
+    : `No ${marketName.toLowerCase()} picks will post until that changes.`;
+  return emptyState(title, desc);
+}
+
 // ── Today's moneyline picks ────────────────────────────────────────────────
 function renderTodayPicks() {
   if (!todayPicks || todayPicks.length === 0) {
-    setHTML('today-picks', emptyState('No moneyline slate locked yet',
+    const gated = gateEmptyState(statsData.model && statsData.model.moneyline_gate, 'Moneyline');
+    setHTML('today-picks', gated || emptyState('No moneyline slate locked yet',
       'Picks post after the morning model run. Check back later today.'));
     return;
   }
@@ -329,7 +365,8 @@ function renderTodayPicks() {
 // ── Today's totals (Over/Under) picks ──────────────────────────────────────
 function renderTodayTotals() {
   if (!todayTotals || todayTotals.length === 0) {
-    setHTML('today-totals', emptyState('No totals slate locked yet',
+    const gated = gateEmptyState(statsData.model && statsData.model.totals_gate, 'Totals');
+    setHTML('today-totals', gated || emptyState('No totals slate locked yet',
       'Over/under picks post after the morning model run. Check back later today.'));
     return;
   }

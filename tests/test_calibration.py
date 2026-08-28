@@ -99,16 +99,50 @@ class TestModelLog:
 # ---------------------------------------------------------------------------
 
 class TestLogModelPredictions:
-    def test_logs_full_slate_and_skips_fallback_probs(self, tmp_db):
+    def test_logs_full_slate_including_fallback_probs(self, tmp_db):
+        """The 0.5 fallback is logged but excluded from the moneyline fit.
+
+        It is not a win prediction, so it must not reach update_blend_weight().
+        But the same game still carries a usable run projection, and the totals
+        fit needs the slate unselected — so the row is written and filtered on
+        read instead of being dropped at write time.
+        """
         games = [
             {"game_date": "2026-06-01", "home_team": "NYY", "away_team": "BOS",
              "model_prob": 0.61, "home_odds": -130, "away_odds": 110},
-            # 0.5 is the "features unavailable" fallback — must be excluded
+            # 0.5 is the "features unavailable" fallback
             {"game_date": "2026-06-01", "home_team": "LAD", "away_team": "SF",
-             "model_prob": 0.5, "home_odds": -150, "away_odds": 130},
+             "model_prob": 0.5, "home_odds": -150, "away_odds": 130,
+             "predicted_total": 8.4, "total_line": 8.5,
+             "over_odds": -110, "under_odds": -110},
         ]
         n = calibration.log_model_predictions(games)
-        assert n == 1
+        assert n == 2
+
+        with database.get_connection() as conn:
+            conn.execute("UPDATE model_log SET home_win = 1, actual_total = 9")
+        # The fallback row is out of the moneyline fit...
+        fit_rows = database.get_graded_model_log()
+        assert [r["raw_model_prob"] for r in fit_rows] == [0.61]
+        # ...but present in the totals fit, which is what it was kept for.
+        totals_rows = database.get_graded_totals_log()
+        assert len(totals_rows) == 1
+        assert totals_rows[0]["predicted_total"] == 8.4
+
+    def test_logs_totals_side_of_the_slate(self, tmp_db):
+        games = [{"game_date": "2026-06-01", "home_team": "NYY", "away_team": "BOS",
+                  "model_prob": 0.61, "home_odds": -130, "away_odds": 110,
+                  "predicted_total": 9.13, "total_line": 8.5,
+                  "over_odds": -105, "under_odds": -115}]
+        calibration.log_model_predictions(games)
+        with database.get_connection() as conn:
+            row = conn.execute(
+                "SELECT predicted_total, market_total, over_odds, under_odds "
+                "FROM model_log").fetchone()
+        assert row["predicted_total"] == pytest.approx(9.13)
+        assert row["market_total"] == pytest.approx(8.5)
+        assert row["over_odds"] == -105
+        assert row["under_odds"] == -115
 
     def test_market_prob_is_devigged(self, tmp_db):
         games = [{"game_date": "2026-06-01", "home_team": "NYY", "away_team": "BOS",

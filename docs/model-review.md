@@ -1,5 +1,12 @@
 # Model performance review — 2026-08-16
 
+> **Superseded in part.** See [`model-review-2026-08-28.md`](model-review-2026-08-28.md).
+> The totals fix in section 5 below realigned the projection's level by hand and
+> overshot: picks flipped from 70% Unders to 92% Overs and August lost 19% ROI.
+> Item D of the recommended work ("fit the totals model against real residuals")
+> is now done, and the level is fit from data rather than set by constant.
+> Items A, B, C, E and F remain outstanding and unchanged.
+
 Diagnostic review of the MLB betting model after a stretch of poor results.
 Every number below is measured from `mlb_bets.db` (804 logged games, 768 graded
 picks) and the persisted model artifacts in `models/`, not estimated.

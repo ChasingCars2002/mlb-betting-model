@@ -5,7 +5,7 @@
     "losses": 414,
     "pushes": 0,
     "pending": 14,
-    "total_units_wagered": 884.9,
+    "total_units_wagered": 884.9000000000001,
     "total_profit": 5.64,
     "roi_pct": 0.64,
     "brier_score": 0.2555,
@@ -18,7 +18,7 @@
     "losses": 414,
     "pushes": 0,
     "pending": 14,
-    "total_units_wagered": 884.9,
+    "total_units_wagered": 884.9000000000001,
     "total_profit": 5.64,
     "roi_pct": 0.64,
     "brier_score": 0.2555,
@@ -32,7 +32,7 @@
         "losses": 191,
         "pushes": 0,
         "pending": 4,
-        "total_units_wagered": 476.53,
+        "total_units_wagered": 476.5299999999999,
         "total_profit": 18.87,
         "roi_pct": 3.96,
         "brier_score": 0.2502,
@@ -44,7 +44,7 @@
         "losses": 191,
         "pushes": 0,
         "pending": 4,
-        "total_units_wagered": 476.53,
+        "total_units_wagered": 476.5299999999999,
         "total_profit": 18.87,
         "roi_pct": 3.96,
         "brier_score": 0.2502,
@@ -58,7 +58,7 @@
         "losses": 223,
         "pushes": 0,
         "pending": 10,
-        "total_units_wagered": 408.37,
+        "total_units_wagered": 408.36999999999983,
         "total_profit": -13.23,
         "roi_pct": -3.24,
         "brier_score": 0.2597,
@@ -70,7 +70,7 @@
         "losses": 223,
         "pushes": 0,
         "pending": 10,
-        "total_units_wagered": 408.37,
+        "total_units_wagered": 408.36999999999983,
         "total_profit": -13.23,
         "roi_pct": -3.24,
         "brier_score": 0.2597,
@@ -96,7 +96,34 @@
       "max_achievable_edge": 0.15,
       "required_edge": 0.05,
       "reachable": true
+    },
+    "moneyline_gate": {
+      "bettable": false,
+      "reason": "no_edge",
+      "gate_enforced": true,
+      "n_games": 910,
+      "n_required": 150,
+      "edge_band": {
+        "weight": 0.95,
+        "max_achievable_edge": 0.0075,
+        "required_edge": 0.05,
+        "reachable": false
+      },
+      "detail": "Best blended log loss 0.67952 vs 0.67907 pure market on 910 graded games \u2014 the classifier is subtracting information, not adding it."
+    },
+    "totals_gate": {
+      "bettable": false,
+      "reason": "no_calibration",
+      "gate_enforced": true,
+      "n_games": 0,
+      "n_required": 200,
+      "detail": "0 of 200 graded full-slate games needed before the totals model can be tested against the line."
+    },
+    "totals_calibration": {
+      "n_games": 0,
+      "fitted": false,
+      "updated_at": "2026-08-28T01:32:41.260201Z"
     }
   },
-  "last_updated": "2026-08-28T00:22:02.181960Z"
+  "last_updated": "2026-08-28T01:32:56.867410Z"
 }

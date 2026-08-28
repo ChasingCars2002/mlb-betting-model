@@ -37,7 +37,7 @@ def _damped_ratio(value: float, league_avg: float, elasticity: float) -> float:
     return 1.0 + elasticity * ((value / league_avg) - 1.0)
 
 
-def predict_game_scores(features: dict) -> dict:
+def predict_game_scores(features: dict, level_adjust: float | None = None) -> dict:
     """Estimate expected runs for home and away teams from game features.
 
     Runs allowed by a team are driven by that team's starting pitcher and its
@@ -46,8 +46,24 @@ def predict_game_scores(features: dict) -> dict:
     BOTH teams — they hit in the same stadium — so e.g. Coors boosts the
     visitors' scoring too.
 
+    The reference constants above set the projection's *level*, and twice now
+    hand-tuning them has moved that level past the truth and out the other side:
+    an 0.89x scale error made 67% of picks Unders, and correcting it by hand
+    made 92% of picks Overs. So the level is no longer trusted to the constants.
+    ``level_adjust`` — runs to subtract, learned by totals_calibration from the
+    residuals of the graded full slate — carries it instead, and is 0.0 until
+    there is enough data to measure it. Pass it explicitly to keep this function
+    pure; None reads the learned value.
+
+    The subtraction is split evenly between the two teams: the residuals it is
+    fit on are game totals, which say nothing about how a level error divides
+    between the sides.
+
     Returns keys: predicted_home_score, predicted_away_score, predicted_total.
     """
+    if level_adjust is None:
+        from totals_calibration import get_level_adjust
+        level_adjust = get_level_adjust()
     # The home team scores against the AWAY staff, and vice versa.
     away_starter = features.get("away_p_xFIP_season") or _LEAGUE_AVG_FIP
     home_starter = features.get("home_p_xFIP_season") or _LEAGUE_AVG_FIP
@@ -63,21 +79,25 @@ def predict_game_scores(features: dict) -> dict:
     away_staff = s * away_starter + p * (away_pen * _LEAGUE_AVG_FIP / _LEAGUE_AVG_BULLPEN)
     home_staff = s * home_starter + p * (home_pen * _LEAGUE_AVG_FIP / _LEAGUE_AVG_BULLPEN)
 
-    home_runs = round(
+    half_adjust = level_adjust / 2.0
+    home_runs = (
         _BASE_RUNS
         * _damped_ratio(away_staff, _LEAGUE_AVG_FIP, _PITCHING_ELASTICITY)
         * _damped_ratio(home_ops, _LEAGUE_AVG_OPS, _HITTING_ELASTICITY)
         * park
-        * _HOME_ADV,
-        2,
-    )
-    away_runs = round(
+        * _HOME_ADV
+    ) - half_adjust
+    away_runs = (
         _BASE_RUNS
         * _damped_ratio(home_staff, _LEAGUE_AVG_FIP, _PITCHING_ELASTICITY)
         * _damped_ratio(away_ops, _LEAGUE_AVG_OPS, _HITTING_ELASTICITY)
-        * park,
-        2,
-    )
+        * park
+    ) - half_adjust
+
+    # A team cannot score a negative number of runs; a large downward correction
+    # on an already-low projection must not produce one.
+    home_runs = round(max(0.0, home_runs), 2)
+    away_runs = round(max(0.0, away_runs), 2)
 
     return {
         "predicted_home_score": home_runs,
