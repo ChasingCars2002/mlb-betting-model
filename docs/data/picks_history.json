@@ -11,9 +11,9 @@
     "ev": 0.1144,
     "units": 0.77,
     "odds": -104,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Loss",
+    "result": "Under",
+    "profit": -0.77,
     "home_pitcher": "Chris Sale",
     "away_pitcher": "Yoshinobu Yamamoto",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 1.15,
     "confidence": 2.0,
     "raw_model_prob": 0.6493,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 1.0,
+    "actual_away_score": 0.0,
+    "actual_total": 1.0
   },
   {
     "date": "2026-08-26",
