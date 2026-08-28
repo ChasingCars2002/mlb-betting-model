@@ -728,6 +728,7 @@ def get_yesterdays_results(target_date: Optional[date] = None) -> dict[str, dict
     )
 
     results = {}
+    collisions = []
     for game_date in data.get("dates", []):
         for g in game_date.get("games", []):
             if g.get("status", {}).get("codedGameState") != "F":
@@ -741,11 +742,29 @@ def get_yesterdays_results(target_date: Optional[date] = None) -> dict[str, dict
             away_score = away.get("score", 0)
 
             key = f"{away_abbrev} @ {home_abbrev}"
+            # Doubleheaders put two final games under the same key. Predictions
+            # carry no game number, so they cannot be told apart here — but
+            # last-write-wins silently graded game 1's pick against game 2's
+            # score. Keep the first (game 1, the order the schedule returns) so
+            # the mapping is at least deterministic, and say that it happened.
+            if key in results:
+                collisions.append(key)
+                continue
+
             results[key] = {
                 "home_score": home_score,
                 "away_score": away_score,
                 "winner": home_abbrev if home_score > away_score else away_abbrev,
+                "game_number": g.get("gameNumber", 1),
             }
+
+    if collisions:
+        logger.warning(
+            "%s: %d doubleheader matchup(s) returned multiple final games (%s). "
+            "Graded against game 1; picks do not record which game they were "
+            "for, so the second game's result is unused.",
+            date_str, len(collisions), ", ".join(sorted(set(collisions))),
+        )
 
     logger.info("Fetched %d game results for %s.", len(results), date_str)
     return results

@@ -8,13 +8,13 @@ from config import (
     KELLY_SCALE,
     MIN_BET_UNITS,
     MAX_BET_UNITS,
-    MARKET_BLEND_WEIGHT,
     MAX_RAW_DISAGREEMENT,
-    TOTALS_SIGMA,
     TOTALS_MAX_DISAGREEMENT,
+    REQUIRE_MEASURED_EDGE,
 )
 from odds import american_to_implied_prob, american_to_decimal, devig_two_way
 import calibration
+import totals_calibration
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +116,20 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
         List of +EV pick dicts ready for database storage.
     """
     picks = []
+
+    # Same gate as totals, on the metric a moneyline bet actually depends on.
+    # This market has emitted nothing since 2026-06-22 — not by decision, but
+    # because the learned blend weight rose until (1 - weight) * cap fell below
+    # EV_THRESHOLD and the filter became arithmetically unsatisfiable. Zero
+    # picks was the right answer arriving for the wrong reason, and silently.
+    gate = moneyline_edge_status()
+    if not gate["bettable"]:
+        logger.error(
+            "MONEYLINE SUPPRESSED (%s): %s No moneyline picks will be emitted.",
+            gate["reason"], gate["detail"],
+        )
+        return picks
+
     blend_weight = calibration.get_blend_weight()
 
     for game in games_with_predictions:
@@ -184,13 +198,23 @@ def filter_positive_ev(games_with_predictions: list[dict]) -> list[dict]:
 
 
 def total_over_probability(predicted_total: float, line: float,
-                           sigma: float = TOTALS_SIGMA) -> float:
+                           sigma: float | None = None) -> float:
     """Probability the game total finishes Over `line`, per the score model.
 
     Treats the actual total as Normal(predicted_total, sigma) and returns
     P(total > line) = 1 - Phi((line - predicted_total) / sigma). Uses math.erf
     so there is no scipy/numpy dependency.
+
+    sigma defaults to the learned residual SD (totals_calibration), falling back
+    to config.TOTALS_SIGMA before there is a fit. It is the single most
+    leveraged number in totals pricing: the edge scales with how far
+    P(Over) sits from the market, and understating sigma moves it further out on
+    every game at once. The old hard-coded 3.0 was ~40% below the measured
+    residual SD, which is how a model with no demonstrated skill still cleared a
+    5% edge gate four to eight times a day.
     """
+    if sigma is None:
+        sigma = totals_calibration.get_totals_sigma()
     if sigma <= 0:
         return 1.0 if predicted_total > line else 0.0
     z = (line - predicted_total) / sigma
@@ -209,6 +233,20 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
     """
     picks = []
 
+    # A totals bet claims the projection is closer to the truth than the line.
+    # When that has not been measured, or has been measured false, there is no
+    # bet to make — emitting picks anyway just pays vig on noise.
+    gate = totals_calibration.totals_edge_status()
+    if not gate["bettable"]:
+        logger.error(
+            "TOTALS SUPPRESSED (%s): %s No totals picks will be emitted.",
+            gate["reason"], gate["detail"],
+        )
+        return picks
+
+    blend_weight = totals_calibration.get_totals_blend_weight()
+    sigma = totals_calibration.get_totals_sigma()
+
     for game in games_with_odds:
         line = game.get("total_line")
         over_odds = game.get("over_odds")
@@ -217,14 +255,15 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
         if line is None or over_odds is None or under_odds is None or predicted_total is None:
             continue
 
-        model_over = total_over_probability(predicted_total, line)
+        model_over = total_over_probability(predicted_total, line, sigma=sigma)
         model_under = 1.0 - model_over
 
         over_novig, under_novig = devig_two_way(over_odds, under_odds)
-        # Totals use the static blend weight: the self-tuned weight is learned
-        # from the moneyline classifier's track record and doesn't transfer to
-        # the analytical score model.
-        blended_over = blend_with_market(model_over, over_novig, weight=MARKET_BLEND_WEIGHT)
+        # Totals get their OWN learned blend weight. The moneyline weight is fit
+        # on a gradient-boosted win classifier and says nothing about an
+        # analytical run projection; before totals_calibration existed this fell
+        # back to the static default with no feedback loop at all.
+        blended_over = blend_with_market(model_over, over_novig, weight=blend_weight)
         blended_under = 1.0 - blended_over
 
         delta = round(predicted_total - line, 2)
@@ -280,7 +319,10 @@ def filter_totals_ev(games_with_odds: list[dict]) -> list[dict]:
             })
 
     picks.sort(key=lambda x: x["ev"], reverse=True)
-    logger.info("Found %d +EV totals picks from %d games.", len(picks), len(games_with_odds))
+    logger.info(
+        "Found %d +EV totals picks from %d games (sigma %.2f, blend weight %.2f).",
+        len(picks), len(games_with_odds), sigma, blend_weight,
+    )
     return picks
 
 
@@ -322,6 +364,81 @@ def compute_confidence(edge: float, ev: float,
     if frac <= 0:
         return 1
     return min(5, 1 + int(frac * 5))
+
+
+def moneyline_edge_status() -> dict:
+    """Whether moneyline may be bet right now, and why.
+
+    Mirrors totals_calibration.totals_edge_status(). ``reason`` is one of:
+
+      no_calibration  not enough graded games to have tested the classifier
+      no_edge         tested, and blending it cannot beat the pure market
+      unreachable     the model is fine but the edge gate is unsatisfiable at
+                      the current blend weight (see edge_band)
+      ok              tested, and the model adds information
+    """
+    state = calibration.get_blend_state() or {}
+    band = edge_band()
+
+    if not calibration.is_self_tuned() or not state:
+        n = state.get("n_games", 0)
+        return {
+            "bettable": not REQUIRE_MEASURED_EDGE,
+            "reason": "no_calibration",
+            "gate_enforced": REQUIRE_MEASURED_EDGE,
+            "n_games": n,
+            "n_required": calibration.MIN_CALIBRATION_GAMES,
+            "edge_band": band,
+            "detail": (
+                f"{n} of {calibration.MIN_CALIBRATION_GAMES} graded games needed "
+                f"before the classifier can be tested against the market."
+            ),
+        }
+
+    if not state.get("model_adds_value", False):
+        return {
+            "bettable": not REQUIRE_MEASURED_EDGE,
+            "reason": "no_edge",
+            "gate_enforced": REQUIRE_MEASURED_EDGE,
+            "n_games": state.get("n_games", 0),
+            "n_required": calibration.MIN_CALIBRATION_GAMES,
+            "edge_band": band,
+            "detail": (
+                f"Best blended log loss {state.get('log_loss')} vs "
+                f"{state.get('pure_market_log_loss')} pure market on "
+                f"{state.get('n_games')} graded games — the classifier is "
+                f"subtracting information, not adding it."
+            ),
+        }
+
+    if not band["reachable"]:
+        return {
+            "bettable": False,
+            "reason": "unreachable",
+            "gate_enforced": REQUIRE_MEASURED_EDGE,
+            "n_games": state.get("n_games", 0),
+            "n_required": calibration.MIN_CALIBRATION_GAMES,
+            "edge_band": band,
+            "detail": (
+                f"At blend weight {band['weight']} no pick can exceed a "
+                f"{band['max_achievable_edge']:.2%} edge, against the "
+                f"{band['required_edge']:.2%} required to bet."
+            ),
+        }
+
+    return {
+        "bettable": True,
+        "reason": "ok",
+        "gate_enforced": REQUIRE_MEASURED_EDGE,
+        "n_games": state.get("n_games", 0),
+        "n_required": calibration.MIN_CALIBRATION_GAMES,
+        "edge_band": band,
+        "detail": (
+            f"Blended log loss {state.get('log_loss')} beats "
+            f"{state.get('pure_market_log_loss')} pure market on "
+            f"{state.get('n_games')} graded games."
+        ),
+    }
 
 
 def edge_band(max_disagreement: float = MAX_RAW_DISAGREEMENT,

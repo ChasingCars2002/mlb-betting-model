@@ -316,3 +316,65 @@ class TestGetTeamHittingSplitsMLB:
         with patch.object(data_mod, "_mlb_api_get", return_value={"teams": []}):
             h = get_team_hitting_splits("ZZZ", "L", season=2026)
         assert h == {"wrc_plus": 100.0, "ops": 0.740}
+
+
+# ---------------------------------------------------------------------------
+# get_yesterdays_results — doubleheaders
+# ---------------------------------------------------------------------------
+
+class TestYesterdaysResultsDoubleheaders:
+    """Two final games share one "AWAY @ HOME" key on a doubleheader date.
+
+    Predictions carry no game number, so the two cannot be told apart at
+    grading time. Last-write-wins silently graded game 1's pick against game
+    2's score; keeping the first at least makes the mapping deterministic and
+    logged.
+    """
+
+    @staticmethod
+    def _payload(*scores):
+        return {"dates": [{"games": [
+            {
+                "status": {"codedGameState": "F"},
+                "gameNumber": i + 1,
+                "teams": {
+                    "home": {"team": {"abbreviation": "NYY"}, "score": h},
+                    "away": {"team": {"abbreviation": "BOS"}, "score": a},
+                },
+            }
+            for i, (a, h) in enumerate(scores)
+        ]}]}
+
+    def test_keeps_the_first_final_game(self):
+        from datetime import date as _date
+        import data as data_mod
+
+        with patch.object(data_mod, "_mlb_api_get",
+                          return_value=self._payload((2, 5), (9, 1))):
+            results = data_mod.get_yesterdays_results(_date(2026, 7, 29))
+
+        assert set(results) == {"BOS @ NYY"}
+        assert results["BOS @ NYY"]["home_score"] == 5
+        assert results["BOS @ NYY"]["away_score"] == 2
+        assert results["BOS @ NYY"]["winner"] == "NYY"
+
+    def test_logs_the_collision(self, caplog):
+        from datetime import date as _date
+        import logging
+        import data as data_mod
+
+        with caplog.at_level(logging.WARNING), \
+                patch.object(data_mod, "_mlb_api_get",
+                             return_value=self._payload((2, 5), (9, 1))):
+            data_mod.get_yesterdays_results(_date(2026, 7, 29))
+
+        assert any("doubleheader" in r.message.lower() for r in caplog.records)
+
+    def test_single_games_are_unaffected(self):
+        from datetime import date as _date
+        import data as data_mod
+
+        with patch.object(data_mod, "_mlb_api_get",
+                          return_value=self._payload((2, 5))):
+            results = data_mod.get_yesterdays_results(_date(2026, 7, 29))
+        assert results["BOS @ NYY"]["home_score"] == 5

@@ -34,10 +34,16 @@ CREATE TABLE IF NOT EXISTS predictions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Raw model vs market probability for EVERY game with odds (not just picks).
--- Graded outcomes feed calibration.update_blend_weight(), which learns how
--- much to shrink the model toward the market. Logging the full slate avoids
--- the adverse-selection bias a picks-only sample would have.
+-- Raw model vs market for EVERY game with odds (not just picks), for BOTH
+-- markets: the win probability against the no-vig moneyline, and the projected
+-- total against the posted line. Graded outcomes feed
+-- calibration.update_blend_weight() and totals_calibration.update_totals_calibration().
+--
+-- Logging the full slate is the whole point. The `predictions` table only ever
+-- holds games the filter chose to bet, which is a sample selected on the
+-- model's own disagreement with the market -- fitting sigma, the level
+-- correction, or a skill test on it would bake that selection straight into the
+-- estimate. Everything with a price gets logged here whether or not it is bet.
 CREATE TABLE IF NOT EXISTS model_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
@@ -49,6 +55,11 @@ CREATE TABLE IF NOT EXISTS model_log (
     away_odds INTEGER,
     model_name TEXT,
     home_win INTEGER,
+    predicted_total REAL,
+    market_total REAL,
+    over_odds INTEGER,
+    under_odds INTEGER,
+    actual_total REAL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(date, home_team, away_team)
 );
@@ -92,6 +103,22 @@ def _migrate_db(conn: sqlite3.Connection):
         if col not in existing:
             conn.execute(f"ALTER TABLE predictions ADD COLUMN {col} {col_type}")
             logger.info("Migration: added column '%s' to predictions.", col)
+
+    # model_log gained the totals side of the slate: the projection, the line it
+    # was priced against, and the realized total. Without these the totals model
+    # can only ever be fit on the picks it made, which is exactly the sample it
+    # must not be fit on.
+    existing_log = {row[1] for row in conn.execute("PRAGMA table_info(model_log)").fetchall()}
+    for col, col_type in [
+        ("predicted_total", "REAL"),
+        ("market_total", "REAL"),
+        ("over_odds", "INTEGER"),
+        ("under_odds", "INTEGER"),
+        ("actual_total", "REAL"),
+    ]:
+        if col not in existing_log:
+            conn.execute(f"ALTER TABLE model_log ADD COLUMN {col} {col_type}")
+            logger.info("Migration: added column '%s' to model_log.", col)
 
 
 def init_db():
@@ -239,21 +266,33 @@ def save_model_log(rows: list[dict]):
     sql = """
     INSERT INTO model_log
         (date, home_team, away_team, raw_model_prob, market_prob,
-         home_odds, away_odds, model_name)
+         home_odds, away_odds, model_name,
+         predicted_total, market_total, over_odds, under_odds)
     VALUES
         (:date, :home_team, :away_team, :raw_model_prob, :market_prob,
-         :home_odds, :away_odds, :model_name)
+         :home_odds, :away_odds, :model_name,
+         :predicted_total, :market_total, :over_odds, :under_odds)
     ON CONFLICT(date, home_team, away_team) DO UPDATE SET
-        raw_model_prob = excluded.raw_model_prob,
-        market_prob    = excluded.market_prob,
-        home_odds      = excluded.home_odds,
-        away_odds      = excluded.away_odds,
-        model_name     = excluded.model_name
+        raw_model_prob  = excluded.raw_model_prob,
+        market_prob     = excluded.market_prob,
+        home_odds       = excluded.home_odds,
+        away_odds       = excluded.away_odds,
+        model_name      = excluded.model_name,
+        predicted_total = excluded.predicted_total,
+        market_total    = excluded.market_total,
+        over_odds       = excluded.over_odds,
+        under_odds      = excluded.under_odds
     WHERE model_log.home_win IS NULL
     """
+    normalized = []
+    for r in rows:
+        row = dict(r)
+        for col in ("predicted_total", "market_total", "over_odds", "under_odds"):
+            row.setdefault(col, None)
+        normalized.append(row)
     with get_connection() as conn:
-        conn.executemany(sql, rows)
-    logger.info("Saved %d rows to model_log.", len(rows))
+        conn.executemany(sql, normalized)
+    logger.info("Saved %d rows to model_log.", len(normalized))
 
 
 def grade_model_log(results: dict[str, dict], for_date: Optional[str] = None):
@@ -278,9 +317,10 @@ def grade_model_log(results: dict[str, dict], for_date: Optional[str] = None):
             if result is None:
                 continue
             home_win = 1 if result["winner"] == row["home_team"] else 0
+            actual_total = result.get("home_score", 0) + result.get("away_score", 0)
             conn.execute(
-                "UPDATE model_log SET home_win = ? WHERE id = ?",
-                (home_win, row["id"]),
+                "UPDATE model_log SET home_win = ?, actual_total = ? WHERE id = ?",
+                (home_win, actual_total, row["id"]),
             )
             graded += 1
         if pending:
@@ -289,11 +329,41 @@ def grade_model_log(results: dict[str, dict], for_date: Optional[str] = None):
 
 
 def get_graded_model_log() -> list[dict]:
-    """Return all graded model_log rows for blend-weight calibration."""
+    """Return graded model_log rows usable for moneyline blend-weight calibration.
+
+    Rows whose raw_model_prob is exactly 0.5 are the "features unavailable"
+    fallback, not a prediction; including them would drag the fit toward pure
+    market. The log now stores them anyway (they still carry a usable totals
+    projection), so they are filtered here instead of at write time.
+    """
     with get_connection() as conn:
         rows = conn.execute(
             """SELECT raw_model_prob, market_prob, home_win
-               FROM model_log WHERE home_win IS NOT NULL"""
+               FROM model_log
+               WHERE home_win IS NOT NULL AND raw_model_prob != 0.5"""
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_graded_totals_log() -> list[dict]:
+    """Return graded full-slate rows usable for totals calibration.
+
+    A row qualifies when it has a projection, the line it was priced against,
+    both O/U prices, and a realized total. This is the whole slate, not the
+    picks -- see the model_log schema comment for why that distinction is load
+    bearing.
+    """
+    with get_connection() as conn:
+        rows = conn.execute(
+            """SELECT date, predicted_total, market_total, over_odds, under_odds,
+                      actual_total
+               FROM model_log
+               WHERE actual_total IS NOT NULL
+                 AND predicted_total IS NOT NULL
+                 AND market_total IS NOT NULL
+                 AND over_odds IS NOT NULL
+                 AND under_odds IS NOT NULL
+               ORDER BY date"""
         ).fetchall()
     return [dict(r) for r in rows]
 

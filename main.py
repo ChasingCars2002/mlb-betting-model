@@ -26,7 +26,7 @@ from model import load_model, predict_win_prob
 from odds import fetch_live_odds, match_odds_to_games
 from evaluate import (
     filter_positive_ev, filter_totals_ev, format_picks, format_stats,
-    compute_confidence, edge_band,
+    compute_confidence, edge_band, moneyline_edge_status,
 )
 from score import predict_game_scores
 from calibration import (
@@ -36,9 +36,27 @@ from calibration import (
     get_blend_weight,
     is_self_tuned,
 )
-from config import MARKET_BLEND_WEIGHT, TOTALS_MAX_DISAGREEMENT, MAX_RAW_DISAGREEMENT
+import totals_calibration
+from totals_calibration import (
+    update_totals_calibration,
+    totals_edge_status,
+    get_totals_state,
+)
+from config import TOTALS_MAX_DISAGREEMENT, MAX_RAW_DISAGREEMENT
 
 logger = logging.getLogger(__name__)
+
+
+def _report_gate(market: str, gate: dict) -> None:
+    """Print (and log) whether a market may be bet, and why not when it may not."""
+    if gate["bettable"]:
+        print(f"        {market}: OPEN — {gate['detail']}")
+        return
+    # filter_positive_ev / filter_totals_ev log the ERROR when they actually
+    # suppress; this is the console-facing half, so it stays at info.
+    msg = f"{market} betting is CLOSED ({gate['reason']}): {gate['detail']}"
+    print(f"        {msg}")
+    logger.info(msg)
 
 
 def post_picks_to_github_issue(picks: list[dict], totals_picks: list[dict] | None = None) -> None:
@@ -300,10 +318,15 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
     print(f"        Market blend weight: {get_blend_weight():.2f} "
           f"({'self-tuned' if is_self_tuned() else 'default'})")
 
-    # A high blend weight can push the achievable edge below EV_THRESHOLD, at
-    # which point the moneyline filter is unsatisfiable and quietly returns
-    # nothing every day. Say so out loud instead of reporting "0 picks" as if
-    # the slate simply had no value.
+    # Report each market's gate BEFORE filtering, so a day with no picks says
+    # which market is shut and why, instead of reporting "0 picks" as if the
+    # slate simply had no value.
+    _report_gate("Moneyline", moneyline_edge_status())
+    _report_gate("Totals", totals_edge_status())
+
+    # A high blend weight can also push the achievable edge below EV_THRESHOLD,
+    # at which point the moneyline filter is unsatisfiable for a second,
+    # independent reason. Both are worth naming.
     band = edge_band()
     if not band["reachable"]:
         msg = (f"Moneyline gate is UNREACHABLE at blend weight {band['weight']:.2f}: "
@@ -332,7 +355,7 @@ def run_predictions(model_name: str = "xgboost", force: bool = False):
         p["confidence"] = compute_confidence(
             p["edge"], p["ev"],
             max_disagreement=TOTALS_MAX_DISAGREEMENT,
-            weight=MARKET_BLEND_WEIGHT,
+            weight=totals_calibration.get_totals_blend_weight(),
         )
 
     # Display picks
@@ -415,6 +438,22 @@ def run_grading():
     except Exception as e:
         logger.warning("Blend weight update failed (non-fatal): %s", e)
 
+    # Same loop for totals: refit the projection's level, its residual SD, its
+    # blend weight, and the skill test that decides whether totals may be bet.
+    try:
+        tstate = update_totals_calibration()
+        if tstate:
+            print(f"  Totals calibration on {tstate['n_games']} graded games: "
+                  f"level {tstate['level_adjust']:+.2f} runs, sigma {tstate['sigma']:.2f}, "
+                  f"blend weight {tstate['weight']:.2f}.")
+            print(f"  Totals skill test: projection RMSE {tstate['model_rmse']:.3f} vs "
+                  f"posted line {tstate['market_rmse']:.3f} — "
+                  f"{'model wins, totals betting OPEN' if tstate['has_edge'] else 'line wins, totals betting CLOSED'}.")
+        else:
+            print("  Totals calibration: not enough graded full-slate games yet.")
+    except Exception as e:
+        logger.warning("Totals calibration update failed (non-fatal): %s", e)
+
     # Show updated stats
     show_stats()
 
@@ -483,8 +522,14 @@ def export_dashboard_data():
             "moneyline_edge_band": edge_band(),
             "totals_edge_band": edge_band(
                 max_disagreement=TOTALS_MAX_DISAGREEMENT,
-                weight=MARKET_BLEND_WEIGHT,
+                weight=totals_calibration.get_totals_blend_weight(),
             ),
+            # Why each market is or isn't producing picks. Without this the
+            # dashboard can only render an empty slate, which reads as "no value
+            # today" when it actually means "this market is shut".
+            "moneyline_gate": moneyline_edge_status(),
+            "totals_gate": totals_edge_status(),
+            "totals_calibration": get_totals_state(),
         },
         "last_updated": datetime.utcnow().isoformat() + "Z",
     }
