@@ -140,7 +140,7 @@ class TestLevelAdjust:
 # update_totals_calibration
 # ---------------------------------------------------------------------------
 
-def _seed(n, *, bias, model_noise, market_noise, seed=7):
+def _seed(n, *, bias, model_noise, market_noise, seed=7, applied=0.0):
     """Seed the log so the model's error is (bias, model_noise) and the line's
     is (0, market_noise), both against a known realized total."""
     import random
@@ -158,7 +158,10 @@ def _seed(n, *, bias, model_noise, market_noise, seed=7):
             "home_odds": -110,
             "away_odds": -110,
             "model_name": "xgboost",
-            "predicted_total": round(actual + bias + rng.gauss(0, model_noise), 2),
+            # `applied` mimics a level correction already subtracted by
+            # score.predict_game_scores before this row was logged.
+            "predicted_total": round(actual + bias + rng.gauss(0, model_noise) - applied, 2),
+            "level_adjust_applied": applied,
             "market_total": round((actual + rng.gauss(0, market_noise)) * 2) / 2,
             "over_odds": -110,
             "under_odds": -110,
@@ -350,3 +353,108 @@ class TestMoneylineGate:
         status = evaluate.moneyline_edge_status()
         assert status["bettable"] is True
         assert status["reason"] == "ok"
+
+
+# ---------------------------------------------------------------------------
+# holdout scoring and the double-correction guard
+# ---------------------------------------------------------------------------
+
+@pytest.mark.usefixtures("real_calibration")
+class TestSplitIndex:
+    def test_holdout_is_at_least_the_minimum(self):
+        dates = [f"2026-07-{(i % 28) + 1:02d}" for i in range(400)]
+        dates.sort()
+        split = totals_calibration._split_index(dates)
+        assert len(dates) - split >= totals_calibration.MIN_HOLDOUT_GAMES
+
+    def test_never_splits_a_date_across_windows(self):
+        """Games on one slate share weather, schedule, and often an opponent."""
+        dates = sorted(f"2026-07-{(i % 28) + 1:02d}" for i in range(400))
+        split = totals_calibration._split_index(dates)
+        assert dates[split - 1] != dates[split]
+
+    def test_none_when_the_log_is_too_short_to_hold_anything_out(self):
+        assert totals_calibration._split_index(["2026-07-01"] * 10) is None
+
+
+@pytest.mark.usefixtures("real_calibration")
+class TestDoubleCorrectionGuard:
+    """Once a level correction is live it is already baked into every logged
+    projection. A refit that reads those rows as raw re-measures a bias it has
+    already removed and subtracts it twice, and the fit never settles."""
+
+    def test_recovers_the_same_bias_whether_or_not_it_was_already_applied(
+            self, tmp_db, tmp_state):
+        uncorrected = _seed(400, bias=1.0, model_noise=2.0, market_noise=2.0)
+        first = totals_calibration.update_totals_calibration()
+
+        # Same underlying model, but every row was logged after a 1.0-run
+        # correction went live. The fit must land in the same place.
+        with database.get_connection() as conn:
+            conn.execute("DELETE FROM model_log")
+        _seed(400, bias=1.0, model_noise=2.0, market_noise=2.0, applied=1.0)
+        second = totals_calibration.update_totals_calibration()
+
+        assert uncorrected  # sanity: the first seeding produced rows
+        assert second["level_adjust"] == pytest.approx(first["level_adjust"], abs=0.05)
+        assert second["level_adjust"] == pytest.approx(1.0, abs=0.3)
+
+    def test_corrected_rows_alone_do_not_stack_a_second_correction(
+            self, tmp_db, tmp_state):
+        """A model already centred, logged post-correction, needs no further shift."""
+        _seed(400, bias=0.0, model_noise=2.0, market_noise=2.0, applied=1.5)
+        state = totals_calibration.update_totals_calibration()
+        assert state["level_adjust"] == pytest.approx(0.0, abs=0.3)
+
+    def test_applied_adjustment_is_recorded_at_log_time(self, tmp_db, monkeypatch):
+        monkeypatch.setattr(totals_calibration, "get_level_adjust", lambda: 0.8)
+        calibration.log_model_predictions([{
+            "game_date": "2026-08-01", "home_team": "NYY", "away_team": "BOS",
+            "model_prob": 0.55, "home_odds": -120, "away_odds": 100,
+            "predicted_total": 8.2, "total_line": 8.5,
+            "over_odds": -110, "under_odds": -110,
+        }])
+        with database.get_connection() as conn:
+            row = conn.execute(
+                "SELECT level_adjust_applied FROM model_log").fetchone()
+        assert row["level_adjust_applied"] == pytest.approx(0.8)
+
+
+@pytest.mark.usefixtures("real_calibration")
+class TestGateIsScoredOnHoldout:
+    def test_gate_metrics_come_from_untouched_games(self, tmp_db, tmp_state):
+        state = _seed(400, bias=1.0, model_noise=2.0, market_noise=2.0) and \
+            totals_calibration.update_totals_calibration()
+        assert state["n_train"] + state["n_holdout"] == state["n_games"]
+        assert state["n_holdout"] >= totals_calibration.MIN_HOLDOUT_GAMES
+
+    def test_both_tests_must_pass(self, tmp_db, tmp_state, monkeypatch):
+        """RMSE alone is not enough — the wager rides on the probabilities.
+
+        A projection can sit nearer the realized total on average and still
+        price Over/Under worse than the book.
+        """
+        monkeypatch.setattr(totals_calibration, "_score_blend_weight",
+                            lambda *a, **k: (0.75, 0.68))  # model loses on log loss
+        _seed(400, bias=0.0, model_noise=1.0, market_noise=3.0)
+        state = totals_calibration.update_totals_calibration()
+        assert state["rmse_beats_line"] is True     # RMSE says yes...
+        assert state["probs_beat_market"] is False  # ...probabilities say no
+        assert state["has_edge"] is False
+
+    def test_edge_requires_the_probability_test_too(self, tmp_db, tmp_state, monkeypatch):
+        monkeypatch.setattr(totals_calibration, "_score_blend_weight",
+                            lambda *a, **k: (0.60, 0.68))  # model wins on log loss
+        _seed(400, bias=0.0, model_noise=1.0, market_noise=3.0)
+        state = totals_calibration.update_totals_calibration()
+        assert state["rmse_beats_line"] is True
+        assert state["probs_beat_market"] is True
+        assert state["has_edge"] is True
+
+    def test_unscoreable_probabilities_close_the_gate(self, tmp_db, tmp_state, monkeypatch):
+        """No holdout log-loss score means the claim is untested, not proven."""
+        monkeypatch.setattr(totals_calibration, "_score_blend_weight",
+                            lambda *a, **k: (None, None))
+        _seed(400, bias=0.0, model_noise=1.0, market_noise=3.0)
+        state = totals_calibration.update_totals_calibration()
+        assert state["has_edge"] is False

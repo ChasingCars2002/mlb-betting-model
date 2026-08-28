@@ -128,8 +128,9 @@ arithmetic accident rather than by decision.
 ### 1. A feedback loop for totals
 
 `model_log` — the full-slate, unselected log the moneyline blend is fit on — now
-also records `predicted_total`, `market_total`, `over_odds`, `under_odds`, and
-the realized `actual_total` at grading.
+also records `predicted_total`, the `level_adjust_applied` that was already
+subtracted from it, `market_total`, `over_odds`, `under_odds`, and the realized
+`actual_total` at grading.
 
 The full-slate part is load-bearing. `predictions` holds only games the filter
 chose to bet, selected on the model's own disagreement with the line, which is
@@ -160,8 +161,30 @@ graded full slate, it fits:
   outcome. Previously totals used the static default with no feedback at all;
   the moneyline weight was correctly *not* reused, since it is fit on a
   gradient-boosted win classifier and says nothing about a run projection.
-- **`has_edge`** — whether the centred projection beats the posted line on RMSE
-  against the realized total.
+- **`has_edge`** — the gate. Deliberately hard to pass, in three ways:
+
+  - **Scored only on a holdout.** Parameters come from the earlier window, the
+    score from the later untouched one (the most recent 35%, never fewer than
+    80 games, cut on a date boundary so one slate never straddles it). Scoring
+    on the fit sample would tilt the comparison: removing that sample's
+    observed bias improves its RMSE by construction, while the line, which gets
+    no fitted parameter, gains nothing. On a near-tie that alone would open
+    betting on the fit's own optimism.
+  - **Two tests, both required.** RMSE against the realized total *and* log
+    loss of the implied Over/Under probabilities against the book's prices.
+    These can disagree — a projection can sit nearer the total on average while
+    pricing O/U worse than the market — and it is the probabilities the wager
+    actually rides on. Scoring the train-fit blend weight on the holdout also
+    means a weight pinned at the "ignore the model" ceiling shows up as a loss
+    rather than a pass.
+  - **No double correction.** Once a level correction is live,
+    `score.predict_game_scores` subtracts it before the projection is ever
+    logged. A refit reading those rows as raw would re-measure a bias it had
+    already removed and subtract it twice, and with corrected and uncorrected
+    rows accumulating side by side it would chase a moving mixture forever.
+    Every logged row records the adjustment applied to it
+    (`model_log.level_adjust_applied`), and the fit adds it back before
+    measuring anything.
 
 `TOTALS_SIGMA`'s cold-start default moves 3.0 → 4.3, and it is now only a
 fallback until there is a fit.

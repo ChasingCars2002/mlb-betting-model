@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS model_log (
     model_name TEXT,
     home_win INTEGER,
     predicted_total REAL,
+    level_adjust_applied REAL,
     market_total REAL,
     over_odds INTEGER,
     under_odds INTEGER,
@@ -111,6 +112,11 @@ def _migrate_db(conn: sqlite3.Connection):
     existing_log = {row[1] for row in conn.execute("PRAGMA table_info(model_log)").fetchall()}
     for col, col_type in [
         ("predicted_total", "REAL"),
+        # The level correction that was already subtracted from predicted_total
+        # when the row was written. Without it the next refit re-measures a bias
+        # it has already corrected and subtracts it a second time; NULL on rows
+        # written before the correction existed, which is the same as 0.0.
+        ("level_adjust_applied", "REAL"),
         ("market_total", "REAL"),
         ("over_odds", "INTEGER"),
         ("under_odds", "INTEGER"),
@@ -267,11 +273,11 @@ def save_model_log(rows: list[dict]):
     INSERT INTO model_log
         (date, home_team, away_team, raw_model_prob, market_prob,
          home_odds, away_odds, model_name,
-         predicted_total, market_total, over_odds, under_odds)
+         predicted_total, level_adjust_applied, market_total, over_odds, under_odds)
     VALUES
         (:date, :home_team, :away_team, :raw_model_prob, :market_prob,
          :home_odds, :away_odds, :model_name,
-         :predicted_total, :market_total, :over_odds, :under_odds)
+         :predicted_total, :level_adjust_applied, :market_total, :over_odds, :under_odds)
     ON CONFLICT(date, home_team, away_team) DO UPDATE SET
         raw_model_prob  = excluded.raw_model_prob,
         market_prob     = excluded.market_prob,
@@ -279,6 +285,7 @@ def save_model_log(rows: list[dict]):
         away_odds       = excluded.away_odds,
         model_name      = excluded.model_name,
         predicted_total = excluded.predicted_total,
+        level_adjust_applied = excluded.level_adjust_applied,
         market_total    = excluded.market_total,
         over_odds       = excluded.over_odds,
         under_odds      = excluded.under_odds
@@ -287,7 +294,8 @@ def save_model_log(rows: list[dict]):
     normalized = []
     for r in rows:
         row = dict(r)
-        for col in ("predicted_total", "market_total", "over_odds", "under_odds"):
+        for col in ("predicted_total", "level_adjust_applied", "market_total",
+                    "over_odds", "under_odds"):
             row.setdefault(col, None)
         normalized.append(row)
     with get_connection() as conn:
@@ -355,8 +363,9 @@ def get_graded_totals_log() -> list[dict]:
     """
     with get_connection() as conn:
         rows = conn.execute(
-            """SELECT date, predicted_total, market_total, over_odds, under_odds,
-                      actual_total
+            """SELECT date, predicted_total,
+                      COALESCE(level_adjust_applied, 0.0) AS level_adjust_applied,
+                      market_total, over_odds, under_odds, actual_total
                FROM model_log
                WHERE actual_total IS NOT NULL
                  AND predicted_total IS NOT NULL

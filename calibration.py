@@ -106,6 +106,7 @@ def log_model_predictions(games_with_odds: list[dict]) -> int:
     """
     from database import save_model_log
     from odds import devig_two_way
+    from totals_calibration import get_level_adjust
 
     rows = []
     for g in games_with_odds:
@@ -133,6 +134,13 @@ def log_model_predictions(games_with_odds: list[dict]) -> int:
             "model_name": g.get("model_name", "xgboost"),
             "predicted_total": (round(float(predicted_total), 2)
                                 if predicted_total is not None else None),
+            # predicted_total already has the learned level correction
+            # subtracted (score.predict_game_scores applies it). Record which
+            # correction that was, so the next refit can reconstruct the raw
+            # projection instead of re-measuring and re-subtracting a bias it
+            # has already removed.
+            "level_adjust_applied": (get_level_adjust()
+                                     if predicted_total is not None else None),
             "market_total": g.get("total_line"),
             "over_odds": g.get("over_odds"),
             "under_odds": g.get("under_odds"),
