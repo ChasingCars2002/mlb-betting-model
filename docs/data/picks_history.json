@@ -11,9 +11,9 @@
     "ev": 0.0535,
     "units": 0.5,
     "odds": -111,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.4505,
     "home_pitcher": "Dean Kremer",
     "away_pitcher": "Luis Castillo",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 0.8,
     "confidence": 1.0,
     "raw_model_prob": 0.6051,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 4.0,
+    "actual_away_score": 7.0,
+    "actual_total": 11.0
   },
   {
     "date": "2026-08-28",
@@ -40,9 +40,9 @@
     "ev": 0.0958,
     "units": 0.75,
     "odds": -120,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Loss",
+    "result": "Under",
+    "profit": -0.75,
     "home_pitcher": "Christian Scott",
     "away_pitcher": "Hunter Brown",
     "bet_type": "totals",
@@ -53,9 +53,9 @@
     "total_delta": 1.35,
     "confidence": 2.0,
     "raw_model_prob": 0.6736,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 1.0,
+    "actual_away_score": 3.0,
+    "actual_total": 4.0
   },
   {
     "date": "2026-08-28",
@@ -69,9 +69,9 @@
     "ev": 0.1143,
     "units": 0.89,
     "odds": -120,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.7417,
     "home_pitcher": "Grant Holmes",
     "away_pitcher": "Tomoyuki Sugano",
     "bet_type": "totals",
@@ -82,9 +82,9 @@
     "total_delta": 1.51,
     "confidence": 2.0,
     "raw_model_prob": 0.6926,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 6.0,
+    "actual_away_score": 4.0,
+    "actual_total": 10.0
   },
   {
     "date": "2026-08-28",
@@ -98,9 +98,9 @@
     "ev": 0.1434,
     "units": 0.91,
     "odds": 102,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.9282,
     "home_pitcher": "David Peterson",
     "away_pitcher": "Rhett Lowder",
     "bet_type": "totals",
@@ -111,9 +111,9 @@
     "total_delta": 1.23,
     "confidence": 3.0,
     "raw_model_prob": 0.6591,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 8.0,
+    "actual_away_score": 10.0,
+    "actual_total": 18.0
   },
   {
     "date": "2026-08-27",
