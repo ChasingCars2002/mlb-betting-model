@@ -1,28 +1,28 @@
 {
   "ytd": {
-    "total_bets": 807,
-    "wins": 391,
-    "losses": 416,
+    "total_bets": 811,
+    "wins": 394,
+    "losses": 417,
     "pushes": 0,
-    "pending": 13,
-    "total_units_wagered": 888.72,
-    "total_profit": 6.24,
-    "roi_pct": 0.7,
-    "brier_score": 0.2554,
-    "win_rate": 48.45,
+    "pending": 9,
+    "total_units_wagered": 891.69,
+    "total_profit": 6.66,
+    "roi_pct": 0.75,
+    "brier_score": 0.2552,
+    "win_rate": 48.58,
     "since": "2026-01-01"
   },
   "all_time": {
-    "total_bets": 807,
-    "wins": 391,
-    "losses": 416,
+    "total_bets": 811,
+    "wins": 394,
+    "losses": 417,
     "pushes": 0,
-    "pending": 13,
-    "total_units_wagered": 888.72,
-    "total_profit": 6.24,
-    "roi_pct": 0.7,
-    "brier_score": 0.2554,
-    "win_rate": 48.45
+    "pending": 9,
+    "total_units_wagered": 891.69,
+    "total_profit": 6.66,
+    "roi_pct": 0.75,
+    "brier_score": 0.2552,
+    "win_rate": 48.58
   },
   "by_bet_type": {
     "moneyline": {
@@ -53,36 +53,36 @@
     },
     "totals": {
       "ytd": {
-        "total_bets": 451,
-        "wins": 226,
-        "losses": 225,
+        "total_bets": 455,
+        "wins": 229,
+        "losses": 226,
         "pushes": 0,
-        "pending": 9,
-        "total_units_wagered": 412.19,
-        "total_profit": -12.63,
-        "roi_pct": -3.06,
-        "brier_score": 0.2595,
-        "win_rate": 50.11
+        "pending": 5,
+        "total_units_wagered": 415.16,
+        "total_profit": -12.21,
+        "roi_pct": -2.94,
+        "brier_score": 0.2591,
+        "win_rate": 50.33
       },
       "all_time": {
-        "total_bets": 451,
-        "wins": 226,
-        "losses": 225,
+        "total_bets": 455,
+        "wins": 229,
+        "losses": 226,
         "pushes": 0,
-        "pending": 9,
-        "total_units_wagered": 412.19,
-        "total_profit": -12.63,
-        "roi_pct": -3.06,
-        "brier_score": 0.2595,
-        "win_rate": 50.11
+        "pending": 5,
+        "total_units_wagered": 415.16,
+        "total_profit": -12.21,
+        "roi_pct": -2.94,
+        "brier_score": 0.2591,
+        "win_rate": 50.33
       }
     }
   },
   "model": {
     "blend_weight": 0.95,
     "self_tuned": true,
-    "calibration_games": 927,
-    "calibration_updated": "2026-08-29T15:56:12.629619Z",
+    "calibration_games": 937,
+    "calibration_updated": "2026-08-30T15:42:54.866358Z",
     "model_adds_value": false,
     "weight_at_ceiling": true,
     "moneyline_edge_band": {
@@ -98,5 +98,5 @@
       "reachable": true
     }
   },
-  "last_updated": "2026-08-29T15:56:12.640129Z"
+  "last_updated": "2026-08-30T15:42:54.877796Z"
 }
