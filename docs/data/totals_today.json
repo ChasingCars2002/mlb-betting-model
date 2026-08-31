@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "date": "2026-08-31",
+    "home_team": "TEX",
+    "away_team": "ATH",
+    "pick": "Over",
+    "pick_side": "Over",
+    "model_prob": 0.5796,
+    "implied_prob": 0.4892,
+    "edge": 0.0904,
+    "ev": 0.1316,
+    "units": 0.9,
+    "odds": -105,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Jacob deGrom",
+    "away_pitcher": "Gage Jump",
+    "bet_type": "totals",
+    "listed_total": 7.5,
+    "predicted_total": 8.82,
+    "predicted_home_runs": 4.77,
+    "predicted_away_runs": 4.05,
+    "total_delta": 1.32,
+    "confidence": 3.0,
+    "raw_model_prob": 0.67,
+    "actual_home_score": null,
+    "actual_away_score": null,
+    "actual_total": null
+  }
+]
