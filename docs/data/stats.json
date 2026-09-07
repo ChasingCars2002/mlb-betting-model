@@ -58,7 +58,7 @@
         "losses": 236,
         "pushes": 1,
         "pending": 13,
-        "total_units_wagered": 433.63,
+        "total_units_wagered": 433.6299999999998,
         "total_profit": -8.96,
         "roi_pct": -2.07,
         "brier_score": 0.2578,
@@ -70,7 +70,7 @@
         "losses": 236,
         "pushes": 1,
         "pending": 13,
-        "total_units_wagered": 433.63,
+        "total_units_wagered": 433.6299999999998,
         "total_profit": -8.96,
         "roi_pct": -2.07,
         "brier_score": 0.2578,
@@ -82,7 +82,7 @@
     "blend_weight": 0.95,
     "self_tuned": true,
     "calibration_games": 1030,
-    "calibration_updated": "2026-09-06T15:52:23.326144Z",
+    "calibration_updated": "2026-09-07T15:51:27.574019Z",
     "model_adds_value": false,
     "weight_at_ceiling": true,
     "moneyline_edge_band": {
@@ -98,5 +98,5 @@
       "reachable": true
     }
   },
-  "last_updated": "2026-09-06T15:52:23.346590Z"
+  "last_updated": "2026-09-07T15:51:27.591302Z"
 }
