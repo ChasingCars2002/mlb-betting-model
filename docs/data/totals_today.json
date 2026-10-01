@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "date": "2026-10-01",
+    "home_team": "ATL",
+    "away_team": "PHI",
+    "pick": "Over",
+    "pick_side": "Over",
+    "model_prob": 0.5728,
+    "implied_prob": 0.4805,
+    "edge": 0.0924,
+    "ev": 0.14,
+    "units": 0.92,
+    "odds": -101,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Ray Kerr",
+    "away_pitcher": "Aaron Nola",
+    "bet_type": "totals",
+    "listed_total": 7.5,
+    "predicted_total": 8.78,
+    "predicted_home_runs": 4.63,
+    "predicted_away_runs": 4.15,
+    "total_delta": 1.28,
+    "confidence": 3.0,
+    "raw_model_prob": 0.6652,
+    "actual_home_score": null,
+    "actual_away_score": null,
+    "actual_total": null
+  }
+]
