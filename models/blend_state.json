@@ -1,10 +1,10 @@
 {
   "weight": 0.95,
-  "n_games": 1295,
-  "log_loss": 0.67497,
-  "default_weight_log_loss": 0.68426,
-  "pure_market_log_loss": 0.67446,
+  "n_games": 1299,
+  "log_loss": 0.67495,
+  "default_weight_log_loss": 0.68416,
+  "pure_market_log_loss": 0.67445,
   "weight_at_ceiling": true,
   "model_adds_value": false,
-  "updated_at": "2026-09-30T17:13:58.660781Z"
+  "updated_at": "2026-10-01T17:43:05.985120Z"
 }

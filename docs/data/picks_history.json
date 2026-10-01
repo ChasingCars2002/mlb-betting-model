@@ -11,9 +11,9 @@
     "ev": 0.0727,
     "units": 0.58,
     "odds": -122,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.4754,
     "home_pitcher": "Max Fried",
     "away_pitcher": "Sonny Gray",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 1.19,
     "confidence": 1.0,
     "raw_model_prob": 0.6542,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 9.0,
+    "actual_away_score": 2.0,
+    "actual_total": 11.0
   },
   {
     "date": "2026-09-30",
@@ -40,9 +40,9 @@
     "ev": 0.0861,
     "units": 0.6,
     "odds": -107,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.5607,
     "home_pitcher": "Hunter Brown",
     "away_pitcher": "Sean Burke",
     "bet_type": "totals",
@@ -53,9 +53,9 @@
     "total_delta": 0.99,
     "confidence": 1.0,
     "raw_model_prob": 0.6293,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 3.0,
+    "actual_away_score": 7.0,
+    "actual_total": 10.0
   },
   {
     "date": "2026-09-29",
