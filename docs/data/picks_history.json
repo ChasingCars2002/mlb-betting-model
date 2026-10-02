@@ -11,9 +11,9 @@
     "ev": 0.14,
     "units": 0.92,
     "odds": -101,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.9109,
     "home_pitcher": "Ray Kerr",
     "away_pitcher": "Aaron Nola",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 1.28,
     "confidence": 3.0,
     "raw_model_prob": 0.6652,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 6.0,
+    "actual_away_score": 2.0,
+    "actual_total": 8.0
   },
   {
     "date": "2026-09-30",
