@@ -11,9 +11,9 @@
     "ev": 0.1127,
     "units": 0.92,
     "odds": -125,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.736,
     "home_pitcher": "Gavin Williams",
     "away_pitcher": "Anthony Kay",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 1.66,
     "confidence": 3.0,
     "raw_model_prob": 0.71,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 3.0,
+    "actual_away_score": 4.0,
+    "actual_total": 7.0
   },
   {
     "date": "2026-10-05",
@@ -40,9 +40,9 @@
     "ev": 0.1209,
     "units": 0.9,
     "odds": -114,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.7895,
     "home_pitcher": "Freddy Peralta",
     "away_pitcher": "Cam Schlittler",
     "bet_type": "totals",
@@ -53,9 +53,9 @@
     "total_delta": 1.45,
     "confidence": 2.0,
     "raw_model_prob": 0.6856,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 5.0,
+    "actual_away_score": 2.0,
+    "actual_total": 7.0
   },
   {
     "date": "2026-10-04",
@@ -69,9 +69,9 @@
     "ev": 0.1293,
     "units": 0.97,
     "odds": -115,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Push",
+    "result": "Push",
+    "profit": 0.0,
     "home_pitcher": "Logan Henderson",
     "away_pitcher": "Michael King",
     "bet_type": "totals",
@@ -82,9 +82,9 @@
     "total_delta": 1.55,
     "confidence": 3.0,
     "raw_model_prob": 0.6973,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 4.0,
+    "actual_away_score": 3.0,
+    "actual_total": 7.0
   },
   {
     "date": "2026-10-03",
