@@ -81,8 +81,8 @@
   "model": {
     "blend_weight": 0.95,
     "self_tuned": true,
-    "calibration_games": 1312,
-    "calibration_updated": "2026-10-10T16:35:36.724532Z",
+    "calibration_games": 1313,
+    "calibration_updated": "2026-10-11T17:00:30.062824Z",
     "model_adds_value": false,
     "weight_at_ceiling": true,
     "moneyline_edge_band": {
@@ -98,5 +98,5 @@
       "reachable": true
     }
   },
-  "last_updated": "2026-10-10T16:35:36.735983Z"
+  "last_updated": "2026-10-11T17:00:30.074754Z"
 }
