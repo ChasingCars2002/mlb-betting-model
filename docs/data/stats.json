@@ -1,28 +1,28 @@
 {
   "ytd": {
-    "total_bets": 964,
+    "total_bets": 965,
     "wins": 467,
-    "losses": 490,
+    "losses": 491,
     "pushes": 7,
-    "pending": 12,
-    "total_units_wagered": 1000.72,
-    "total_profit": 0.97,
-    "roi_pct": 0.1,
-    "brier_score": 0.255,
-    "win_rate": 48.8,
+    "pending": 11,
+    "total_units_wagered": 1001.39,
+    "total_profit": 0.3,
+    "roi_pct": 0.03,
+    "brier_score": 0.2551,
+    "win_rate": 48.75,
     "since": "2026-01-01"
   },
   "all_time": {
-    "total_bets": 964,
+    "total_bets": 965,
     "wins": 467,
-    "losses": 490,
+    "losses": 491,
     "pushes": 7,
-    "pending": 12,
-    "total_units_wagered": 1000.72,
-    "total_profit": 0.97,
-    "roi_pct": 0.1,
-    "brier_score": 0.255,
-    "win_rate": 48.8
+    "pending": 11,
+    "total_units_wagered": 1001.39,
+    "total_profit": 0.3,
+    "roi_pct": 0.03,
+    "brier_score": 0.2551,
+    "win_rate": 48.75
   },
   "by_bet_type": {
     "moneyline": {
@@ -53,36 +53,36 @@
     },
     "totals": {
       "ytd": {
-        "total_bets": 608,
+        "total_bets": 609,
         "wins": 302,
-        "losses": 299,
+        "losses": 300,
         "pushes": 7,
-        "pending": 8,
-        "total_units_wagered": 524.19,
-        "total_profit": -17.9,
-        "roi_pct": -3.41,
-        "brier_score": 0.2579,
-        "win_rate": 50.25
+        "pending": 7,
+        "total_units_wagered": 524.86,
+        "total_profit": -18.57,
+        "roi_pct": -3.54,
+        "brier_score": 0.258,
+        "win_rate": 50.17
       },
       "all_time": {
-        "total_bets": 608,
+        "total_bets": 609,
         "wins": 302,
-        "losses": 299,
+        "losses": 300,
         "pushes": 7,
-        "pending": 8,
-        "total_units_wagered": 524.19,
-        "total_profit": -17.9,
-        "roi_pct": -3.41,
-        "brier_score": 0.2579,
-        "win_rate": 50.25
+        "pending": 7,
+        "total_units_wagered": 524.86,
+        "total_profit": -18.57,
+        "roi_pct": -3.54,
+        "brier_score": 0.258,
+        "win_rate": 50.17
       }
     }
   },
   "model": {
     "blend_weight": 0.95,
     "self_tuned": true,
-    "calibration_games": 1313,
-    "calibration_updated": "2026-10-11T17:00:30.062824Z",
+    "calibration_games": 1314,
+    "calibration_updated": "2026-10-12T20:35:46.075704Z",
     "model_adds_value": false,
     "weight_at_ceiling": true,
     "moneyline_edge_band": {
@@ -98,5 +98,5 @@
       "reachable": true
     }
   },
-  "last_updated": "2026-10-11T17:01:54.254999Z"
+  "last_updated": "2026-10-12T20:35:46.087236Z"
 }
