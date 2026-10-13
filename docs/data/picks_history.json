@@ -11,9 +11,9 @@
     "ev": 0.0557,
     "units": 0.5,
     "odds": -125,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.4,
     "home_pitcher": "Drew Rasmussen",
     "away_pitcher": "Foster Griffin",
     "bet_type": "totals",
@@ -24,9 +24,9 @@
     "total_delta": 1.08,
     "confidence": 1.0,
     "raw_model_prob": 0.6406,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 3.0,
+    "actual_away_score": 7.0,
+    "actual_total": 10.0
   },
   {
     "date": "2026-10-12",
@@ -40,9 +40,9 @@
     "ev": 0.1431,
     "units": 0.91,
     "odds": 102,
-    "status": "Pending",
-    "result": null,
-    "profit": null,
+    "status": "Win",
+    "result": "Over",
+    "profit": 0.9282,
     "home_pitcher": "Logan Henderson",
     "away_pitcher": "Yoshinobu Yamamoto",
     "bet_type": "totals",
@@ -53,9 +53,9 @@
     "total_delta": 1.22,
     "confidence": 3.0,
     "raw_model_prob": 0.6579,
-    "actual_home_score": null,
-    "actual_away_score": null,
-    "actual_total": null
+    "actual_home_score": 7.0,
+    "actual_away_score": 4.0,
+    "actual_total": 11.0
   },
   {
     "date": "2026-10-11",
