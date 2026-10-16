@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "date": "2026-10-16",
+    "home_team": "CLE",
+    "away_team": "TB",
+    "pick": "Over",
+    "pick_side": "Over",
+    "model_prob": 0.6302,
+    "implied_prob": 0.5108,
+    "edge": 0.1194,
+    "ev": 0.1783,
+    "units": 1.33,
+    "odds": -115,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Shawn Armstrong",
+    "away_pitcher": "Nick Martinez",
+    "bet_type": "totals",
+    "listed_total": 6.5,
+    "predicted_total": 8.52,
+    "predicted_home_runs": 4.12,
+    "predicted_away_runs": 4.4,
+    "total_delta": 2.02,
+    "confidence": 4.0,
+    "raw_model_prob": 0.7496,
+    "actual_home_score": null,
+    "actual_away_score": null,
+    "actual_total": null
+  }
+]
