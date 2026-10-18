@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "date": "2026-10-18",
+    "home_team": "CLE",
+    "away_team": "TB",
+    "pick": "Over",
+    "pick_side": "Over",
+    "model_prob": 0.5355,
+    "implied_prob": 0.4826,
+    "edge": 0.0529,
+    "ev": 0.0605,
+    "units": 0.5,
+    "odds": -102,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Parker Messick",
+    "away_pitcher": "Drew Rasmussen",
+    "bet_type": "totals",
+    "listed_total": 6.5,
+    "predicted_total": 7.17,
+    "predicted_home_runs": 3.67,
+    "predicted_away_runs": 3.5,
+    "total_delta": 0.67,
+    "confidence": 1.0,
+    "raw_model_prob": 0.5884,
+    "actual_home_score": null,
+    "actual_away_score": null,
+    "actual_total": null
+  }
+]
