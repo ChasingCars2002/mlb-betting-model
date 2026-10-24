@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "date": "2026-10-24",
+    "home_team": "MIL",
+    "away_team": "TB",
+    "pick": "Over",
+    "pick_side": "Over",
+    "model_prob": 0.5982,
+    "implied_prob": 0.4978,
+    "edge": 0.1003,
+    "ev": 0.1469,
+    "units": 1.04,
+    "odds": -109,
+    "status": "Pending",
+    "result": null,
+    "profit": null,
+    "home_pitcher": "Logan Henderson",
+    "away_pitcher": "Drew Rasmussen",
+    "bet_type": "totals",
+    "listed_total": 6.5,
+    "predicted_total": 8.06,
+    "predicted_home_runs": 4.03,
+    "predicted_away_runs": 4.03,
+    "total_delta": 1.56,
+    "confidence": 3.0,
+    "raw_model_prob": 0.6985,
+    "actual_home_score": null,
+    "actual_away_score": null,
+    "actual_total": null
+  }
+]
