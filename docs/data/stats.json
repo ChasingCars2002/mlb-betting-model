@@ -82,7 +82,7 @@
     "blend_weight": 0.95,
     "self_tuned": true,
     "calibration_games": 1325,
-    "calibration_updated": "2026-11-26T20:42:32.672714Z",
+    "calibration_updated": "2026-11-27T20:28:23.795908Z",
     "model_adds_value": false,
     "weight_at_ceiling": true,
     "moneyline_edge_band": {
@@ -98,5 +98,5 @@
       "reachable": true
     }
   },
-  "last_updated": "2026-11-27T00:39:56.589035Z"
+  "last_updated": "2026-11-27T20:28:23.806638Z"
 }
